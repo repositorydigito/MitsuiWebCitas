@@ -1,0 +1,389 @@
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:wsoap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="urn:sap-com:document:sap:rfc:functions" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" targetNamespace="urn:sap-com:document:sap:rfc:functions">
+<wsdl:documentation>
+<sidl:sidl xmlns:sidl="http://www.sap.com/2007/03/sidl"/>
+</wsdl:documentation>
+<!-- wsp:UsingPolicy eliminado -->
+<!-- wsp:Policy wsu:Id="BN__ZWS_GESCIT" eliminado -->
+<!-- wsp:Policy wsu:Id="BN__ZWS_GESCIT_soap12" eliminado -->
+<!-- wsp:Policy wsu:Id="IF__ZWS_GES_CIT" eliminado -->
+<!-- wsp:Policy wsu:Id="OP__Z3PF_GETDATOSASESORPROCESO" eliminado -->
+<!-- wsp:Policy wsu:Id="OP__Z3PF_GETDATOSCLIENTE" eliminado -->
+<!-- wsp:Policy wsu:Id="OP__Z3PF_GETLISTAPREPAGOPEN" eliminado -->
+<!-- wsp:Policy wsu:Id="OP__Z3PF_GETLISTASERVICIOS" eliminado -->
+<!-- wsp:Policy wsu:Id="OP__Z3PF_GETLISTAVEHICULOS" eliminado -->
+<wsdl:types>
+<xsd:schema attributeFormDefault="qualified" targetNamespace="urn:sap-com:document:sap:rfc:functions">
+<xsd:simpleType name="char1">
+<xsd:restriction base="xsd:string">
+<xsd:maxLength value="1"/>
+</xsd:restriction>
+</xsd:simpleType>
+<xsd:simpleType name="char10">
+<xsd:restriction base="xsd:string">
+<xsd:maxLength value="10"/>
+</xsd:restriction>
+</xsd:simpleType>
+<xsd:simpleType name="char100">
+<xsd:restriction base="xsd:string">
+<xsd:maxLength value="100"/>
+</xsd:restriction>
+</xsd:simpleType>
+<xsd:simpleType name="char15">
+<xsd:restriction base="xsd:string">
+<xsd:maxLength value="15"/>
+</xsd:restriction>
+</xsd:simpleType>
+<xsd:simpleType name="char16">
+<xsd:restriction base="xsd:string">
+<xsd:maxLength value="16"/>
+</xsd:restriction>
+</xsd:simpleType>
+<xsd:simpleType name="char18">
+<xsd:restriction base="xsd:string">
+<xsd:maxLength value="18"/>
+</xsd:restriction>
+</xsd:simpleType>
+<xsd:simpleType name="char2">
+<xsd:restriction base="xsd:string">
+<xsd:maxLength value="2"/>
+</xsd:restriction>
+</xsd:simpleType>
+<xsd:simpleType name="char241">
+<xsd:restriction base="xsd:string">
+<xsd:maxLength value="241"/>
+</xsd:restriction>
+</xsd:simpleType>
+<xsd:simpleType name="char25">
+<xsd:restriction base="xsd:string">
+<xsd:maxLength value="25"/>
+</xsd:restriction>
+</xsd:simpleType>
+<xsd:simpleType name="char30">
+<xsd:restriction base="xsd:string">
+<xsd:maxLength value="30"/>
+</xsd:restriction>
+</xsd:simpleType>
+<xsd:simpleType name="char40">
+<xsd:restriction base="xsd:string">
+<xsd:maxLength value="40"/>
+</xsd:restriction>
+</xsd:simpleType>
+<xsd:simpleType name="char60">
+<xsd:restriction base="xsd:string">
+<xsd:maxLength value="60"/>
+</xsd:restriction>
+</xsd:simpleType>
+<xsd:simpleType name="date10">
+<xsd:restriction base="xsd:string">
+<xsd:maxLength value="10"/>
+<xsd:pattern value="\d\d\d\d-\d\d-\d\d"/>
+</xsd:restriction>
+</xsd:simpleType>
+<xsd:simpleType name="numeric4">
+<xsd:restriction base="xsd:string">
+<xsd:maxLength value="4"/>
+<xsd:pattern value="\d*"/>
+</xsd:restriction>
+</xsd:simpleType>
+<xsd:simpleType name="quantum7.0">
+<xsd:restriction base="xsd:decimal">
+<xsd:totalDigits value="7"/>
+<xsd:fractionDigits value="0"/>
+</xsd:restriction>
+</xsd:simpleType>
+<xsd:simpleType name="time">
+<xsd:restriction base="xsd:time">
+<xsd:pattern value="[0-9]{2}:[0-9]{2}:[0-9]{2}"/>
+</xsd:restriction>
+</xsd:simpleType>
+<xsd:complexType name="ZSDBM_SERV_PREPAGO">
+<xsd:sequence>
+<xsd:element name="ZZTIPO" type="tns:char2"/>
+<xsd:element name="ZZMAT1" type="tns:char18"/>
+<xsd:element name="MAKTX" type="tns:char40"/>
+<xsd:element name="KUNNR" type="tns:char10"/>
+</xsd:sequence>
+</xsd:complexType>
+<xsd:complexType name="Z3PS_CIT_SERV_VEHI">
+<xsd:sequence>
+<xsd:element name="FECSRV" type="tns:date10"/>
+<xsd:element name="SEDSRV" type="tns:char25"/>
+<xsd:element name="DESSRV" type="tns:char60"/>
+<xsd:element name="ASESRV" type="tns:char60"/>
+<xsd:element name="TIPPAGSRV" type="tns:char25"/>
+</xsd:sequence>
+</xsd:complexType>
+<xsd:complexType name="Z3PS_CIT_VEHI_CLI">
+<xsd:sequence>
+<xsd:element name="VHCLE" type="tns:char10"/>
+<xsd:element name="NUMPLA" type="tns:char15"/>
+<xsd:element name="ANIOMOD" type="tns:numeric4"/>
+<xsd:element name="MODVER" type="tns:char18"/>
+</xsd:sequence>
+</xsd:complexType>
+<xsd:complexType name="ZTT_SERV_PREPAGO">
+<xsd:sequence>
+<xsd:element name="item" type="tns:ZSDBM_SERV_PREPAGO" minOccurs="0" maxOccurs="unbounded"/>
+</xsd:sequence>
+</xsd:complexType>
+<xsd:complexType name="Z3PTT_CIT_SRV_VEHI">
+<xsd:sequence>
+<xsd:element name="item" type="tns:Z3PS_CIT_SERV_VEHI" minOccurs="0" maxOccurs="unbounded"/>
+</xsd:sequence>
+</xsd:complexType>
+<xsd:complexType name="Z3PTT_CIT_VEHI_CLI">
+<xsd:sequence>
+<xsd:element name="item" type="tns:Z3PS_CIT_VEHI_CLI" minOccurs="0" maxOccurs="unbounded"/>
+</xsd:sequence>
+</xsd:complexType>
+<xsd:element name="Z3PF_GETDATOSASESORPROCESO">
+<xsd:complexType>
+<xsd:sequence>
+<xsd:element name="PI_PLACA" type="tns:char15"/>
+</xsd:sequence>
+</xsd:complexType>
+</xsd:element>
+<xsd:element name="Z3PF_GETDATOSASESORPROCESOResponse">
+<xsd:complexType>
+<xsd:sequence>
+<xsd:element name="PE_COR_ASE" type="tns:char100"/>
+<xsd:element name="PE_FEC_ENTREGA" type="tns:date10"/>
+<xsd:element name="PE_HOR_ENTREGA" type="tns:time"/>
+<xsd:element name="PE_LOCAL" type="tns:char30"/>
+<xsd:element name="PE_NOM_ASE" type="tns:char100"/>
+<xsd:element name="PE_TEL_ASER" type="tns:char10"/>
+</xsd:sequence>
+</xsd:complexType>
+</xsd:element>
+<xsd:element name="Z3PF_GETDATOSCLIENTE">
+<xsd:complexType>
+<xsd:sequence>
+<xsd:element name="PI_NUMDOCCLI" type="tns:char16"/>
+</xsd:sequence>
+</xsd:complexType>
+</xsd:element>
+<xsd:element name="Z3PF_GETDATOSCLIENTEResponse">
+<xsd:complexType>
+<xsd:sequence>
+<xsd:element name="PE_CORCLI" type="tns:char241"/>
+<xsd:element name="PE_NOMCLI" type="tns:char100"/>
+<xsd:element name="PE_TELCLI" type="tns:char15"/>
+</xsd:sequence>
+</xsd:complexType>
+</xsd:element>
+<xsd:element name="Z3PF_GETLISTAPREPAGOPEN">
+<xsd:complexType>
+<xsd:sequence>
+<xsd:element name="PI_PEND" type="tns:char1" minOccurs="0"/>
+<xsd:element name="PI_PLACA" type="tns:char15"/>
+</xsd:sequence>
+</xsd:complexType>
+</xsd:element>
+<xsd:element name="Z3PF_GETLISTAPREPAGOPENResponse">
+<xsd:complexType>
+<xsd:sequence>
+<xsd:element name="PE_SERV_PREPAGO" type="tns:ZTT_SERV_PREPAGO"/>
+</xsd:sequence>
+</xsd:complexType>
+</xsd:element>
+<xsd:element name="Z3PF_GETLISTASERVICIOS">
+<xsd:complexType>
+<xsd:sequence>
+<xsd:element name="PI_PLACA" type="tns:char15"/>
+</xsd:sequence>
+</xsd:complexType>
+</xsd:element>
+<xsd:element name="Z3PF_GETLISTASERVICIOSResponse">
+<xsd:complexType>
+<xsd:sequence>
+<xsd:element name="PE_KILOMETRAJE" type="tns:quantum7.0"/>
+<xsd:element name="PE_PLACA" type="tns:char15"/>
+<xsd:element name="PE_ULT_FEC_PREPAGO" type="tns:date10"/>
+<xsd:element name="PE_ULT_FEC_SERVICIO" type="tns:date10"/>
+<xsd:element name="PE_ULT_KM_" type="tns:quantum7.0"/>
+<xsd:element name="TT_LISSRV" type="tns:Z3PTT_CIT_SRV_VEHI"/>
+</xsd:sequence>
+</xsd:complexType>
+</xsd:element>
+<xsd:element name="Z3PF_GETLISTAVEHICULOS">
+<xsd:complexType>
+<xsd:sequence>
+<xsd:element name="PI_MARCA" type="tns:char10" minOccurs="0"/>
+<xsd:element name="PI_NUMDOCCLI" type="tns:char16" minOccurs="0"/>
+</xsd:sequence>
+</xsd:complexType>
+</xsd:element>
+<xsd:element name="Z3PF_GETLISTAVEHICULOSResponse">
+<xsd:complexType>
+<xsd:sequence>
+<xsd:element name="TT_LISVEH" type="tns:Z3PTT_CIT_VEHI_CLI"/>
+</xsd:sequence>
+</xsd:complexType>
+</xsd:element>
+</xsd:schema>
+</wsdl:types>
+<wsdl:message name="Z3PF_GETDATOSASESORPROCESO">
+<wsdl:part name="parameters" element="tns:Z3PF_GETDATOSASESORPROCESO"/>
+</wsdl:message>
+<wsdl:message name="Z3PF_GETDATOSASESORPROCESOResponse">
+<wsdl:part name="parameter" element="tns:Z3PF_GETDATOSASESORPROCESOResponse"/>
+</wsdl:message>
+<wsdl:message name="Z3PF_GETDATOSCLIENTE">
+<wsdl:part name="parameters" element="tns:Z3PF_GETDATOSCLIENTE"/>
+</wsdl:message>
+<wsdl:message name="Z3PF_GETDATOSCLIENTEResponse">
+<wsdl:part name="parameter" element="tns:Z3PF_GETDATOSCLIENTEResponse"/>
+</wsdl:message>
+<wsdl:message name="Z3PF_GETLISTAPREPAGOPEN">
+<wsdl:part name="parameters" element="tns:Z3PF_GETLISTAPREPAGOPEN"/>
+</wsdl:message>
+<wsdl:message name="Z3PF_GETLISTAPREPAGOPENResponse">
+<wsdl:part name="parameter" element="tns:Z3PF_GETLISTAPREPAGOPENResponse"/>
+</wsdl:message>
+<wsdl:message name="Z3PF_GETLISTASERVICIOS">
+<wsdl:part name="parameters" element="tns:Z3PF_GETLISTASERVICIOS"/>
+</wsdl:message>
+<wsdl:message name="Z3PF_GETLISTASERVICIOSResponse">
+<wsdl:part name="parameter" element="tns:Z3PF_GETLISTASERVICIOSResponse"/>
+</wsdl:message>
+<wsdl:message name="Z3PF_GETLISTAVEHICULOS">
+<wsdl:part name="parameters" element="tns:Z3PF_GETLISTAVEHICULOS"/>
+</wsdl:message>
+<wsdl:message name="Z3PF_GETLISTAVEHICULOSResponse">
+<wsdl:part name="parameter" element="tns:Z3PF_GETLISTAVEHICULOSResponse"/>
+</wsdl:message>
+<wsdl:portType name="ZWS_GES_CIT">
+<!-- Referencia a IF__ZWS_GES_CIT eliminada -->
+<wsdl:operation name="Z3PF_GETDATOSASESORPROCESO">
+<!-- Referencia a OP__Z3PF_GETDATOSASESORPROCESO eliminada -->
+<wsdl:input message="tns:Z3PF_GETDATOSASESORPROCESO"/>
+<wsdl:output message="tns:Z3PF_GETDATOSASESORPROCESOResponse"/>
+</wsdl:operation>
+<wsdl:operation name="Z3PF_GETDATOSCLIENTE">
+<!-- Referencia a OP__Z3PF_GETDATOSCLIENTE eliminada -->
+<wsdl:input message="tns:Z3PF_GETDATOSCLIENTE"/>
+<wsdl:output message="tns:Z3PF_GETDATOSCLIENTEResponse"/>
+</wsdl:operation>
+<wsdl:operation name="Z3PF_GETLISTAPREPAGOPEN">
+<!-- Referencia a OP__Z3PF_GETLISTAPREPAGOPEN eliminada -->
+<wsdl:input message="tns:Z3PF_GETLISTAPREPAGOPEN"/>
+<wsdl:output message="tns:Z3PF_GETLISTAPREPAGOPENResponse"/>
+</wsdl:operation>
+<wsdl:operation name="Z3PF_GETLISTASERVICIOS">
+<!-- Referencia a OP__Z3PF_GETLISTASERVICIOS eliminada -->
+<wsdl:input message="tns:Z3PF_GETLISTASERVICIOS"/>
+<wsdl:output message="tns:Z3PF_GETLISTASERVICIOSResponse"/>
+</wsdl:operation>
+<wsdl:operation name="Z3PF_GETLISTAVEHICULOS">
+<!-- Referencia a OP__Z3PF_GETLISTAVEHICULOS eliminada -->
+<wsdl:input message="tns:Z3PF_GETLISTAVEHICULOS"/>
+<wsdl:output message="tns:Z3PF_GETLISTAVEHICULOSResponse"/>
+</wsdl:operation>
+</wsdl:portType>
+<wsdl:binding name="ZWS_GESCIT" type="tns:ZWS_GES_CIT">
+<!-- Referencia a BN__ZWS_GESCIT eliminada -->
+<soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+<wsdl:operation name="Z3PF_GETDATOSASESORPROCESO">
+<soap:operation soapAction="urn:sap-com:document:sap:rfc:functions:ZWS_GES_CIT:Z3PF_GETDATOSASESORPROCESORequest" style="document"/>
+<wsdl:input>
+<soap:body use="literal"/>
+</wsdl:input>
+<wsdl:output>
+<soap:body use="literal"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="Z3PF_GETDATOSCLIENTE">
+<soap:operation soapAction="urn:sap-com:document:sap:rfc:functions:ZWS_GES_CIT:Z3PF_GETDATOSCLIENTERequest" style="document"/>
+<wsdl:input>
+<soap:body use="literal"/>
+</wsdl:input>
+<wsdl:output>
+<soap:body use="literal"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="Z3PF_GETLISTAPREPAGOPEN">
+<soap:operation soapAction="urn:sap-com:document:sap:rfc:functions:ZWS_GES_CIT:Z3PF_GETLISTAPREPAGOPENRequest" style="document"/>
+<wsdl:input>
+<soap:body use="literal"/>
+</wsdl:input>
+<wsdl:output>
+<soap:body use="literal"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="Z3PF_GETLISTASERVICIOS">
+<soap:operation soapAction="urn:sap-com:document:sap:rfc:functions:ZWS_GES_CIT:Z3PF_GETLISTASERVICIOSRequest" style="document"/>
+<wsdl:input>
+<soap:body use="literal"/>
+</wsdl:input>
+<wsdl:output>
+<soap:body use="literal"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="Z3PF_GETLISTAVEHICULOS">
+<soap:operation soapAction="urn:sap-com:document:sap:rfc:functions:ZWS_GES_CIT:Z3PF_GETLISTAVEHICULOSRequest" style="document"/>
+<wsdl:input>
+<soap:body use="literal"/>
+</wsdl:input>
+<wsdl:output>
+<soap:body use="literal"/>
+</wsdl:output>
+</wsdl:operation>
+</wsdl:binding>
+<wsdl:binding name="ZWS_GESCIT_soap12" type="tns:ZWS_GES_CIT">
+<!-- Referencia a BN__ZWS_GESCIT_soap12 eliminada -->
+<wsoap12:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+<wsdl:operation name="Z3PF_GETDATOSASESORPROCESO">
+<wsoap12:operation soapAction="urn:sap-com:document:sap:rfc:functions:ZWS_GES_CIT:Z3PF_GETDATOSASESORPROCESORequest" style="document"/>
+<wsdl:input>
+<wsoap12:body use="literal"/>
+</wsdl:input>
+<wsdl:output>
+<wsoap12:body use="literal"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="Z3PF_GETDATOSCLIENTE">
+<wsoap12:operation soapAction="urn:sap-com:document:sap:rfc:functions:ZWS_GES_CIT:Z3PF_GETDATOSCLIENTERequest" style="document"/>
+<wsdl:input>
+<wsoap12:body use="literal"/>
+</wsdl:input>
+<wsdl:output>
+<wsoap12:body use="literal"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="Z3PF_GETLISTAPREPAGOPEN">
+<wsoap12:operation soapAction="urn:sap-com:document:sap:rfc:functions:ZWS_GES_CIT:Z3PF_GETLISTAPREPAGOPENRequest" style="document"/>
+<wsdl:input>
+<wsoap12:body use="literal"/>
+</wsdl:input>
+<wsdl:output>
+<wsoap12:body use="literal"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="Z3PF_GETLISTASERVICIOS">
+<wsoap12:operation soapAction="urn:sap-com:document:sap:rfc:functions:ZWS_GES_CIT:Z3PF_GETLISTASERVICIOSRequest" style="document"/>
+<wsdl:input>
+<wsoap12:body use="literal"/>
+</wsdl:input>
+<wsdl:output>
+<wsoap12:body use="literal"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="Z3PF_GETLISTAVEHICULOS">
+<wsoap12:operation soapAction="urn:sap-com:document:sap:rfc:functions:ZWS_GES_CIT:Z3PF_GETLISTAVEHICULOSRequest" style="document"/>
+<wsdl:input>
+<wsoap12:body use="literal"/>
+</wsdl:input>
+<wsdl:output>
+<wsoap12:body use="literal"/>
+</wsdl:output>
+</wsdl:operation>
+</wsdl:binding>
+<wsdl:service name="ZWS_GESCIT">
+<wsdl:port name="ZWS_GESCIT" binding="tns:ZWS_GESCIT">
+<soap:address location="http://mitdesqafo.mitsuiautomotriz.com:8002/sap/bc/srt/rfc/sap/zws_ges_cit/400/zws_gescit/zws_gescit"/>
+</wsdl:port>
+<wsdl:port name="ZWS_GESCIT_soap12" binding="tns:ZWS_GESCIT_soap12">
+<wsoap12:address location="http://mitdesqafo.mitsuiautomotriz.com:8002/sap/bc/srt/rfc/sap/zws_ges_cit/400/zws_gescit/zws_gescit"/>
+</wsdl:port>
+</wsdl:service>
+</wsdl:definitions> 
