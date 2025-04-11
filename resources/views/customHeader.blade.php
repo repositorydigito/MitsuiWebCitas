@@ -34,7 +34,7 @@
         gap: 2rem;
         flex: 1;
         justify-content: center;
-        margin-right: 52rem;
+        margin-right: 40rem;
     }
 
     .tab {
