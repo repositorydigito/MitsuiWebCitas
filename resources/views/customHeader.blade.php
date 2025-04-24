@@ -34,11 +34,7 @@
         gap: 2rem;
         flex: 1;
         justify-content: center;
-<<<<<<< HEAD
-        margin-right: 52rem;
-=======
         margin-right: 40rem;
->>>>>>> recuperar-archivos
     }
 
     .tab {

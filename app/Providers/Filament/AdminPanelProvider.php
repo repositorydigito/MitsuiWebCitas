@@ -4,6 +4,9 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\Vehiculos;
+use App\Filament\Pages\AgendarCita;
+use App\Filament\Pages\DetalleVehiculo;
+use App\Filament\Pages\AgregarVehiculo;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -34,12 +37,16 @@ class AdminPanelProvider extends PanelProvider
             ->sidebarFullyCollapsibleOnDesktop()
             ->colors([
                 'primary' => '#0075BF',
+                'secondary' => '#073568',
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
                 Dashboard::class,
                 Vehiculos::class,
+                AgendarCita::class,
+                DetalleVehiculo::class,
+                AgregarVehiculo::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
