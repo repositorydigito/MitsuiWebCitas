@@ -13,21 +13,21 @@ use Livewire\WithPagination;
 class Vehiculos extends Page
 {
     use WithPagination;
-    
+
     protected static ?string $navigationIcon = 'heroicon-o-truck';
-    
+
     protected static ?string $navigationLabel = 'Mis Vehículos';
-    
+
     protected static ?string $title = 'Cita de servicio';
 
     protected static string $view = 'filament.pages.vehiculos-con-pestanas';
-    
+
     public Collection $todosLosVehiculos;
     protected array $vehiculosAgrupados = [];
     public array $marcasInfo = [];
     public array $marcaCounts = [];
     public string $activeTab = 'Z01';
-    
+
     protected $queryString = ['activeTab'];
 
     protected $mapaMarcas = [
@@ -51,9 +51,9 @@ class Vehiculos extends Page
             $service = app(VehiculoSoapService::class);
             //Log::info("[VehiculosPage] Iniciando consulta de vehículos para cliente {$documentoCliente}");
             $this->todosLosVehiculos = $service->getVehiculosCliente($documentoCliente, $codigosMarca);
-            
+
             //Log::info("[VehiculosPage] Total vehículos recibidos: {$this->todosLosVehiculos->count()}");
-            
+
             $this->agruparYPaginarVehiculos();
 
         } catch (\Exception $e) {
@@ -66,19 +66,19 @@ class Vehiculos extends Page
                 ->danger()
                 ->send();
         }
-        
+
         if (empty($this->vehiculosAgrupados) && !empty($this->marcasInfo)) {
             $this->activeTab = array_key_first($this->marcasInfo);
         } elseif (!isset($this->vehiculosAgrupados[$this->activeTab]) && !empty($this->vehiculosAgrupados)) {
             $this->activeTab = array_key_first($this->vehiculosAgrupados);
-        } 
+        }
     }
-    
+
     protected function agruparYPaginarVehiculos(int $perPage = 5): void
     {
         $this->vehiculosAgrupados = [];
         $this->marcaCounts = [];
-        
+
         if ($this->todosLosVehiculos->isEmpty()) {
             foreach ($this->marcasInfo as $codigo => $nombre) {
                 $this->marcaCounts[$codigo] = 0;
@@ -86,48 +86,92 @@ class Vehiculos extends Page
             return;
         }
 
-        $grupos = $this->todosLosVehiculos->groupBy('marca_codigo');
-        
-        //Log::debug("[VehiculosPage] Vehículos agrupados por marca:", $grupos->map->count()->toArray());
-
+        // Inicializar colecciones vacías para cada marca
+        $gruposPorMarca = [];
         foreach ($this->marcasInfo as $codigo => $nombre) {
-            $this->marcaCounts[$codigo] = $grupos->get($codigo, collect())->count();
+            $gruposPorMarca[$codigo] = collect();
         }
-        
-        foreach ($grupos as $marcaCodigo => $vehiculosDeMarca) {
-            $pageName = "page_{$marcaCodigo}"; 
+
+        // Filtrar vehículos por marca según el campo marca_codigo
+        foreach ($this->todosLosVehiculos as $vehiculo) {
+            $marcaCodigo = $vehiculo['marca_codigo'] ?? null;
+
+            // Solo asignar vehículos a marcas válidas y existentes
+            if (isset($marcaCodigo) && isset($this->mapaMarcas[$marcaCodigo])) {
+                $gruposPorMarca[$marcaCodigo]->push($vehiculo);
+            } else {
+                // Si no tiene marca o la marca no es válida, no lo asignamos a ninguna marca
+                // Esto evita que se muestren vehículos en marcas a las que no pertenecen
+                continue;
+            }
+        }
+
+        // Contar vehículos por marca
+        foreach ($this->marcasInfo as $codigo => $nombre) {
+            $this->marcaCounts[$codigo] = $gruposPorMarca[$codigo]->count();
+        }
+
+        Log::debug("[VehiculosPage] Conteo de vehículos por marca:", $this->marcaCounts);
+
+        // Crear paginadores solo para marcas que tienen vehículos
+        foreach ($gruposPorMarca as $marcaCodigo => $vehiculosDeMarca) {
+            if ($vehiculosDeMarca->isEmpty()) {
+                // No crear paginador para marcas sin vehículos
+                continue;
+            }
+
+            $pageName = "page_{$marcaCodigo}";
             $currentPage = Paginator::resolveCurrentPage($pageName);
-            
+
             $paginator = new LengthAwarePaginator(
                 $vehiculosDeMarca->forPage($currentPage, $perPage)->values(),
                 $this->marcaCounts[$marcaCodigo],
                 $perPage,
                 $currentPage,
-                ['path' => Paginator::resolveCurrentPath(), 'pageName' => $pageName] 
+                [
+                    'path' => Paginator::resolveCurrentPath(),
+                    'pageName' => $pageName,
+                    'view' => 'pagination::default',
+                    'fragment' => null,
+                ]
             );
-            
+
+            // Limitar el número de páginas que se muestran
+            $paginator->onEachSide(1);
+
+            // Personalizar los textos de la paginación
+            $paginator->withQueryString()->appends(['activeTab' => $marcaCodigo]);
+
             $this->vehiculosAgrupados[$marcaCodigo] = $paginator;
         }
-        
-         Log::debug("[VehiculosPage] Paginadores creados para marcas:", array_keys($this->vehiculosAgrupados));
-         Log::debug("[VehiculosPage] Contadores por marca:", $this->marcaCounts);
+
+        Log::debug("[VehiculosPage] Paginadores creados para marcas:", array_keys($this->vehiculosAgrupados));
     }
-    
+
     public function selectTab(string $tab): void
     {
         Log::debug("[VehiculosPage] Cambiando a pestaña: {$tab}");
         $this->activeTab = $tab;
-        $this->resetPage("page_{$tab}"); 
+        $this->resetPage("page_{$tab}");
     }
-    
+
     public function getVehiculosPaginadosProperty(): ?LengthAwarePaginator
     {
         if (empty($this->vehiculosAgrupados) && $this->todosLosVehiculos->isNotEmpty()) {
-            $this->agruparYPaginarVehiculos(); 
+            $this->agruparYPaginarVehiculos();
         }
-        
-        $paginator = $this->vehiculosAgrupados[$this->activeTab] ?? null;
-        
-        return $paginator;
+
+        // Si no hay vehículos para la marca seleccionada, devolver null
+        if (!isset($this->vehiculosAgrupados[$this->activeTab])) {
+            Log::info("[VehiculosPage] No hay vehículos para la marca: {$this->activeTab}");
+            return null;
+        }
+
+        return $this->vehiculosAgrupados[$this->activeTab];
     }
-} 
+
+    public function paginationView()
+    {
+        return 'vendor.pagination.default';
+    }
+}

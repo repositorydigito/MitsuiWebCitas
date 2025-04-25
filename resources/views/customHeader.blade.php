@@ -154,29 +154,24 @@
         <img src="{{ asset('images/logoMitsui.svg') }}" alt="Logo">
     </div>
     <div class="header-tabs">
-        <a href="?activeTab=Z01" class="tab {{ request()->query('activeTab') === 'Z01' ? 'active' : '' }}">TOYOTA</a>
-        <a href="?activeTab=Z02" class="tab {{ request()->query('activeTab') === 'Z02' ? 'active' : '' }}">LEXUS</a>
-        <a href="?activeTab=Z03" class="tab {{ request()->query('activeTab') === 'Z03' ? 'active' : '' }}">HINO</a>
+        <button wire:click="selectTab('Z01')" class="tab {{ request()->query('activeTab', 'Z01') === 'Z01' ? 'active' : '' }}">TOYOTA</button>
+        <button wire:click="selectTab('Z02')" class="tab {{ request()->query('activeTab') === 'Z02' ? 'active' : '' }}">LEXUS</button>
+        <button wire:click="selectTab('Z03')" class="tab {{ request()->query('activeTab') === 'Z03' ? 'active' : '' }}">HINO</button>
     </div>
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar los tabs
         const tabs = document.querySelectorAll('.tab');
-        const currentTab = new URLSearchParams(window.location.search).get('activeTab') || 'Z01';
 
+        // Añadir efecto visual al hacer clic
         tabs.forEach(tab => {
-            if (tab.getAttribute('href').includes(currentTab)) {
-                tab.classList.add('active');
-            }
-        });
-
-        // Añadir evento click a los tabs
-        tabs.forEach(tab => {
-            tab.addEventListener('click', function(e) {
-                e.preventDefault();
-                const tabValue = this.getAttribute('href').split('=')[1];
-                window.location.href = window.location.pathname + '?activeTab=' + tabValue;
+            tab.addEventListener('click', function() {
+                // Remover la clase active de todos los tabs
+                tabs.forEach(t => t.classList.remove('active'));
+                // Añadir la clase active al tab actual
+                this.classList.add('active');
             });
         });
     });

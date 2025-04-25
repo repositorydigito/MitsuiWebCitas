@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Filament\Pages\Vehiculos;
+use App\Filament\Pages\MiCuenta;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Assets\AlpineComponent;
@@ -32,8 +33,9 @@ class FilamentServiceProvider extends ServiceProvider
             // Registrar la página una vez que Filament se inicialice
             $filament->registerPages([
                 Vehiculos::class,
+                MiCuenta::class,
             ]);
         });
-        
+
     }
 }

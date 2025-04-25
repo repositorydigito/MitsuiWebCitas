@@ -21,5 +21,11 @@ class AppServiceProvider extends ServiceProvider
     {
         // Suprimir warnings de deprecación para trim(null)
         error_reporting(E_ALL & ~E_DEPRECATED);
+
+        // Configurar el formato de números para usar coma como separador de miles
+        \Illuminate\Support\Number::useLocale('es_ES');
+
+        // Configurar el idioma de la aplicación
+        app()->setLocale('es');
     }
 }

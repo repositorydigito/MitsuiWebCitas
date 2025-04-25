@@ -37,10 +37,27 @@
         </div>
     </div>
 
+    {{-- Pestañas de marcas --}}
+    <div class="mb-6">
+        <div class="flex border-b border-gray-200">
+            @foreach ($marcasInfo as $codigo => $nombre)
+                <button
+                    wire:click="selectTab('{{ $codigo }}')"
+                    class="px-6 py-3 text-sm font-medium {{ $activeTab === $codigo ? 'border-b-2 border-primary-500 text-primary-600' : 'text-gray-500 hover:text-gray-700 hover:border-gray-300' }}"
+                >
+                    {{ $nombre }}
+                    @if(isset($marcaCounts[$codigo]) && $marcaCounts[$codigo] > 0)
+                        <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-700">{{ $marcaCounts[$codigo] }}</span>
+                    @endif
+                </button>
+            @endforeach
+        </div>
+    </div>
+
     {{-- Contenido de las Marcas --}}
     <div>
         @foreach ($marcasInfo as $codigo => $nombre)
-            {{-- El contenido de cada marca (sin los tabs ahora) --}}
+            {{-- El contenido de cada marca --}}
             <div
                 wire:key="tab-content-{{ $codigo }}"
             >
@@ -48,6 +65,7 @@
                 @if($activeTab === $codigo)
                     @php
                         $currentPaginator = $this->vehiculosPaginados;
+                        $marcaActual = $this->marcasInfo[$codigo] ?? 'Desconocida';
                     @endphp
 
                     @if($currentPaginator && $currentPaginator->total() > 0)
@@ -139,12 +157,15 @@
 </table>
 
 
-                            <div class="p-4">
-                                {{ $currentPaginator->links() }}
+                            <div class="px-6 py-4 flex justify-end">
+                                {{ $currentPaginator->links('vendor.pagination.default') }}
                             </div>
                         </div>
                     @else
-                        <p class="text-gray-500 dark:text-gray-400 text-sm">No se encontraron vehículos para esta marca.</p>
+                        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm py-4 mb-4 w-full text-center">
+                            <p class="text-gray-500 dark:text-gray-400 text-lg mb-2">No se encontraron vehículos</p>
+                            <p class="text-gray-500 dark:text-gray-400 text-sm">No hay vehículos registrados para la marca {{ $marcaActual }}.</p>
+                        </div>
                     @endif
                 @endif
             </div>
