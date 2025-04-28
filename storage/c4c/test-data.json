@@ -1,0 +1,276 @@
+{
+    "success": true,
+    "error": null,
+    "data": [
+        {
+            "uuid": "7a459202-d8b0-348f-8c27-797c97ed3f81",
+            "internal_id": "86324",
+            "external_id": "0000086324",
+            "change_state_id": "20250428.041961",
+            "system_administrative_data": {
+                "creation_date_time": "2025-01-28T01:59:25.000000Z",
+                "creation_identity_uuid": "ca3a3465-6db9-3abc-8caa-d7df3c1c21d3",
+                "last_change_date_time": "2025-04-25T05:15:21.000000Z",
+                "last_change_identity_uuid": "ace92477-e524-3af5-99a8-bf6aa324881d"
+            },
+            "category_code": "1",
+            "prospect_indicator": true,
+            "life_cycle_status_code": "1",
+            "organisation": {
+                "company_legal_form_code": "Z1",
+                "first_line_name": "Srta. Daniela Barrera Monta\u00f1ez"
+            },
+            "contact_allowed_code": "1",
+            "legal_competence_indicator": true,
+            "industrial_sector_code": "ZM002",
+            "address_information": {
+                "uuid": "a1c08482-deff-36c6-aaf0-0f657c3da0da",
+                "current_address_snapshot_uuid": "63a1e235-142a-32de-a193-bf44ef3fe66e",
+                "address_usage": {
+                    "address_usage_code": "XXDEFAULT"
+                },
+                "address": {
+                    "correspondence_language_code": "ES",
+                    "email": {
+                        "uri": "urenteria@ayala.com"
+                    },
+                    "postal_address": {
+                        "country_code": "PE",
+                        "region_code": "25",
+                        "region_description": "Lima Region",
+                        "city_name": "Daniel Este",
+                        "street_name": "Jr. Axel Briones # 4 Piso 77",
+                        "time_zone_code": "UTC-5"
+                    },
+                    "telephone": [
+                        {
+                            "formatted_number_description": "+51 4096654",
+                            "mobile_phone_number_indicator": true
+                        },
+                        {
+                            "formatted_number_description": "+51 1 974-1142",
+                            "mobile_phone_number_indicator": false
+                        }
+                    ],
+                    "formatted_address": {
+                        "formatted_address_description": "Srta. Daniela Barrera Monta\u00f1ez \/ Jr. Alma Ruelas # 7 Hab. 560 \/ San Alexa \/ PE",
+                        "formatted_postal_address_description": "Urb. Gael Armas # 43  \/ Andr\u00e9s  Sur \/ PE",
+                        "formatted_address": {
+                            "first_line_description": "Srta. Daniela Barrera Monta\u00f1ez",
+                            "second_line_description": "Av. Juan Sebasti\u00e1n Renter\u00eda # 693 ",
+                            "third_line_description": "Gral. David",
+                            "fourth_line_description": "Peru"
+                        }
+                    }
+                }
+            },
+            "role": {
+                "role_code": "BUP002"
+            },
+            "role_description": "Prospect",
+            "direct_responsibility": {
+                "party_role_code": "142",
+                "employee_id": 10,
+                "employee_uuid": "0b33899d-52bd-3ef1-87a7-be8c3df5260c",
+                "validity_period": {
+                    "start_date": "0001-01-01",
+                    "end_date": "9999-12-31"
+                },
+                "default_indicator": true
+            },
+            "sales_arrangement": {
+                "sales_organisation_id": "DM07",
+                "distribution_channel_code": "D4",
+                "sales_group_id": "D03",
+                "complete_delivery_requested_indicator": true,
+                "currency_code": "PEN",
+                "customer_group_code": "T1",
+                "cash_discount_terms_code": "Z000",
+                "division_code": "D1"
+            },
+            "zDNI": "62354816"
+        },
+        {
+            "uuid": "9fc09010-dfcf-3c85-b7c1-d1f9a6af8ddf",
+            "internal_id": "81542",
+            "external_id": "0000081542",
+            "change_state_id": "20250428.659585",
+            "system_administrative_data": {
+                "creation_date_time": "2025-04-26T15:10:08.000000Z",
+                "creation_identity_uuid": "5b1b04f8-47ec-30d7-a985-c90401ae9d96",
+                "last_change_date_time": "2025-04-11T20:02:58.000000Z",
+                "last_change_identity_uuid": "dc4bc0d5-a07d-3017-9992-7720468a1413"
+            },
+            "category_code": "2",
+            "prospect_indicator": true,
+            "life_cycle_status_code": "1",
+            "organisation": {
+                "company_legal_form_code": "Z2",
+                "first_line_name": "Galarza, Guillen y Posada"
+            },
+            "contact_allowed_code": "1",
+            "legal_competence_indicator": true,
+            "industrial_sector_code": "ZM007",
+            "address_information": {
+                "uuid": "89586f3c-6fc2-3ec4-96eb-1971ff541f45",
+                "current_address_snapshot_uuid": "8e96f078-666e-3453-a46d-0454afa767ef",
+                "address_usage": {
+                    "address_usage_code": "XXDEFAULT"
+                },
+                "address": {
+                    "correspondence_language_code": "ES",
+                    "email": {
+                        "uri": "gael.casares@pedroza.com"
+                    },
+                    "postal_address": {
+                        "country_code": "PE",
+                        "region_code": "25",
+                        "region_description": "Lima Region",
+                        "city_name": "Gral. Sebasti\u00e1n",
+                        "street_name": "Cl. Juli\u00e1n Alanis # 6 ",
+                        "time_zone_code": "UTC-5"
+                    },
+                    "telephone": [
+                        {
+                            "formatted_number_description": "+51 5083675",
+                            "mobile_phone_number_indicator": true
+                        },
+                        {
+                            "formatted_number_description": "+51 1 940-9959",
+                            "mobile_phone_number_indicator": false
+                        }
+                    ],
+                    "formatted_address": {
+                        "formatted_address_description": "Galarza, Guillen y Posada \/ Urb. Delfina Vargas # 19294  \/ Puerto M\u00eda \/ PE",
+                        "formatted_postal_address_description": "Av. Elizabeth Ure\u00f1a # 44814  \/ Joshua Baja \/ PE",
+                        "formatted_address": {
+                            "first_line_description": "Galarza, Guillen y Posada",
+                            "second_line_description": "Av. Carla Ferrer # 47596 Hab. 752",
+                            "third_line_description": "Natalia  Oeste",
+                            "fourth_line_description": "Peru"
+                        }
+                    }
+                }
+            },
+            "role": {
+                "role_code": "BUP002"
+            },
+            "role_description": "Prospect",
+            "direct_responsibility": {
+                "party_role_code": "142",
+                "employee_id": 7,
+                "employee_uuid": "aa14faf0-4969-3e06-b495-310c40e5daee",
+                "validity_period": {
+                    "start_date": "0001-01-01",
+                    "end_date": "9999-12-31"
+                },
+                "default_indicator": true
+            },
+            "sales_arrangement": {
+                "sales_organisation_id": "DM07",
+                "distribution_channel_code": "D4",
+                "sales_group_id": "D03",
+                "complete_delivery_requested_indicator": true,
+                "currency_code": "PEN",
+                "customer_group_code": "T1",
+                "cash_discount_terms_code": "Z000",
+                "division_code": "D1"
+            },
+            "zRuc": "20100587903"
+        },
+        {
+            "uuid": "720766f9-b354-34fe-9874-6c827dabf352",
+            "internal_id": "89188",
+            "external_id": "0000089188",
+            "change_state_id": "20250428.922589",
+            "system_administrative_data": {
+                "creation_date_time": "2025-02-10T01:10:21.000000Z",
+                "creation_identity_uuid": "49cfd714-f3f2-3dc3-8d36-e97cf4fa8248",
+                "last_change_date_time": "2025-04-21T11:53:58.000000Z",
+                "last_change_identity_uuid": "003fd65e-c663-3b43-b387-a57a53d4850e"
+            },
+            "category_code": "2",
+            "prospect_indicator": true,
+            "life_cycle_status_code": "2",
+            "organisation": {
+                "company_legal_form_code": "Z2",
+                "first_line_name": "Avil\u00e9s y Rael"
+            },
+            "contact_allowed_code": "1",
+            "legal_competence_indicator": true,
+            "industrial_sector_code": "ZM007",
+            "address_information": {
+                "uuid": "9d4ff1d3-e8be-3fa0-b975-b20ce765e2b3",
+                "current_address_snapshot_uuid": "d5a4a54f-789c-3934-8246-343e9a9cef76",
+                "address_usage": {
+                    "address_usage_code": "XXDEFAULT"
+                },
+                "address": {
+                    "correspondence_language_code": "ES",
+                    "email": {
+                        "uri": "fabiana01@yahoo.com"
+                    },
+                    "postal_address": {
+                        "country_code": "PE",
+                        "region_code": "25",
+                        "region_description": "Lima Region",
+                        "city_name": "Quesada Este",
+                        "street_name": "Jr. Julia Urrutia # 7 Dpto. 810",
+                        "time_zone_code": "UTC-5"
+                    },
+                    "telephone": [
+                        {
+                            "formatted_number_description": "+51 1032056",
+                            "mobile_phone_number_indicator": true
+                        },
+                        {
+                            "formatted_number_description": "+51 1 124-3820",
+                            "mobile_phone_number_indicator": false
+                        }
+                    ],
+                    "formatted_address": {
+                        "formatted_address_description": "Avil\u00e9s y Rael \/ Jr. Sergio G\u00e1lvez # 79053  \/ Dylan Norte \/ PE",
+                        "formatted_postal_address_description": "Cl. Esteban Fuentes # 88184  \/ Puerto Elena  \/ PE",
+                        "formatted_address": {
+                            "first_line_description": "Avil\u00e9s y Rael",
+                            "second_line_description": "Jr. Silvana  Oliv\u00e1rez # 956 ",
+                            "third_line_description": "Ximena Baja",
+                            "fourth_line_description": "Peru"
+                        }
+                    }
+                }
+            },
+            "role": {
+                "role_code": "BUP002"
+            },
+            "role_description": "Prospect",
+            "direct_responsibility": {
+                "party_role_code": "142",
+                "employee_id": 3,
+                "employee_uuid": "332bcc81-83a5-386e-a015-82b21081daec",
+                "validity_period": {
+                    "start_date": "0001-01-01",
+                    "end_date": "9999-12-31"
+                },
+                "default_indicator": true
+            },
+            "sales_arrangement": {
+                "sales_organisation_id": "DM07",
+                "distribution_channel_code": "D4",
+                "sales_group_id": "D03",
+                "complete_delivery_requested_indicator": true,
+                "currency_code": "PEN",
+                "customer_group_code": "T1",
+                "cash_discount_terms_code": "Z000",
+                "division_code": "D1"
+            },
+            "zRuc": "20058746932"
+        }
+    ],
+    "count": 3,
+    "processing_conditions": {
+        "returned_query_hits_number_value": 3,
+        "more_hits_available_indicator": false,
+        "last_returned_object_id": "720766f9-b354-34fe-9874-6c827dabf352"
+    }
+}

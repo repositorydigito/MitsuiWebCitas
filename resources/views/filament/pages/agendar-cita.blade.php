@@ -31,8 +31,10 @@
             type="text"
             id="nombreCliente"
             wire:model="nombreCliente"
+            value="PABLO"
             placeholder="Nombres"
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50"
+            readonly
         >
     </div>
     <div>
@@ -40,8 +42,10 @@
             type="email"
             id="emailCliente"
             wire:model="emailCliente"
+            value="pablo@mitsui.com.pe"
             placeholder="Email"
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50"
+            readonly
         >
     </div>
     <div>
@@ -49,8 +53,10 @@
             type="text"
             id="apellidoCliente"
             wire:model="apellidoCliente"
+            value="RODRIGUEZ MENDOZA"
             placeholder="Apellidos"
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50"
+            readonly
         >
     </div>
     <div>
@@ -58,8 +64,10 @@
             type="tel"
             id="celularCliente"
             wire:model="celularCliente"
+            value="987654321"
             placeholder="Celular"
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50"
+            readonly
         >
     </div>
 </div>
@@ -149,10 +157,10 @@
                         <div class="py-2 text-base text-gray-400">29</div>
                         <div class="py-2 text-base text-gray-400">30</div>
                         <div class="py-2 text-base text-gray-400">31</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-01')">1</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-02')">2</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-03')">3</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-04')">4</div>
+                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '01/04/2025')">1</div>
+                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '02/04/2025')">2</div>
+                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '03/04/2025')">3</div>
+                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '04/04/2025')">4</div>
 
                         <!-- Segunda semana -->
                         <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-05')">5</div>
@@ -196,66 +204,66 @@
                 <div class="border rounded-lg p-4">
                     <div class="grid grid-cols-2 md:grid-cols-2 gap-3">
                         <!-- Horario 1 -->
-                        <div x-data="{ selected: false }" class="cursor-pointer">
+                        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '08:00 AM' }" class="cursor-pointer">
                             <div
                                 class="border rounded-lg p-3 text-center"
                                 :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
-                                @click="selected = !selected; if(selected) { $el.closest('.grid').querySelectorAll('[x-data]').forEach(el => { if(el !== $el.closest('[x-data]')) { Alpine.raw(el).__x.$data.selected = false } }); }"
+                                @click="selected = true; $wire.set('horaSeleccionada', '08:00 AM'); $el.closest('.grid').querySelectorAll('[x-data]').forEach(el => { if(el !== $el.closest('[x-data]')) { Alpine.raw(el).__x.$data.selected = false } });"
                             >
                                 08:00 AM
                             </div>
                         </div>
 
                         <!-- Horario 2 -->
-                        <div x-data="{ selected: false }" class="cursor-pointer">
+                        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '09:15 AM' }" class="cursor-pointer">
                             <div
                                 class="border rounded-lg p-3 text-center"
                                 :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
-                                @click="selected = !selected; if(selected) { $el.closest('.grid').querySelectorAll('[x-data]').forEach(el => { if(el !== $el.closest('[x-data]')) { Alpine.raw(el).__x.$data.selected = false } }); }"
+                                @click="selected = true; $wire.set('horaSeleccionada', '09:15 AM'); $el.closest('.grid').querySelectorAll('[x-data]').forEach(el => { if(el !== $el.closest('[x-data]')) { Alpine.raw(el).__x.$data.selected = false } });"
                             >
                                 09:15 AM
                             </div>
                         </div>
 
                         <!-- Horario 3 -->
-                        <div x-data="{ selected: false }" class="cursor-pointer">
+                        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '10:15 AM' }" class="cursor-pointer">
                             <div
                                 class="border rounded-lg p-3 text-center"
                                 :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
-                                @click="selected = !selected; if(selected) { $el.closest('.grid').querySelectorAll('[x-data]').forEach(el => { if(el !== $el.closest('[x-data]')) { Alpine.raw(el).__x.$data.selected = false } }); }"
+                                @click="selected = true; $wire.set('horaSeleccionada', '10:15 AM'); $el.closest('.grid').querySelectorAll('[x-data]').forEach(el => { if(el !== $el.closest('[x-data]')) { Alpine.raw(el).__x.$data.selected = false } });"
                             >
                                 10:15 AM
                             </div>
                         </div>
 
                         <!-- Horario 4 -->
-                        <div x-data="{ selected: false }" class="cursor-pointer">
+                        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '11:15 AM' }" class="cursor-pointer">
                             <div
                                 class="border rounded-lg p-3 text-center"
                                 :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
-                                @click="selected = !selected; if(selected) { $el.closest('.grid').querySelectorAll('[x-data]').forEach(el => { if(el !== $el.closest('[x-data]')) { Alpine.raw(el).__x.$data.selected = false } }); }"
+                                @click="selected = true; $wire.set('horaSeleccionada', '11:15 AM'); $el.closest('.grid').querySelectorAll('[x-data]').forEach(el => { if(el !== $el.closest('[x-data]')) { Alpine.raw(el).__x.$data.selected = false } });"
                             >
                                 11:15 AM
                             </div>
                         </div>
 
                         <!-- Horario 5 -->
-                        <div x-data="{ selected: false }" class="cursor-pointer">
+                        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '01:00 PM' }" class="cursor-pointer">
                             <div
                                 class="border rounded-lg p-3 text-center"
                                 :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
-                                @click="selected = !selected; if(selected) { $el.closest('.grid').querySelectorAll('[x-data]').forEach(el => { if(el !== $el.closest('[x-data]')) { Alpine.raw(el).__x.$data.selected = false } }); }"
+                                @click="selected = true; $wire.set('horaSeleccionada', '01:00 PM'); $el.closest('.grid').querySelectorAll('[x-data]').forEach(el => { if(el !== $el.closest('[x-data]')) { Alpine.raw(el).__x.$data.selected = false } });"
                             >
                                 01:00 PM
                             </div>
                         </div>
 
                         <!-- Horario 6 -->
-                        <div x-data="{ selected: false }" class="cursor-pointer">
+                        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '02:00 PM' }" class="cursor-pointer">
                             <div
                                 class="border rounded-lg p-3 text-center"
                                 :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
-                                @click="selected = !selected; if(selected) { $el.closest('.grid').querySelectorAll('[x-data]').forEach(el => { if(el !== $el.closest('[x-data]')) { Alpine.raw(el).__x.$data.selected = false } }); }"
+                                @click="selected = true; $wire.set('horaSeleccionada', '02:00 PM'); $el.closest('.grid').querySelectorAll('[x-data]').forEach(el => { if(el !== $el.closest('[x-data]')) { Alpine.raw(el).__x.$data.selected = false } });"
                             >
                                 02:00 PM
                             </div>
@@ -504,6 +512,7 @@
                             <td colspan="2" class="pt-4 pb-2">
                                 <h3 class="font-medium text-success-700 text-lg border-b border-gray-200 pb-1 mb-2">Datos del vehículo</h3>
                                 <!-- Debug: {{ json_encode($vehiculo) }} -->
+                                <div class="text-xs text-gray-500">ID: {{ $vehiculo['id'] ?? 'No disponible' }}</div>
                             </td>
                         </tr>
                         <tr>
@@ -529,7 +538,7 @@
                             <td class="py-2 pr-4 w-1/3">
                                 <span class="font-medium text-info-800">Local</span>
                             </td>
-                            <td class="py-2 text-gray-800">{{ $locales[$localSeleccionado]['nombre'] ?? 'No seleccionado' }}</td>
+                            <td class="py-2 text-gray-800">{{ !empty($localSeleccionado) && isset($locales[$localSeleccionado]) ? $locales[$localSeleccionado]['nombre'] : 'No seleccionado' }}</td>
                         </tr>
                         <tr>
                             <td class="py-2 pr-4 w-1/3">
@@ -677,7 +686,7 @@
                             <td class="py-2 pr-4 w-1/3">
                                 <span class="font-medium text-primary-800">Local</span>
                             </td>
-                            <td class="py-2 text-gray-800">{{ $locales[$localSeleccionado]['nombre'] ?? 'No seleccionado' }}</td>
+                            <td class="py-2 text-gray-800">{{ !empty($localSeleccionado) && isset($locales[$localSeleccionado]) ? $locales[$localSeleccionado]['nombre'] : 'No seleccionado' }}</td>
                         </tr>
                         <tr>
                             <td class="py-2 pr-4 w-1/3">

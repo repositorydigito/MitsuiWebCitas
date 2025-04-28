@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="http://sap.com/xi/SAPGlobal20/Global" targetNamespace="http://sap.com/xi/SAPGlobal20/Global">
+  <wsdl:types>
+    <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://sap.com/xi/SAPGlobal20/Global">
+      <xs:element name="ActivityBOVNCitasQueryByElementsSimpleByRequest_sync">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="ActivitySimpleSelectionBy" minOccurs="1" maxOccurs="1">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name="SelectionByTypeCode" minOccurs="0">
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name="InclusionExclusionCode" type="xs:string" minOccurs="0"/>
+                        <xs:element name="IntervalBoundaryTypeCode" type="xs:string" minOccurs="0"/>
+                        <xs:element name="LowerBoundaryTypeCode" type="xs:string" minOccurs="0"/>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                  <xs:element name="SelectionByPartyID" minOccurs="0">
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name="InclusionExclusionCode" type="xs:string" minOccurs="0"/>
+                        <xs:element name="IntervalBoundaryTypeCode" type="xs:string" minOccurs="0"/>
+                        <xs:element name="LowerBoundaryPartyID" type="xs:string" minOccurs="0"/>
+                        <xs:element name="UpperBoundaryPartyID" type="xs:string" minOccurs="0"/>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                  <xs:element name="SelectionByzEstadoCita_5PEND6QL5482763O1SFB05YP5" minOccurs="0">
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name="InclusionExclusionCode" type="xs:string" minOccurs="0"/>
+                        <xs:element name="IntervalBoundaryTypeCode" type="xs:string" minOccurs="0"/>
+                        <xs:element name="LowerBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5" type="xs:string" minOccurs="0"/>
+                        <xs:element name="UpperBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5" type="xs:string" minOccurs="0"/>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                  <xs:element name="SelectionByScheduledStartDate" minOccurs="0">
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name="InclusionExclusionCode" type="xs:string" minOccurs="0"/>
+                        <xs:element name="IntervalBoundaryTypeCode" type="xs:string" minOccurs="0"/>
+                        <xs:element name="LowerBoundaryScheduledStartDate" type="xs:date" minOccurs="0"/>
+                        <xs:element name="UpperBoundaryScheduledStartDate" type="xs:date" minOccurs="0"/>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                  <xs:element name="SelectionByzIDCentro" minOccurs="0">
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name="InclusionExclusionCode" type="xs:string" minOccurs="0"/>
+                        <xs:element name="IntervalBoundaryTypeCode" type="xs:string" minOccurs="0"/>
+                        <xs:element name="LowerBoundaryzIDCentro" type="xs:string" minOccurs="0"/>
+                        <xs:element name="UpperBoundaryzIDCentro" type="xs:string" minOccurs="0"/>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                  <xs:element name="SelectionByzPlaca" minOccurs="0">
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name="InclusionExclusionCode" type="xs:string" minOccurs="0"/>
+                        <xs:element name="IntervalBoundaryTypeCode" type="xs:string" minOccurs="0"/>
+                        <xs:element name="LowerBoundaryzPlaca" type="xs:string" minOccurs="0"/>
+                        <xs:element name="UpperBoundaryzPlaca" type="xs:string" minOccurs="0"/>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+            <xs:element name="ProcessingConditions" minOccurs="0">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name="QueryHitsMaximumNumberValue" type="xs:integer" minOccurs="0"/>
+                  <xs:element name="QueryHitsUnlimitedIndicator" type="xs:boolean" minOccurs="0"/>
+                  <xs:element name="LastReturnedObjectID" type="xs:string" minOccurs="0"/>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="ActivityBOVNCitasQueryByElementsSimpleByConfirmation_sync">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Activity" minOccurs="0" maxOccurs="unbounded">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name="TypeCode" type="xs:string" minOccurs="0"/>
+                  <xs:element name="TypeName" type="xs:string" minOccurs="0"/>
+                  <xs:element name="ProcessingTypeCode" type="xs:string" minOccurs="0"/>
+                  <xs:element name="ProcessingTypeName" type="xs:string" minOccurs="0"/>
+                  <xs:element name="ID" type="xs:string" minOccurs="0"/>
+                  <xs:element name="SubjectName" type="xs:string" minOccurs="0"/>
+                  <xs:element name="LocationName" type="xs:string" minOccurs="0"/>
+                  <xs:element name="PriorityCode" type="xs:string" minOccurs="0"/>
+                  <xs:element name="PriorityName" type="xs:string" minOccurs="0"/>
+                  <xs:element name="InitiatorCode" type="xs:string" minOccurs="0"/>
+                  <xs:element name="InitiatorName" type="xs:string" minOccurs="0"/>
+                  <xs:element name="InformationSensitivityCode" type="xs:string" minOccurs="0"/>
+                  <xs:element name="InformationSensitivityName" type="xs:string" minOccurs="0"/>
+                  <xs:element name="GroupCode" type="xs:string" minOccurs="0"/>
+                  <xs:element name="GroupName" type="xs:string" minOccurs="0"/>
+                  <xs:element name="DataOriginTypeCode" type="xs:string" minOccurs="0"/>
+                  <xs:element name="DataOriginTypeName" type="xs:string" minOccurs="0"/>
+                  <xs:element name="ReportedDateTime" type="xs:dateTime" minOccurs="0"/>
+                  <xs:element name="ReportedDate" type="xs:date" minOccurs="0"/>
+                  <xs:element name="ScheduledStartDateTime" minOccurs="0">
+                    <xs:complexType>
+                      <xs:simpleContent>
+                        <xs:extension base="xs:dateTime">
+                          <xs:attribute name="timeZoneCode" type="xs:string"/>
+                        </xs:extension>
+                      </xs:simpleContent>
+                    </xs:complexType>
+                  </xs:element>
+                  <xs:element name="ScheduledEndDateTime" minOccurs="0">
+                    <xs:complexType>
+                      <xs:simpleContent>
+                        <xs:extension base="xs:dateTime">
+                          <xs:attribute name="timeZoneCode" type="xs:string"/>
+                        </xs:extension>
+                      </xs:simpleContent>
+                    </xs:complexType>
+                  </xs:element>
+                  <xs:element name="ScheduledStartDate" type="xs:date" minOccurs="0"/>
+                  <xs:element name="ScheduledEndDate" type="xs:date" minOccurs="0"/>
+                  <xs:element name="LifeCycleStatusCode" type="xs:string" minOccurs="0"/>
+                  <xs:element name="LifeCycleStatusName" type="xs:string" minOccurs="0"/>
+                  <xs:element name="UUID" type="xs:string" minOccurs="0"/>
+                  <xs:element name="SystemAdministrativeData" minOccurs="0">
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name="CreationDateTime" type="xs:dateTime" minOccurs="0"/>
+                        <xs:element name="CreationIdentityUUID" type="xs:string" minOccurs="0"/>
+                        <xs:element name="LastChangeDateTime" type="xs:dateTime" minOccurs="0"/>
+                        <xs:element name="LastChangeIdentityUUID" type="xs:string" minOccurs="0"/>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                  <xs:element name="CreationDate" type="xs:date" minOccurs="0"/>
+                  <xs:element name="LastChangeDate" type="xs:date" minOccurs="0"/>
+                  <xs:element name="ActualStartDateTime" type="xs:dateTime" minOccurs="0"/>
+                  <xs:element name="ActualEndDateTime" type="xs:dateTime" minOccurs="0"/>
+                  <xs:element name="StartGeoCoordinates" minOccurs="0">
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name="LatitudeMeasure" minOccurs="0">
+                          <xs:complexType>
+                            <xs:simpleContent>
+                              <xs:extension base="xs:string">
+                                <xs:attribute name="unitCode" type="xs:string"/>
+                              </xs:extension>
+                            </xs:simpleContent>
+                          </xs:complexType>
+                        </xs:element>
+                        <xs:element name="LongitudeMeasure" minOccurs="0">
+                          <xs:complexType>
+                            <xs:simpleContent>
+                              <xs:extension base="xs:string">
+                                <xs:attribute name="unitCode" type="xs:string"/>
+                              </xs:extension>
+                            </xs:simpleContent>
+                          </xs:complexType>
+                        </xs:element>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                  <xs:element name="EndGeoCoordinates" minOccurs="0">
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name="LatitudeMeasure" minOccurs="0">
+                          <xs:complexType>
+                            <xs:simpleContent>
+                              <xs:extension base="xs:string">
+                                <xs:attribute name="unitCode" type="xs:string"/>
+                              </xs:extension>
+                            </xs:simpleContent>
+                          </xs:complexType>
+                        </xs:element>
+                        <xs:element name="LongitudeMeasure" minOccurs="0">
+                          <xs:complexType>
+                            <xs:simpleContent>
+                              <xs:extension base="xs:string">
+                                <xs:attribute name="unitCode" type="xs:string"/>
+                              </xs:extension>
+                            </xs:simpleContent>
+                          </xs:complexType>
+                        </xs:element>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                  <xs:element name="SalesOrganisationUUID" type="xs:string" minOccurs="0"/>
+                  <xs:element name="SalesOrganisationID" type="xs:string" minOccurs="0"/>
+                  <xs:element name="DistributionChannelCode" type="xs:string" minOccurs="0"/>
+                  <xs:element name="DistributionChannelName" type="xs:string" minOccurs="0"/>
+                  <xs:element name="DivisionCode" type="xs:string" minOccurs="0"/>
+                  <xs:element name="DivisionName" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zTelefonoCliente" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zVIN" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zPlaca" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zFechaHoraProbSalida" type="xs:date" minOccurs="0"/>
+                  <xs:element name="zNombresConductor" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zEstadoCita" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zEstadoCitaName" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zModeloVeh" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zVINTmp" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zDesModeloVeh" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zDesSolitarTaxi" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zDireccionCliente" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zKilometrajeVeh" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zHoraProbSalida" type="xs:time" minOccurs="0"/>
+                  <xs:element name="zVersionVeh" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zDescCentro" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zActDNI" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zIDCentro" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zAnnioVeh" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zColorVeh" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zHoraInicio" type="xs:time" minOccurs="0"/>
+                  <xs:element name="zMotor" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zAsesorTelemarketing" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zIDCliente" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zTelefonoFijoCliente" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zCelularConductor" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zSolicitarTaxi" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zSolicitarTaxiName" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zFecha" type="xs:date" minOccurs="0"/>
+                  <xs:element name="zVariable" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zFlagtre" type="xs:string" minOccurs="0"/>
+                  <xs:element name="zFlagOne" type="xs:string" minOccurs="0"/>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+            <xs:element name="ProcessingConditions" minOccurs="0">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name="ReturnedQueryHitsNumberValue" type="xs:integer" minOccurs="0"/>
+                  <xs:element name="MoreHitsAvailableIndicator" type="xs:boolean" minOccurs="0"/>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+            <xs:element name="Log" minOccurs="0">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name="MaximumLogItemSeverityCode" type="xs:integer" minOccurs="0"/>
+                  <xs:element name="Item" minOccurs="0" maxOccurs="unbounded">
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name="TypeID" type="xs:string" minOccurs="0"/>
+                        <xs:element name="SeverityCode" type="xs:integer" minOccurs="0"/>
+                        <xs:element name="Note" type="xs:string" minOccurs="0"/>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:schema>
+  </wsdl:types>
+  <wsdl:message name="ActivityBOVNCitasQueryByElementsSimpleByRequest_sync">
+    <wsdl:part name="parameters" element="tns:ActivityBOVNCitasQueryByElementsSimpleByRequest_sync"/>
+  </wsdl:message>
+  <wsdl:message name="ActivityBOVNCitasQueryByElementsSimpleByConfirmation_sync">
+    <wsdl:part name="parameters" element="tns:ActivityBOVNCitasQueryByElementsSimpleByConfirmation_sync"/>
+  </wsdl:message>
+  <wsdl:portType name="WSCitas">
+    <wsdl:operation name="ActivityBOVNCitasQueryByElementsSimpleByRequest_sync">
+      <wsdl:input message="tns:ActivityBOVNCitasQueryByElementsSimpleByRequest_sync"/>
+      <wsdl:output message="tns:ActivityBOVNCitasQueryByElementsSimpleByConfirmation_sync"/>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="WSCitasBinding" type="tns:WSCitas">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="ActivityBOVNCitasQueryByElementsSimpleByRequest_sync">
+      <soap:operation soapAction="http://sap.com/xi/SAPGlobal20/Global/ActivityBOVNCitasQueryByElementsSimpleByRequest_sync"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="WSCitasService">
+    <wsdl:port name="WSCitasPort" binding="tns:WSCitasBinding">
+      <soap:address location="https://my317791.crm.ondemand.com/sap/bc/srt/scs/sap/yy6saj0kgy_wscitas"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

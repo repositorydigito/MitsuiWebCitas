@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\Vehicle;
 use App\Services\VehiculoSoapService;
 use Filament\Pages\Page;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -9,6 +10,7 @@ use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Livewire\WithPagination;
+use Illuminate\Database\Eloquent\Builder;
 
 class Vehiculos extends Page
 {
@@ -43,21 +45,55 @@ class Vehiculos extends Page
 
     protected function cargarVehiculos(): void
     {
-        $documentoCliente = '20605414410';
         $codigosMarca = array_keys($this->mapaMarcas);
         $this->marcasInfo = $this->mapaMarcas;
 
         try {
-            $service = app(VehiculoSoapService::class);
-            //Log::info("[VehiculosPage] Iniciando consulta de vehículos para cliente {$documentoCliente}");
-            $this->todosLosVehiculos = $service->getVehiculosCliente($documentoCliente, $codigosMarca);
+            // Primero intentamos cargar desde la base de datos
+            $vehiculosDB = Vehicle::where('status', 'active')->get();
 
-            //Log::info("[VehiculosPage] Total vehículos recibidos: {$this->todosLosVehiculos->count()}");
+            // Si hay vehículos en la base de datos, los usamos
+            if ($vehiculosDB->count() > 0) {
+                Log::info("[VehiculosPage] Cargando vehículos desde la base de datos: {$vehiculosDB->count()}");
+
+                // Convertir los modelos a un formato compatible con el que usa la vista
+                $this->todosLosVehiculos = $vehiculosDB->map(function ($vehicle) {
+                    return [
+                        'vhclie' => $vehicle->vehicle_id,
+                        'numpla' => $vehicle->license_plate,
+                        'modver' => $vehicle->model,
+                        'aniomod' => $vehicle->year,
+                        'marca_codigo' => $vehicle->brand_code,
+                        'marca_nombre' => $vehicle->brand_name,
+                        'kilometraje' => $vehicle->mileage,
+                        'color' => $vehicle->color,
+                        'vin' => $vehicle->vin,
+                        'motor' => $vehicle->engine_number,
+                        'ultimo_servicio_fecha' => $vehicle->last_service_date,
+                        'ultimo_servicio_km' => $vehicle->last_service_mileage,
+                        'proximo_servicio_fecha' => $vehicle->next_service_date,
+                        'proximo_servicio_km' => $vehicle->next_service_mileage,
+                        'mantenimiento_prepagado' => $vehicle->has_prepaid_maintenance,
+                        'mantenimiento_prepagado_vencimiento' => $vehicle->prepaid_maintenance_expiry,
+                        'imagen_url' => $vehicle->image_url,
+                    ];
+                });
+            } else {
+                // Si no hay vehículos en la base de datos, intentamos cargar desde el servicio SOAP
+                Log::info("[VehiculosPage] No hay vehículos en la base de datos, intentando cargar desde el servicio SOAP");
+
+                $documentoCliente = '20605414410';
+                $service = app(VehiculoSoapService::class);
+                $this->todosLosVehiculos = $service->getVehiculosCliente($documentoCliente, $codigosMarca);
+
+                // Opcionalmente, podríamos guardar estos vehículos en la base de datos
+                // para futuras consultas, pero eso depende de los requisitos del negocio
+            }
 
             $this->agruparYPaginarVehiculos();
 
         } catch (\Exception $e) {
-            Log::error("[VehiculosPage] Error crítico al obtener vehículos en mount(): " . $e->getMessage());
+            Log::error("[VehiculosPage] Error crítico al obtener vehículos: " . $e->getMessage());
             $this->todosLosVehiculos = collect();
             $this->vehiculosAgrupados = [];
             \Filament\Notifications\Notification::make()

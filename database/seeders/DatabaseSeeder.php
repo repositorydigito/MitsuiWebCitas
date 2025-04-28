@@ -19,5 +19,13 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        // Ejecutar los seeders para las tablas de citas
+        $this->call([
+            ServiceCenterSeeder::class,
+            ServiceTypeSeeder::class,
+            AdditionalServiceSeeder::class,
+            VehicleSeeder::class,
+        ]);
     }
 }

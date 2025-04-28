@@ -137,6 +137,7 @@ return [
         // \App\Providers\BroadcastServiceProvider::class,
         \App\Providers\VehiculosServiceProvider::class,
         \App\Providers\FilamentServiceProvider::class,
+        \App\Providers\C4CServiceProvider::class,
     ])->toArray(),
 
 ];

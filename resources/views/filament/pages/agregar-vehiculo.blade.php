@@ -25,31 +25,54 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-6">
                     <div class="relative">
-                        <input 
-                            type="text" 
-                            id="placa" 
-                            wire:model="placa" 
-                            placeholder="Placa" 
+                        <input
+                            type="text"
+                            id="placa"
+                            wire:model="placa"
+                            placeholder="Placa"
                             class="text-primary-600 w-full rounded-md border-primary-600 shadow-sm focus:border-primary-600 focus:ring focus:ring-primary-600 focus:ring-opacity-50"
                         >
                     </div>
 
                     <div>
-                        <input 
-                            type="text" 
-                            id="modelo" 
-                            wire:model="modelo" 
-                            placeholder="Modelo" 
+                        <select
+                            id="marca"
+                            wire:model="marca"
+                            class="text-primary-600 w-full rounded-md border-primary-600 shadow-sm focus:border-primary-600 focus:ring focus:ring-primary-600 focus:ring-opacity-50"
+                        >
+                            <option value="">Seleccione una marca</option>
+                            <option value="Z01">TOYOTA</option>
+                            <option value="Z02">LEXUS</option>
+                            <option value="Z03">HINO</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <input
+                            type="text"
+                            id="modelo"
+                            wire:model="modelo"
+                            placeholder="Modelo"
                             class="text-primary-600 w-full rounded-md border-primary-600 shadow-sm focus:border-primary-600 focus:ring focus:ring-primary-600 focus:ring-opacity-50"
                         >
                     </div>
 
                     <div>
-                        <input 
-                            type="text" 
-                            id="anio" 
-                            wire:model="anio" 
-                            placeholder="Año" 
+                        <input
+                            type="text"
+                            id="anio"
+                            wire:model="anio"
+                            placeholder="Año"
+                            class="text-primary-600 w-full rounded-md border-primary-600 shadow-sm focus:border-primary-600 focus:ring focus:ring-primary-600 focus:ring-opacity-50"
+                        >
+                    </div>
+
+                    <div>
+                        <input
+                            type="text"
+                            id="color"
+                            wire:model="color"
+                            placeholder="Color"
                             class="text-primary-600 w-full rounded-md border-primary-600 shadow-sm focus:border-primary-600 focus:ring focus:ring-primary-600 focus:ring-opacity-50"
                         >
                     </div>
@@ -79,12 +102,30 @@
                         <dd class="text-sm text-gray-700 col-span-2">{{ $placa ?: 'No especificado' }}</dd>
                     </div>
                     <div class="px-4 py-3 grid grid-cols-3 gap-4">
+                        <dt class="text-sm font-medium text-gray-900">Marca</dt>
+                        <dd class="text-sm text-gray-700 col-span-2">
+                            @if($marca == 'Z01')
+                                TOYOTA
+                            @elseif($marca == 'Z02')
+                                LEXUS
+                            @elseif($marca == 'Z03')
+                                HINO
+                            @else
+                                No especificado
+                            @endif
+                        </dd>
+                    </div>
+                    <div class="px-4 py-3 grid grid-cols-3 gap-4">
                         <dt class="text-sm font-medium text-gray-900">Modelo</dt>
                         <dd class="text-sm text-gray-700 col-span-2">{{ $modelo ?: 'No especificado' }}</dd>
                     </div>
                     <div class="px-4 py-3 grid grid-cols-3 gap-4">
                         <dt class="text-sm font-medium text-gray-900">Año</dt>
                         <dd class="text-sm text-gray-700 col-span-2">{{ $anio ?: 'No especificado' }}</dd>
+                    </div>
+                    <div class="px-4 py-3 grid grid-cols-3 gap-4">
+                        <dt class="text-sm font-medium text-gray-900">Color</dt>
+                        <dd class="text-sm text-gray-700 col-span-2">{{ $color ?: 'No especificado' }}</dd>
                     </div>
                     <div class="px-4 py-3 grid grid-cols-3 gap-4">
                         <dt class="text-sm font-medium text-gray-900">Kilometraje</dt>
@@ -118,12 +159,30 @@
                         <dd class="text-sm text-gray-700 col-span-2">{{ $placa ?: 'No especificado' }}</dd>
                     </div>
                     <div class="px-4 py-3 grid grid-cols-3 gap-4">
+                        <dt class="text-sm font-medium text-gray-900">Marca</dt>
+                        <dd class="text-sm text-gray-700 col-span-2">
+                            @if($marca == 'Z01')
+                                TOYOTA
+                            @elseif($marca == 'Z02')
+                                LEXUS
+                            @elseif($marca == 'Z03')
+                                HINO
+                            @else
+                                No especificado
+                            @endif
+                        </dd>
+                    </div>
+                    <div class="px-4 py-3 grid grid-cols-3 gap-4">
                         <dt class="text-sm font-medium text-gray-900">Modelo</dt>
                         <dd class="text-sm text-gray-700 col-span-2">{{ $modelo ?: 'No especificado' }}</dd>
                     </div>
                     <div class="px-4 py-3 grid grid-cols-3 gap-4">
                         <dt class="text-sm font-medium text-gray-900">Año</dt>
                         <dd class="text-sm text-gray-700 col-span-2">{{ $anio ?: 'No especificado' }}</dd>
+                    </div>
+                    <div class="px-4 py-3 grid grid-cols-3 gap-4">
+                        <dt class="text-sm font-medium text-gray-900">Color</dt>
+                        <dd class="text-sm text-gray-700 col-span-2">{{ $color ?: 'No especificado' }}</dd>
                     </div>
                     <div class="px-4 py-3 grid grid-cols-3 gap-4">
                         <dt class="text-sm font-medium text-gray-900">Kilometraje</dt>
@@ -151,7 +210,7 @@
                 </div>
             </button>
 
-            <button type="button" wire:click="{{ $pasoActual == 2 ? 'confirmar' : 'continuar' }}" 
+            <button type="button" wire:click="{{ $pasoActual == 2 ? 'confirmar' : 'continuar' }}"
             class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-[#0066A6] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0075BF]">
                 {{ $pasoActual == 2 ? 'Confirmar' : 'Continuar' }}
             </button>
