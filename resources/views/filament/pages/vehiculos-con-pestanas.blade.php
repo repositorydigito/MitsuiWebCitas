@@ -15,21 +15,23 @@
                     >
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-2">
-                <button type="button" class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-primary-500 bg-white border border-primary-500 rounded-lg hover:bg-blue-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1">
+            
+            <div class="flex gap-2">
+                <button type="button" class="flex-1 inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-primary-500 bg-white border border-primary-500 rounded-lg hover:bg-blue-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1">
                     <svg class="w-4 h-4 mr-1 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="currentColor">
                         <path d="M16.006 3C9.375 3 3.995 8.38 3.995 15.01c0 2.648.695 5.13 2.021 7.338l-2.13 6.233 6.398-2.1A12.9 12.9 0 0016 27.01c6.632 0 12.01-5.38 12.01-12.003C28.01 8.38 22.63 3 16.006 3zm0 22.014a10.01 10.01 0 01-5.108-1.39l-.365-.218-3.796 1.243 1.243-3.688-.238-.379a9.978 9.978 0 01-1.565-5.26c0-5.52 4.488-10.007 10.016-10.007 5.52 0 10.007 4.487 10.007 10.007 0 5.528-4.487 10.002-10.007 10.002zm5.584-7.423c-.303-.15-1.787-.88-2.065-.983-.276-.102-.478-.15-.68.15-.203.3-.78.983-.956 1.187-.177.203-.352.228-.654.076-.303-.15-1.278-.47-2.434-1.5-.9-.8-1.51-1.788-1.686-2.09-.177-.3-.02-.46.133-.61.137-.136.303-.354.455-.532.152-.18.203-.3.303-.5.1-.2.05-.38-.025-.532-.077-.15-.68-1.638-.93-2.243-.244-.585-.49-.5-.68-.51l-.58-.01c-.2 0-.526.076-.8.38s-1.05 1.02-1.05 2.48 1.077 2.88 1.225 3.078c.15.2 2.12 3.23 5.137 4.527.717.31 1.276.494 1.712.63.718.228 1.372.197 1.886.12.575-.085 1.787-.73 2.04-1.437.25-.707.25-1.313.177-1.437-.074-.125-.276-.2-.58-.35z"/>
                     </svg>
-                    <span class="whitespace-nowrap overflow-hidden text-ellipsis">Contactar</span>
+                    <span class="whitespace-nowrap overflow-hidden text-ellipsis">Contactar central</span>
                 </button>
 
-                <button type="button" class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-primary-500 bg-white border border-primary-500 rounded-lg hover:bg-[#e6f6fc] focus:ring-2 focus:ring-[#169FDB] focus:ring-offset-1">
+                <button type="button" class="flex-1 inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-primary-500 bg-white border border-primary-500 rounded-lg hover:bg-[#e6f6fc] focus:ring-2 focus:ring-[#169FDB] focus:ring-offset-1">
                     <svg class="w-4 h-4 mr-1 text-[#169FDB]" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M2.003 5.884a1 1 0 01.57-1.11l2.828-1.26a1 1 0 011.185.297l1.516 1.89a1 1 0 01-.105 1.382L6.387 8.21a11.03 11.03 0 005.404 5.404l1.127-1.61a1 1 0 011.382-.105l1.89 1.516a1 1 0 01.297 1.185l-1.26 2.828a1 1 0 01-1.11.57c-3.213-.56-6.173-2.345-8.543-4.714s-4.154-5.33-4.714-8.543z" />
                     </svg>
-                    <span class="whitespace-nowrap overflow-hidden text-ellipsis">Llamar</span>
+                    <span class="whitespace-nowrap overflow-hidden text-ellipsis">Llamar central</span>
                 </button>
             </div>
+
             <div class="w-full">
                 <a href="{{ \App\Filament\Pages\AgregarVehiculo::getUrl() }}" class="inline-flex w-full items-center justify-center px-4 py-2 text-sm font-medium text-primary-500 bg-white border border-primary-500 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">
                     <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -134,7 +136,8 @@
                     @endphp
 
                     @if($currentPaginator && $currentPaginator->total() > 0)
-                        {{-- Vista móvil: tarjetas --}}
+                        
+                    {{-- Vista móvil: tarjetas --}}
                         <div class="lg:hidden space-y-4 mb-4">
                             @foreach ($currentPaginator->items() as $vehiculo)
                                 <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
@@ -150,38 +153,37 @@
                                                     </div>
                                                 @endif
                                             </div>
-                                            <div>
-                                                <h3 class="text-base font-bold text-gray-900 dark:text-white">{{ $vehiculo['modver'] }}</h3>
-                                                <div class="flex items-center mt-1">
-                                                    <span class="text-sm font-medium text-gray-600 dark:text-gray-300">
-                                                        {{ $vehiculo['numpla'] ?? 'No disponible' }}
-                                                    </span>
-                                                    <span class="mx-2 text-gray-400">•</span>
-                                                    <span class="text-sm text-gray-600 dark:text-gray-300">
-                                                        {{ $vehiculo['aniomod'] }}
-                                                    </span>
+                                            <div class="px-4">
+                                                <h3 class="text-base font-bold text-gray-900 dark:text-white">
+                                                    {{ $vehiculo['modver'] }}
+                                                </h3>
+                                                <div class="text-sm font-medium text-gray-600 dark:text-gray-300">
+                                                    Placa: {{ $vehiculo['numpla'] ?? 'No disponible' }}
+                                                </div>
+                                                <div class="text-sm text-gray-600 dark:text-gray-300">
+                                                    Año: {{ $vehiculo['aniomod'] }}
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div class="grid grid-cols-3 gap-2 mt-3">
-                                            <a href="{{ \App\Filament\Pages\DetalleVehiculo::getUrl(['vehiculoId' => $vehiculo['vhclie'] ?? '']) }}" class="inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium text-primary-500 bg-white border border-primary-500 rounded hover:bg-gray-50 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">
+                                        <div class="flex flex-cols-3 justify-between gap-2 mt-3">
+                                            <a href="{{ \App\Filament\Pages\DetalleVehiculo::getUrl(['vehiculoId' => $vehiculo['vhclie'] ?? '']) }}" class="gap-1 inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium text-primary-500 bg-white border border-primary-500 rounded hover:bg-gray-50 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">
                                                 <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                                     <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
                                                 </svg>
-                                                Ver
+                                                Ver detalle
                                             </a>
-                                            <button type="button" class="inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium text-primary-500 bg-white border border-primary-500 rounded hover:bg-danger-50 focus:ring-2 focus:ring-danger-500 focus:ring-offset-1">
+                                            <button type="button" class="gap-1 inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium text-primary-500 bg-white border border-primary-500 rounded hover:bg-danger-50 focus:ring-2 focus:ring-danger-500 focus:ring-offset-1">
                                                 <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                                     <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
                                                 </svg>
                                                 Retirar
                                             </button>
-                                            <a href="{{ route('filament.admin.pages.agendar-cita', ['vehiculoId' => $vehiculo['vhclie'] ?? '']) }}" class="inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium text-white bg-primary-600 border border-transparent rounded hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">
+                                            <a href="{{ route('filament.admin.pages.agendar-cita', ['vehiculoId' => $vehiculo['vhclie'] ?? '']) }}" class="gap-1 inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium text-white bg-primary-600 border border-transparent rounded hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">
                                                 <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                                     <path fill-rule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clip-rule="evenodd" />
                                                 </svg>
-                                                Agendar
+                                                Agendar cita
                                             </a>
                                         </div>
                                     </div>

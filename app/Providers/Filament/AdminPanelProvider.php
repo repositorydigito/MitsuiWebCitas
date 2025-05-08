@@ -8,6 +8,8 @@ use App\Filament\Pages\AgendarCita;
 use App\Filament\Pages\DetalleVehiculo;
 use App\Filament\Pages\AgregarVehiculo;
 use App\Filament\Pages\Campanas;
+use App\Filament\Pages\ProgramacionCitasServicio;
+use App\Filament\Pages\ProgramarBloqueo;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -49,6 +51,8 @@ class AdminPanelProvider extends PanelProvider
                 DetalleVehiculo::class,
                 AgregarVehiculo::class,
                 Campanas::class,
+                ProgramacionCitasServicio::class,
+                ProgramarBloqueo::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([

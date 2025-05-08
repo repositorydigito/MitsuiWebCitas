@@ -201,75 +201,125 @@
                 </div>
 
                 <!-- Horarios disponibles -->
-                <div class="border rounded-lg p-4">
-                    <div class="grid grid-cols-2 md:grid-cols-2 gap-3">
-                        <!-- Horario 1 -->
-                        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '08:00 AM' }" class="cursor-pointer">
-                            <div
-                                class="border rounded-lg p-3 text-center"
-                                :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
-                                @click="selected = true; $wire.set('horaSeleccionada', '08:00 AM'); $el.closest('.grid').querySelectorAll('[x-data]').forEach(el => { if(el !== $el.closest('[x-data]')) { Alpine.raw(el).__x.$data.selected = false } });"
-                            >
-                                08:00 AM
-                            </div>
-                        </div>
+<div class="border rounded-lg p-4">
+    <div class="flex flex-wrap -mx-1">
 
-                        <!-- Horario 2 -->
-                        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '09:15 AM' }" class="cursor-pointer">
-                            <div
-                                class="border rounded-lg p-3 text-center"
-                                :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
-                                @click="selected = true; $wire.set('horaSeleccionada', '09:15 AM'); $el.closest('.grid').querySelectorAll('[x-data]').forEach(el => { if(el !== $el.closest('[x-data]')) { Alpine.raw(el).__x.$data.selected = false } });"
-                            >
-                                09:15 AM
-                            </div>
-                        </div>
+        <!-- Horario 1 -->
+        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '08:00 AM' }" class="w-1/3 px-1 mb-2 cursor-pointer flex-shrink-0">
+            <div
+                class="w-full text-xs sm:text-sm border rounded-lg p-3 text-center h-12 flex items-center justify-center"
+                :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
+                @click="
+                    selected = !selected;
+                    $wire.set('horaSeleccionada', selected ? '08:00 AM' : '');
+                    $el.closest('.flex').querySelectorAll('[x-data]').forEach(el => {
+                        if (el !== $el.closest('[x-data]') && selected) {
+                            Alpine.raw(el).__x.$data.selected = false;
+                        }
+                    });
+                "
+            >
+                <span>08:00 AM</span>
+            </div>
+        </div>
 
-                        <!-- Horario 3 -->
-                        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '10:15 AM' }" class="cursor-pointer">
-                            <div
-                                class="border rounded-lg p-3 text-center"
-                                :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
-                                @click="selected = true; $wire.set('horaSeleccionada', '10:15 AM'); $el.closest('.grid').querySelectorAll('[x-data]').forEach(el => { if(el !== $el.closest('[x-data]')) { Alpine.raw(el).__x.$data.selected = false } });"
-                            >
-                                10:15 AM
-                            </div>
-                        </div>
+        <!-- Horario 2 -->
+        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '09:15 AM' }" class="w-1/3 px-1 mb-2 cursor-pointer flex-shrink-0">
+            <div
+                class="w-full text-xs sm:text-sm border rounded-lg p-3 text-center h-12 flex items-center justify-center"
+                :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
+                @click="
+                    selected = !selected;
+                    $wire.set('horaSeleccionada', selected ? '09:15 AM' : '');
+                    $el.closest('.flex').querySelectorAll('[x-data]').forEach(el => {
+                        if (el !== $el.closest('[x-data]') && selected) {
+                            Alpine.raw(el).__x.$data.selected = false;
+                        }
+                    });
+                "
+            >
+                <span>09:15 AM</span>
+            </div>
+        </div>
 
-                        <!-- Horario 4 -->
-                        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '11:15 AM' }" class="cursor-pointer">
-                            <div
-                                class="border rounded-lg p-3 text-center"
-                                :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
-                                @click="selected = true; $wire.set('horaSeleccionada', '11:15 AM'); $el.closest('.grid').querySelectorAll('[x-data]').forEach(el => { if(el !== $el.closest('[x-data]')) { Alpine.raw(el).__x.$data.selected = false } });"
-                            >
-                                11:15 AM
-                            </div>
-                        </div>
+        <!-- Horario 3 -->
+        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '10:15 AM' }" class="w-1/3 px-1 mb-2 cursor-pointer flex-shrink-0">
+            <div
+                class="w-full text-xs sm:text-sm border rounded-lg p-3 text-center h-12 flex items-center justify-center"
+                :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
+                @click="
+                    selected = !selected;
+                    $wire.set('horaSeleccionada', selected ? '10:15 AM' : '');
+                    $el.closest('.flex').querySelectorAll('[x-data]').forEach(el => {
+                        if (el !== $el.closest('[x-data]') && selected) {
+                            Alpine.raw(el).__x.$data.selected = false;
+                        }
+                    });
+                "
+            >
+                <span>10:15 AM</span>
+            </div>
+        </div>
 
-                        <!-- Horario 5 -->
-                        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '01:00 PM' }" class="cursor-pointer">
-                            <div
-                                class="border rounded-lg p-3 text-center"
-                                :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
-                                @click="selected = true; $wire.set('horaSeleccionada', '01:00 PM'); $el.closest('.grid').querySelectorAll('[x-data]').forEach(el => { if(el !== $el.closest('[x-data]')) { Alpine.raw(el).__x.$data.selected = false } });"
-                            >
-                                01:00 PM
-                            </div>
-                        </div>
+        <!-- Horario 4 -->
+        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '11:15 AM' }" class="w-1/3 px-1 mb-2 cursor-pointer flex-shrink-0">
+            <div
+                class="w-full text-xs sm:text-sm border rounded-lg p-3 text-center h-12 flex items-center justify-center"
+                :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
+                @click="
+                    selected = !selected;
+                    $wire.set('horaSeleccionada', selected ? '11:15 AM' : '');
+                    $el.closest('.flex').querySelectorAll('[x-data]').forEach(el => {
+                        if (el !== $el.closest('[x-data]') && selected) {
+                            Alpine.raw(el).__x.$data.selected = false;
+                        }
+                    });
+                "
+            >
+                <span>11:15 AM</span>
+            </div>
+        </div>
 
-                        <!-- Horario 6 -->
-                        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '02:00 PM' }" class="cursor-pointer">
-                            <div
-                                class="border rounded-lg p-3 text-center"
-                                :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
-                                @click="selected = true; $wire.set('horaSeleccionada', '02:00 PM'); $el.closest('.grid').querySelectorAll('[x-data]').forEach(el => { if(el !== $el.closest('[x-data]')) { Alpine.raw(el).__x.$data.selected = false } });"
-                            >
-                                02:00 PM
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <!-- Horario 5 -->
+        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '01:00 PM' }" class="w-1/3 px-1 mb-2 cursor-pointer flex-shrink-0">
+            <div
+                class="w-full text-xs sm:text-sm border rounded-lg p-3 text-center h-12 flex items-center justify-center"
+                :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
+                @click="
+                    selected = !selected;
+                    $wire.set('horaSeleccionada', selected ? '01:00 PM' : '');
+                    $el.closest('.flex').querySelectorAll('[x-data]').forEach(el => {
+                        if (el !== $el.closest('[x-data]') && selected) {
+                            Alpine.raw(el).__x.$data.selected = false;
+                        }
+                    });
+                "
+            >
+                <span>01:00 PM</span>
+            </div>
+        </div>
+
+        <!-- Horario 6 -->
+        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '02:00 PM' }" class="w-1/3 px-1 mb-2 cursor-pointer flex-shrink-0">
+            <div
+                class="w-full text-xs sm:text-sm border rounded-lg p-3 text-center h-12 flex items-center justify-center"
+                :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
+                @click="
+                    selected = !selected;
+                    $wire.set('horaSeleccionada', selected ? '02:00 PM' : '');
+                    $el.closest('.flex').querySelectorAll('[x-data]').forEach(el => {
+                        if (el !== $el.closest('[x-data]') && selected) {
+                            Alpine.raw(el).__x.$data.selected = false;
+                        }
+                    });
+                "
+            >
+                <span>02:00 PM</span>
+            </div>
+        </div>
+
+    </div>
+</div>
             </div>
         </div>
         <br>
@@ -465,7 +515,7 @@
                     <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                     </svg>
-                    Volver a vehículos
+                    Volver
                 </div>
             </button>
             <button type="button" wire:click="finalizarAgendamiento" class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
