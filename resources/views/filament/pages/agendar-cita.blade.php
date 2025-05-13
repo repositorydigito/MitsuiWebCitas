@@ -89,13 +89,13 @@
                         </div>
                         <div class="ml-auto flex space-x-2 gap-4">
                             <!-- Botón 1: Maps -->
-                            <button type="button" class="text-primary-600 hover:text-primary-800">
+                            <a href="https://www.google.com/maps/search/?api=1&query={{ urlencode($local['direccion']) }}" target="_blank" class="text-primary-600 hover:text-primary-800">
                                 <img src="/images/maps.svg" alt="Maps" class="w-9 h-9 rounded-md">
-                            </button>
+                            </a>
                             <!-- Botón 2: Waze -->
-                            <button type="button" class="text-primary-600 hover:text-primary-800">
+                            <a href="https://waze.com/ul?q={{ urlencode($local['direccion']) }}" target="_blank" class="text-primary-600 hover:text-primary-800">
                                 <img src="/images/waze.svg" alt="Waze" class="w-9 h-9 rounded-md">
-                            </button>
+                            </a>
                         </div>
                     </div>
                 @endforeach
@@ -117,7 +117,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                                 </svg>
                             </button>
-                            <span class="text-lg font-medium text-primary-800">Abril</span>
+                            <span class="text-lg font-medium text-primary-800">{{ $this->nombreMesActual }}</span>
                             <button type="button" class="flex items-center justify-center w-8 h-8 text-primary-600" wire:click="cambiarMes(1)">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -131,7 +131,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                                 </svg>
                             </button>
-                            <span class="text-lg font-medium text-primary-800">2025</span>
+                            <span class="text-lg font-medium text-primary-800">{{ $anoActual }}</span>
                             <button type="button" class="flex items-center justify-center w-8 h-8 text-primary-600" wire:click="cambiarAno(1)">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -153,173 +153,89 @@
 
                     <!-- Días del mes -->
                     <div class="grid grid-cols-7 gap-1 text-center">
-                        <!-- Primera semana -->
-                        <div class="py-2 text-base text-gray-400">29</div>
-                        <div class="py-2 text-base text-gray-400">30</div>
-                        <div class="py-2 text-base text-gray-400">31</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '01/04/2025')">1</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '02/04/2025')">2</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '03/04/2025')">3</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '04/04/2025')">4</div>
+                        @foreach($diasCalendario as $dia)
+                            <div
+                                class="py-2 text-base {{ $dia['esActual'] ? ($dia['disponible'] ? 'cursor-pointer hover:bg-primary-100' : 'text-gray-400') : 'text-gray-400' }}
+                                {{ $dia['fecha'] === $fechaSeleccionada ? 'bg-primary-500 text-white rounded-md' : ($dia['disponible'] && $dia['esActual'] ? 'text-primary-600' : '') }}
+                                {{ $dia['esPasado'] ? 'opacity-50' : '' }}"
+                                @if($dia['disponible'])
+                                    wire:click="seleccionarFecha('{{ $dia['fecha'] }}')"
+                                @endif
+                            >
+                                {{ $dia['dia'] }}
 
-                        <!-- Segunda semana -->
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-05')">5</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-06')">6</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-07')">7</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-08')">8</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-09')">9</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-10')">10</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-11')">11</div>
-
-                        <!-- Tercera semana -->
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-12')">12</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-13')">13</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-14')">14</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-15')">15</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-16')">16</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-17')">17</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-18')">18</div>
-
-                        <!-- Cuarta semana -->
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-19')">19</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-20')">20</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-21')">21</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-22')">22</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-23')">23</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-24')">24</div>
-                        <div class="py-2 text-base text-gray-400">25</div>
-
-                        <!-- Quinta semana -->
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-26')">26</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-27')">27</div>
-                        <div class="py-2 text-base text-white bg-primary-600 rounded-md w-8 h-8 flex items-center justify-center mx-auto cursor-pointer" wire:click="$set('fechaSeleccionada', '2024-11-28')">28</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-29')">29</div>
-                        <div class="py-2 text-base text-primary-600 cursor-pointer hover:bg-primary-100 rounded-md" wire:click="$set('fechaSeleccionada', '2024-11-30')">30</div>
-                        <div class="py-2 text-base text-gray-400">1</div>
-                        <div class="py-2 text-base text-gray-400">2</div>
+                                @if($dia['esHoy'])
+                                    <div class="w-1 h-1 {{ $dia['fecha'] === $fechaSeleccionada ? 'bg-white' : 'bg-primary-600' }} rounded-full mx-auto mt-1"></div>
+                                @endif
+                            </div>
+                        @endforeach
                     </div>
                 </div>
 
                 <!-- Horarios disponibles -->
-<div class="border rounded-lg p-4">
-    <div class="flex flex-wrap -mx-1">
+                <div class="border rounded-lg p-4">
+                    <h3 class="text-lg font-medium text-primary-800 mb-4">Horarios disponibles</h3>
 
-        <!-- Horario 1 -->
-        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '08:00 AM' }" class="w-1/3 px-1 mb-2 cursor-pointer flex-shrink-0">
-            <div
-                class="w-full text-xs sm:text-sm border rounded-lg p-3 text-center h-12 flex items-center justify-center"
-                :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
-                @click="
-                    selected = !selected;
-                    $wire.set('horaSeleccionada', selected ? '08:00 AM' : '');
-                    $el.closest('.flex').querySelectorAll('[x-data]').forEach(el => {
-                        if (el !== $el.closest('[x-data]') && selected) {
-                            Alpine.raw(el).__x.$data.selected = false;
-                        }
-                    });
-                "
-            >
-                <span>08:00 AM</span>
+                    @if(empty($fechaSeleccionada))
+                        <div class="text-center py-8 text-gray-500">
+                            <svg class="w-4 h-4 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <p>Selecciona una fecha para ver los horarios disponibles</p>
+                        </div>
+                    @elseif(empty($horariosDisponibles))
+                        <div class="text-center py-8 text-gray-500">
+                            <svg class="w-12 h-12 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <p>No hay horarios disponibles para esta fecha</p>
+                            <p class="text-xs mt-2">Esta fecha puede estar bloqueada o todos los horarios están ocupados</p>
+                        </div>
+                    @else
+                        <div class="flex flex-wrap -mx-1">
+                            @foreach($horariosDisponibles as $hora)
+                                <div class="w-1/3 px-1 mb-2 cursor-pointer flex-shrink-0">
+                                    <div
+                                        class="w-full text-xs sm:text-sm border rounded-lg p-3 text-center h-12 flex items-center justify-center {{ $horaSeleccionada === $hora ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600' }}"
+                                        wire:click="seleccionarHora('{{ $hora }}')"
+                                    >
+                                        <span>{{ $hora }}</span>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        @if(count($horariosDisponibles) < 3)
+                            <div class="mt-4 text-xs text-gray-500 bg-yellow-50 p-2 rounded-md border border-yellow-200">
+                                <p class="flex items-center">
+                                    <svg class="w-4 h-4 mr-1 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                    Quedan pocos horarios disponibles para esta fecha
+                                </p>
+                            </div>
+                        @endif
+                    @endif
+                </div>
             </div>
-        </div>
 
-        <!-- Horario 2 -->
-        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '09:15 AM' }" class="w-1/3 px-1 mb-2 cursor-pointer flex-shrink-0">
-            <div
-                class="w-full text-xs sm:text-sm border rounded-lg p-3 text-center h-12 flex items-center justify-center"
-                :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
-                @click="
-                    selected = !selected;
-                    $wire.set('horaSeleccionada', selected ? '09:15 AM' : '');
-                    $el.closest('.flex').querySelectorAll('[x-data]').forEach(el => {
-                        if (el !== $el.closest('[x-data]') && selected) {
-                            Alpine.raw(el).__x.$data.selected = false;
-                        }
-                    });
-                "
-            >
-                <span>09:15 AM</span>
-            </div>
-        </div>
-
-        <!-- Horario 3 -->
-        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '10:15 AM' }" class="w-1/3 px-1 mb-2 cursor-pointer flex-shrink-0">
-            <div
-                class="w-full text-xs sm:text-sm border rounded-lg p-3 text-center h-12 flex items-center justify-center"
-                :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
-                @click="
-                    selected = !selected;
-                    $wire.set('horaSeleccionada', selected ? '10:15 AM' : '');
-                    $el.closest('.flex').querySelectorAll('[x-data]').forEach(el => {
-                        if (el !== $el.closest('[x-data]') && selected) {
-                            Alpine.raw(el).__x.$data.selected = false;
-                        }
-                    });
-                "
-            >
-                <span>10:15 AM</span>
-            </div>
-        </div>
-
-        <!-- Horario 4 -->
-        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '11:15 AM' }" class="w-1/3 px-1 mb-2 cursor-pointer flex-shrink-0">
-            <div
-                class="w-full text-xs sm:text-sm border rounded-lg p-3 text-center h-12 flex items-center justify-center"
-                :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
-                @click="
-                    selected = !selected;
-                    $wire.set('horaSeleccionada', selected ? '11:15 AM' : '');
-                    $el.closest('.flex').querySelectorAll('[x-data]').forEach(el => {
-                        if (el !== $el.closest('[x-data]') && selected) {
-                            Alpine.raw(el).__x.$data.selected = false;
-                        }
-                    });
-                "
-            >
-                <span>11:15 AM</span>
-            </div>
-        </div>
-
-        <!-- Horario 5 -->
-        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '01:00 PM' }" class="w-1/3 px-1 mb-2 cursor-pointer flex-shrink-0">
-            <div
-                class="w-full text-xs sm:text-sm border rounded-lg p-3 text-center h-12 flex items-center justify-center"
-                :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
-                @click="
-                    selected = !selected;
-                    $wire.set('horaSeleccionada', selected ? '01:00 PM' : '');
-                    $el.closest('.flex').querySelectorAll('[x-data]').forEach(el => {
-                        if (el !== $el.closest('[x-data]') && selected) {
-                            Alpine.raw(el).__x.$data.selected = false;
-                        }
-                    });
-                "
-            >
-                <span>01:00 PM</span>
-            </div>
-        </div>
-
-        <!-- Horario 6 -->
-        <div x-data="{ selected: @entangle('horaSeleccionada').defer === '02:00 PM' }" class="w-1/3 px-1 mb-2 cursor-pointer flex-shrink-0">
-            <div
-                class="w-full text-xs sm:text-sm border rounded-lg p-3 text-center h-12 flex items-center justify-center"
-                :class="selected ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600'"
-                @click="
-                    selected = !selected;
-                    $wire.set('horaSeleccionada', selected ? '02:00 PM' : '');
-                    $el.closest('.flex').querySelectorAll('[x-data]').forEach(el => {
-                        if (el !== $el.closest('[x-data]') && selected) {
-                            Alpine.raw(el).__x.$data.selected = false;
-                        }
-                    });
-                "
-            >
-                <span>02:00 PM</span>
-            </div>
-        </div>
-
-    </div>
-</div>
+            <!-- Resumen de selección -->
+            <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 class="text-lg font-medium text-primary-800 mb-2">Resumen de selección</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Fecha seleccionada</label>
+                        <div class="mt-1 p-2 bg-white border border-gray-300 rounded-md">
+                            {{ $fechaSeleccionada ?: 'No seleccionada' }}
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Hora seleccionada</label>
+                        <div class="mt-1 p-2 bg-white border border-gray-300 rounded-md">
+                            {{ $horaSeleccionada ?: 'No seleccionada' }}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         <br>
@@ -428,77 +344,81 @@
 
         <!-- Servicios adicionales -->
         <div class="mb-4">
-            <h2 class="text-xl font-semibold mb-4">5. Elige un servicio adicional (opcional)</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <!-- Servicio 1 -->
-                <div class="relative" x-data="{ selected: false }">
-                    <div
-                        class="border rounded-lg overflow-hidden cursor-pointer"
-                        :class="selected ? 'border-primary-500 ring-2 ring-primary-500' : 'border-gray-300'"
-                        @click="selected = !selected"
-                    >
-                        <img src="{{ asset('images/toyota-hilux.jpg') }}" alt="Restauración de faros" class="w-full h-32 object-cover">
-                        <div class="p-2 text-center" :class="selected ? 'bg-primary-100' : ''">
-                            <span class="text-sm font-medium" :class="selected ? 'text-primary-800' : ''">Restauración de faros</span>
-                        </div>
-                        <div
-                            class="absolute top-2 left-2 bg-primary-500 text-white rounded-full p-1"
-                            x-show="selected"
-                            style="display: none;"
-                        >
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
+            <h2 class="text-xl font-semibold mb-4">5. Campañas y promociones disponibles (opcional)</h2>
 
-                <!-- Servicio 2 -->
-                <div class="relative" x-data="{ selected: false }">
-                    <div
-                        class="border rounded-lg overflow-hidden cursor-pointer"
-                        :class="selected ? 'border-primary-500 ring-2 ring-primary-500' : 'border-gray-300'"
-                        @click="selected = !selected"
-                    >
-                        <img src="{{ asset('images/toyota-hilux.jpg') }}" alt="Restauración de rines" class="w-full h-32 object-cover">
-                        <div class="p-2 text-center" :class="selected ? 'bg-primary-100' : ''">
-                            <span class="text-sm font-medium" :class="selected ? 'text-primary-800' : ''">Restauración de rines</span>
-                        </div>
-                        <div
-                            class="absolute top-2 left-2 bg-primary-500 text-white rounded-full p-1"
-                            x-show="selected"
-                            style="display: none;"
-                        >
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
+            <!-- Servicios adicionales tradicionales ocultos por solicitud del cliente -->
+            <!-- Solo se mostrarán las campañas -->
 
-                <!-- Servicio 3 -->
-                <div class="relative" x-data="{ selected: false }">
-                    <div
-                        class="border rounded-lg overflow-hidden cursor-pointer"
-                        :class="selected ? 'border-primary-500 ring-2 ring-primary-500' : 'border-gray-300'"
-                        @click="selected = !selected"
-                    >
-                        <img src="{{ asset('images/toyota-hilux.jpg') }}" alt="Restauración de focos" class="w-full h-32 object-cover">
-                        <div class="p-2 text-center" :class="selected ? 'bg-primary-100' : ''">
-                            <span class="text-sm font-medium" :class="selected ? 'text-primary-800' : ''">Restauración de focos</span>
-                        </div>
-                        <div
-                            class="absolute top-2 left-2 bg-primary-500 text-white rounded-full p-1"
-                            x-show="selected"
-                            style="display: none;"
-                        >
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
+            <!-- Campañas disponibles -->
+            @if(count($campanasDisponibles) > 0)
+                <div class="mt-2">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        @foreach($campanasDisponibles as $campana)
+                            <div class="relative" x-data="{ selected: {{ in_array('campana_'.$campana['id'], $serviciosAdicionales) ? 'true' : 'false' }} }">
+                                <div
+                                    class="border rounded-lg overflow-hidden cursor-pointer"
+                                    :class="selected ? 'border-primary-500 ring-2 ring-primary-500' : 'border-gray-300'"
+                                    @click="
+                                        selected = !selected;
+                                        if (selected) {
+                                            $wire.serviciosAdicionales = [...$wire.serviciosAdicionales, 'campana_{{ $campana['id'] }}'];
+                                        } else {
+                                            $wire.serviciosAdicionales = $wire.serviciosAdicionales.filter(item => item !== 'campana_{{ $campana['id'] }}');
+                                        }
+                                    "
+                                >
+                                    <img src="{{ $campana['imagen'] }}" alt="{{ $campana['titulo'] }}" class="w-full h-32 object-cover" loading="lazy">
+                                    <div class="p-2" :class="selected ? 'bg-primary-100' : ''">
+                                        <h4 class="text-sm font-medium" :class="selected ? 'text-primary-800' : ''">{{ $campana['titulo'] }}</h4>
+                                        <p class="text-xs text-gray-400 mt-1">
+                                            @if(isset($campana['fecha_fin']))
+                                                Válido hasta: {{ \Carbon\Carbon::parse($campana['fecha_fin'])->format('d/m/Y') }}
+                                            @else
+                                                Campaña permanente
+                                            @endif
+                                        </p>
+                                    </div>
+                                    <div
+                                        class="absolute top-2 left-2 bg-primary-500 text-white rounded-full p-1"
+                                        x-show="selected"
+                                        style="display: none;"
+                                    >
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <!-- Información de depuración -->
+                    <div class="mt-4 text-xs text-gray-400">
+                        Total de campañas disponibles: {{ count($campanasDisponibles) }}
+
+                        @if(app()->environment('local'))
+                            <div class="mt-2 p-2 bg-gray-100 rounded text-xs">
+                                <p class="font-semibold">Información de depuración (solo visible en entorno local):</p>
+                                @foreach($campanasDisponibles as $index => $campana)
+                                    <div class="mt-1">
+                                        <p>Campaña #{{ $index+1 }}: {{ $campana['titulo'] }}</p>
+                                        <p>URL de imagen: <a href="{{ $campana['imagen'] }}" target="_blank" class="text-blue-500 underline">{{ $campana['imagen'] }}</a></p>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
                 </div>
-            </div>
+            @endif
+
+            @if(count($campanasDisponibles) == 0)
+                <div class="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+                    <svg class="w-12 h-12 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p>No hay campañas disponibles en este momento</p>
+                </div>
+            @endif
         </div>
         <br>
 
@@ -801,3 +721,61 @@
         </div>
     </div>
 </x-filament-panels::page>
+
+@push('scripts')
+<script>
+    document.addEventListener('livewire:load', function () {
+        Livewire.on('mostrarResumen', function () {
+            document.getElementById('resumen-cita').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Evento para actualizar la vista cuando cambian los horarios
+        Livewire.on('horarios-actualizados', function () {
+            console.log('Horarios actualizados, refrescando vista');
+            // Forzar actualización de Alpine.js
+            document.querySelectorAll('[x-data]').forEach(el => {
+                if (el.__x) {
+                    el.__x.updateElements(el);
+                }
+            });
+        });
+
+        // Evento para mostrar notificaciones
+        Livewire.on('notify', function (data) {
+            console.log('Notificación:', data);
+
+            // Crear elemento de notificación
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-500 transform translate-x-full';
+
+            // Aplicar estilos según el tipo
+            if (data.type === 'error') {
+                notification.className += ' bg-red-500 text-white';
+            } else if (data.type === 'success') {
+                notification.className += ' bg-green-500 text-white';
+            } else {
+                notification.className += ' bg-primary-500 text-white';
+            }
+
+            // Agregar mensaje
+            notification.textContent = data.message;
+
+            // Agregar al DOM
+            document.body.appendChild(notification);
+
+            // Mostrar con animación
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 10);
+
+            // Ocultar después de 3 segundos
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    notification.remove();
+                }, 500);
+            }, 3000);
+        });
+    });
+</script>
+@endpush

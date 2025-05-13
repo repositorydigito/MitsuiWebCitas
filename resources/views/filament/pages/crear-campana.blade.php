@@ -1,5 +1,13 @@
 <x-filament-panels::page>
     <div class="bg-white rounded-lg shadow-sm p-6">
+        <!-- Título de la página -->
+        <div class="mb-6 text-center">
+            <h1 class="text-2xl font-bold text-gray-900">{{ $modoEdicion ? 'Editar Campaña' : 'Crear Nueva Campaña' }}</h1>
+            @if($modoEdicion)
+                <p class="text-gray-600 mt-1">Estás editando la campaña: {{ $tituloCampana }}</p>
+            @endif
+        </div>
+
         <!-- Indicador de progreso -->
         <div class="flex justify-center items-center mb-8">
             <div class="flex items-center">
@@ -20,7 +28,7 @@
         @if ($pasoActual === 1)
             <div>
                 <!-- Datos de la campaña -->
-                <div class="mb-6">
+                <div class="mb-4">
                     <h2 class="text-lg font-medium text-gray-900 mb-4">Datos de la campaña</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -31,7 +39,7 @@
                                 wire:model="codigoCampana"
                                 class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500"
                             >
-                            @error('codigoCampana') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            @error('codigoCampana') <span class="text-primary-500 text-sm">{{ $message }}</span> @enderror
                         </div>
                         <div>
                             <label for="tituloCampana" class="block text-sm font-medium text-gray-700 mb-1">Título de campaña</label>
@@ -41,7 +49,7 @@
                                 wire:model="tituloCampana"
                                 class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500"
                             >
-                            @error('tituloCampana') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            @error('tituloCampana') <span class="text-primary-500 text-sm">{{ $message }}</span> @enderror
                         </div>
                         <div>
                             <label for="fechaInicio" class="block text-sm font-medium text-gray-700 mb-1">Elige la fecha de inicio</label>
@@ -55,7 +63,7 @@
                                     autocomplete="off"
                                 >
                             </div>
-                            @error('fechaInicio') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            @error('fechaInicio') <span class="text-primary-500 text-sm">{{ $message }}</span> @enderror
                         </div>
                         <div>
                             <label for="fechaFin" class="block text-sm font-medium text-gray-700 mb-1">Elige la fecha de fin</label>
@@ -69,13 +77,13 @@
                                     autocomplete="off"
                                 >
                             </div>
-                            @error('fechaFin') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            @error('fechaFin') <span class="text-primary-500 text-sm">{{ $message }}</span> @enderror
                         </div>
                     </div>
                 </div>
 
                 <!-- Segmentación -->
-                <div class="mb-6 border-t pt-6">
+                <div class="mb-4 border-t pt-4">
                     <h2 class="text-lg font-medium text-gray-900 mb-4">Segmentación</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -194,19 +202,19 @@
                                                     x-model="selectedOptions"
                                                     class="rounded border-gray-300 text-primary-600 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50"
                                                 >
-                                                <span class="px-2">{{ $local }}</span>
+                                                <span class="px-2">{{ \App\Models\Local::where('codigo', $local)->value('nombre') ?? $local }}</span>
                                             </label>
                                         </div>
                                     @endforeach
                                 </div>
                             </div>
-                            @error('localesSeleccionados') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            @error('localesSeleccionados') <span class="text-primary-500 text-sm">{{ $message }}</span> @enderror
                         </div>
                     </div>
                 </div>
 
                 <!-- Horario para mostrar campaña -->
-                <div class="mb-6 border-t pt-6">
+                <div class="mb-4 border-t pt-4">
                     <h2 class="text-lg font-medium text-gray-900 mb-4">Horario para mostrar campaña</h2>
                     <div class="mb-4">
                         <label class="inline-flex items-center">
@@ -257,19 +265,52 @@
                 </div>
 
                 <!-- Imagen y Estado -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 border-t pt-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4 border-t pt-4">
                     <div>
                         <h2 class="text-lg font-medium text-gray-900 mb-4">Imagen</h2>
-                        <div class="flex items-center w-full">
-                            <div class="w-1/2 border border-gray-300 rounded-lg p-2 text-gray-500 mr-2">
-                                Sin selección
+                        <div class="flex flex-col space-y-4">
+                            <div class="flex items-center w-full">
+                                <label for="imagen" class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <svg class="w-8 h-8 mb-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                        </svg>
+                                        <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Haz clic para subir</span> o arrastra y suelta</p>
+                                        <p class="text-xs text-gray-500">PNG, JPG o JPEG (MAX. 2MB)</p>
+                                    </div>
+                                    <input
+                                        id="imagen"
+                                        type="file"
+                                        wire:model="imagen"
+                                        accept="image/*"
+                                        class="hidden"
+                                    />
+                                </label>
                             </div>
-                            <button
-                                type="button"
-                                class="inline-flex items-center px-4 py-2 text-sm font-medium text-primary-600 bg-white border border-primary-600 rounded-lg hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                            >
-                                Seleccionar Archivo
-                            </button>
+
+                            @error('imagen')
+                                <span class="text-primary-500 text-sm">{{ $message }}</span>
+                            @enderror
+
+                            <!-- Vista previa de la imagen -->
+                            @if($imagenPreview)
+                                <div class="mt-4">
+                                    <h3 class="text-sm font-medium text-gray-700 mb-2">Vista previa:</h3>
+                                    <div class="relative">
+                                        <img src="{{ $imagenPreview }}" alt="Vista previa" class="max-w-full h-auto rounded-lg border border-gray-300" style="max-height: 200px;" onerror="this.onerror=null; this.src='https://via.placeholder.com/150'; console.log('Error al cargar imagen:', this.src)">
+                                        <button
+                                            type="button"
+                                            wire:click="$set('imagen', null)"
+                                            class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none"
+                                            title="Eliminar imagen"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     </div>
                     <div>
@@ -346,7 +387,11 @@
                             </tr>
                             <tr class="border-b">
                                 <td class="px-6 py-3 text-sm font-medium text-primary-600 bg-gray-50">Locales</td>
-                                <td class="px-6 py-3 text-sm text-gray-900">{{ implode(', ', $localesSeleccionados) }}</td>
+                                <td class="px-6 py-3 text-sm text-gray-900">
+                                    @foreach($localesSeleccionados as $localCodigo)
+                                        {{ \App\Models\Local::where('codigo', $localCodigo)->value('nombre') ?? $localCodigo }}{{ !$loop->last ? ', ' : '' }}
+                                    @endforeach
+                                </td>
                             </tr>
 
                             @if ($todoElDia)
@@ -369,6 +414,14 @@
                                 <td class="px-6 py-3 text-sm font-medium text-primary-600 bg-gray-50">Estado</td>
                                 <td class="px-6 py-3 text-sm text-gray-900">{{ $estadoCampana }}</td>
                             </tr>
+                            @if($imagenPreview)
+                            <tr>
+                                <td class="px-6 py-3 text-sm font-medium text-primary-600 bg-gray-50">Imagen</td>
+                                <td class="px-6 py-3 text-sm text-gray-900">
+                                    <img src="{{ $imagenPreview }}" alt="Imagen de campaña" class="max-w-full h-auto rounded-lg" style="max-height: 100px;" onerror="this.onerror=null; this.src='https://via.placeholder.com/150'; console.log('Error al cargar imagen:', this.src)">
+                                </td>
+                            </tr>
+                            @endif
                         </tbody>
                     </table>
                 </div>
@@ -383,7 +436,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-900 mb-2">¡Campaña creada con éxito!</h2>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">¡{{ $modoEdicion ? 'Campaña actualizada' : 'Campaña creada' }} con éxito!</h2>
 
                 <div class="bg-white rounded-lg shadow overflow-hidden mb-6 max-w-2xl mx-auto">
                     <table class="w-full">
@@ -416,12 +469,24 @@
                             </tr>
                             <tr class="border-b">
                                 <td class="px-6 py-3 text-sm font-medium text-primary-600 bg-gray-50">Locales</td>
-                                <td class="px-6 py-3 text-sm text-gray-900">{{ implode(', ', $localesSeleccionados) }}</td>
+                                <td class="px-6 py-3 text-sm text-gray-900">
+                                    @foreach($localesSeleccionados as $localCodigo)
+                                        {{ \App\Models\Local::where('codigo', $localCodigo)->value('nombre') ?? $localCodigo }}{{ !$loop->last ? ', ' : '' }}
+                                    @endforeach
+                                </td>
                             </tr>
                             <tr>
                                 <td class="px-6 py-3 text-sm font-medium text-primary-600 bg-gray-50">Estado</td>
                                 <td class="px-6 py-3 text-sm text-gray-900">{{ $estadoCampana }}</td>
                             </tr>
+                            @if($imagenPreview)
+                            <tr>
+                                <td class="px-6 py-3 text-sm font-medium text-primary-600 bg-gray-50">Imagen</td>
+                                <td class="px-6 py-3 text-sm text-gray-900">
+                                    <img src="{{ $imagenPreview }}" alt="Imagen de campaña" class="max-w-full h-auto rounded-lg" style="max-height: 100px;" onerror="this.onerror=null; this.src='https://via.placeholder.com/150'; console.log('Error al cargar imagen:', this.src)">
+                                </td>
+                            </tr>
+                            @endif
                         </tbody>
                     </table>
                 </div>
@@ -458,7 +523,7 @@
                     wire:click="finalizarCreacion"
                     class="px-6 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 shadow-sm"
                 >
-                    Confirmar
+                    {{ $modoEdicion ? 'Guardar cambios' : 'Confirmar' }}
                 </button>
             @elseif ($pasoActual === 3)
                 <button

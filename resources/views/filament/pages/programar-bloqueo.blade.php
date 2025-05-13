@@ -25,11 +25,15 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div class="w-full">
-                            <select wire:model="data.local" class="w-full rounded-lg border border-primary-500 text-gray-700 py-2 px-3">
+                            <select wire:model="data.local" class="w-full rounded-lg border {{ $errors['local'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3">
                                 <option value="">Elegir local</option>
-                                <option value="local1">La molina</option>
-                                <option value="local2">San Miguel</option>
+                                @foreach(\App\Models\Local::where('activo', true)->orderBy('nombre')->get() as $local)
+                                    <option value="{{ $local->codigo }}">{{ $local->nombre }}</option>
+                                @endforeach
                             </select>
+                            @if($errors['local'])
+                                <p class="text-primary-500 text-sm mt-1">Elige una opción disponible.</p>
+                            @endif
                         </div>
 
                     <div class="flex items-center gap-2">
@@ -40,7 +44,10 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <input type="date" wire:model="data.fechaInicio" class="w-full rounded-lg border border-primary-500 text-gray-700 py-2 px-3" placeholder="Elige la fecha de inicio">
+                        <input type="date" wire:model="data.fechaInicio" class="w-full rounded-lg border {{ $errors['fechaInicio'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3" placeholder="Elige la fecha de inicio">
+                        @if($errors['fechaInicio'])
+                            <p class="text-primary-500 text-sm mt-1">Elige una opción disponible.</p>
+                        @endif
                     </div>
                     <div>
                         @if ($data['todoDia'])
@@ -48,7 +55,7 @@
                                 08:00 AM
                             </div>
                         @else
-                            <select wire:model="data.horaInicio" class="w-full rounded-lg border border-primary-500 text-gray-700 py-2 px-3">
+                            <select wire:model="data.horaInicio" class="w-full rounded-lg border {{ $errors['horaInicio'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3">
                                 <option value="">Hora de inicio</option>
                                 @for ($hour = 8; $hour <= 18; $hour++)
                                     <option value="{{ sprintf('%02d', $hour) }}:00">{{ sprintf('%02d', $hour) }}:00</option>
@@ -57,13 +64,19 @@
                                     @endif
                                 @endfor
                             </select>
+                            @if($errors['horaInicio'])
+                                <p class="text-primary-500 text-sm mt-1">Elige una opción disponible.</p>
+                            @endif
                         @endif
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <input type="date" wire:model="data.fechaFin" class="w-full rounded-lg border border-primary-500 text-gray-700 py-2 px-3" placeholder="Elige la fecha de fin">
+                        <input type="date" wire:model="data.fechaFin" class="w-full rounded-lg border {{ $errors['fechaFin'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3" placeholder="Elige la fecha de fin">
+                        @if($errors['fechaFin'])
+                            <p class="text-primary-500 text-sm mt-1">Elige una opción disponible.</p>
+                        @endif
                     </div>
                     <div>
                         @if ($data['todoDia'])
@@ -71,7 +84,7 @@
                                 06:00 PM
                             </div>
                         @else
-                            <select wire:model="data.horaFin" class="w-full rounded-lg border border-primary-500 text-gray-700 py-2 px-3">
+                            <select wire:model="data.horaFin" class="w-full rounded-lg border {{ $errors['horaFin'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3">
                                 <option value="">Hora de fin</option>
                                 @for ($hour = 8; $hour <= 18; $hour++)
                                     <option value="{{ sprintf('%02d', $hour) }}:00">{{ sprintf('%02d', $hour) }}:00</option>
@@ -80,6 +93,9 @@
                                     @endif
                                 @endfor
                             </select>
+                            @if($errors['horaFin'])
+                                <p class="text-primary-500 text-sm mt-1">Elige una opción disponible.</p>
+                            @endif
                         @endif
                     </div>
                 </div>
@@ -88,10 +104,19 @@
                     <textarea wire:model="data.comentarios" class="w-full rounded-lg border border-primary-500 text-gray-700 py-2 px-3" rows="4" placeholder="Comentarios u observaciones"></textarea>
                 </div>
 
-                <div class="flex justify-center border-t pt-4 gap-4">
-                    <button type="button" wire:click="cerrarYVolver" class="px-6 py-2 border border-primary-500 text-primary-500 rounded-lg hover:bg-gray-50">
-                        Volver
-                    </button>
+                <div class="flex justify-between border-t pt-4">
+                    <div>
+                        <button type="button" wire:click="cerrarYVolver" class="px-6 py-2 border border-primary-500 text-primary-500 rounded-lg hover:bg-gray-50">
+                            Volver
+                        </button>
+
+                        <!-- Botón de depuración (solo en desarrollo) -->
+                        @if(config('app.env') === 'local')
+                            <button type="button" wire:click="debug" class="ml-2 px-4 py-2 bg-gray-500 text-white rounded-lg">
+                                Debug
+                            </button>
+                        @endif
+                    </div>
 
                     <button type="button" wire:click="nextStep" class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
                         Continuar
@@ -110,13 +135,7 @@
                     <div class="mb-4">
                         <p class="text-sm text-gray-500">Local</p>
                         <p class="font-medium">
-                                @if($local === 'local1')
-                                    La molina
-                                @elseif($local === 'local2')
-                                    San Miguel
-                                @else
-                                    {{ $local }}
-                                @endif
+                                {{ \App\Models\Local::where('codigo', $local)->value('nombre') ?? $local }}
                         </p>
                     </div>
                     <div class="mb-4">
@@ -175,13 +194,7 @@
                         <div class="mb-4">
                             <p class="text-sm text-gray-500">Local</p>
                             <p class="font-medium">
-                                @if($local === 'local1')
-                                    La molina
-                                @elseif($local === 'local2')
-                                    San Miguel
-                                @else
-                                    {{ $local }}
-                                @endif
+                                {{ \App\Models\Local::where('codigo', $local)->value('nombre') ?? $local }}
                             </p>
                         </div>
                         <div class="mb-4">

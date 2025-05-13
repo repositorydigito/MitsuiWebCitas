@@ -141,7 +141,7 @@
                                 {{ $campana['fecha_fin'] }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $campana['estado'] === 'Activo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $campana['estado'] === 'Activo' ? 'bg-primary-500 text-white' : 'bg-red-100 text-red-800' }}">
                                     {{ $campana['estado'] }}
                                 </span>
                             </td>
@@ -172,7 +172,8 @@
 
                                     {{-- Botón Eliminar --}}
                                     <button
-                                        wire:click="eliminar('{{ $campana['codigo'] }}')"
+                                        x-data="{}"
+                                        x-on:click="if (confirm('¿Estás seguro de que deseas eliminar esta campaña? Esta acción no se puede deshacer.')) { $wire.eliminar('{{ $campana['codigo'] }}') }"
                                         class="text-red-600 hover:text-red-900"
                                         title="Eliminar"
                                     >
@@ -205,6 +206,113 @@
     <div class="mt-4 flex justify-end">
         {{ $this->campanasPaginadas->links('vendor.pagination.default') }}
     </div>
+
+    {{-- Modal para ver detalle de campaña --}}
+    @if($modalDetalleVisible)
+        <div class="fixed inset-0 z-50 overflow-y-auto" x-data="{}" x-cloak>
+            <!-- Overlay de fondo oscuro (clic para cerrar) -->
+            <div class="fixed inset-0 bg-black/50" wire:click="cerrarModalDetalle" aria-hidden="true"></div>
+
+            <!-- Modal centrado -->
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <!-- Panel del modal -->
+                <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl mx-4 relative z-10"
+                     x-on:click.outside="$wire.cerrarModalDetalle()"
+                >
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-lg font-semibold text-blue-900">Detalle de Campaña</h2>
+                            <button wire:click="cerrarModalDetalle" class="text-gray-500 hover:text-gray-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                                <div>
+                                    <h3 class="text-base font-semibold leading-7 text-gray-900">Información General</h3>
+                                    <div class="mt-2 border-t border-gray-100">
+                                        <dl class="divide-y divide-gray-100">
+                                            <div class="px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                                                <dt class="text-sm font-medium leading-6 text-gray-900">Código</dt>
+                                                <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ $campanaDetalle['codigo'] ?? '' }}</dd>
+                                            </div>
+                                            <div class="px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                                                <dt class="text-sm font-medium leading-6 text-gray-900">Título</dt>
+                                                <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ $campanaDetalle['nombre'] ?? '' }}</dd>
+                                            </div>
+                                            <div class="px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                                                <dt class="text-sm font-medium leading-6 text-gray-900">Estado</dt>
+                                                <dd class="mt-1 text-sm leading-6 sm:col-span-2 sm:mt-0">
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ ($campanaDetalle['estado'] ?? '') === 'Activo' ? 'bg-primary-500 text-white' : 'bg-red-100 text-red-800' }}">
+                                                        {{ $campanaDetalle['estado'] ?? '' }}
+                                                    </span>
+                                                </dd>
+                                            </div>
+                                            <div class="px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                                                <dt class="text-sm font-medium leading-6 text-gray-900">Fecha Inicio</dt>
+                                                <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ $campanaDetalle['fecha_inicio'] ?? '' }}</dd>
+                                            </div>
+                                            <div class="px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                                                <dt class="text-sm font-medium leading-6 text-gray-900">Fecha Fin</dt>
+                                                <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ $campanaDetalle['fecha_fin'] ?? '' }}</dd>
+                                            </div>
+                                        </dl>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    @if(!empty($campanaDetalle['imagen']))
+                                        <div class="mb-4">
+                                            <h3 class="text-base font-semibold leading-7 text-gray-900">Imagen</h3>
+                                            <div class="mt-2 flex justify-center">
+                                                <img src="{{ $campanaDetalle['imagen'] }}" alt="Imagen de campaña" class="max-w-full h-auto rounded-lg" style="max-height: 150px;" onerror="this.onerror=null; this.src='https://via.placeholder.com/150'; console.log('Error al cargar imagen:', this.src)">
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    <h3 class="text-base font-semibold leading-7 text-gray-900">Segmentación</h3>
+                                    <div class="mt-2 border-t border-gray-100">
+                                        <dl class="divide-y divide-gray-100">
+                                            <div class="px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                                                <dt class="text-sm font-medium leading-6 text-gray-900">Locales</dt>
+                                                <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                                                    {{ !empty($campanaDetalle['locales']) ? implode(', ', $campanaDetalle['locales']) : 'No especificado' }}
+                                                </dd>
+                                            </div>
+                                            <div class="px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                                                <dt class="text-sm font-medium leading-6 text-gray-900">Modelos</dt>
+                                                <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                                                    {{ !empty($campanaDetalle['modelos']) ? implode(', ', $campanaDetalle['modelos']) : 'No especificado' }}
+                                                </dd>
+                                            </div>
+                                            <div class="px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                                                <dt class="text-sm font-medium leading-6 text-gray-900">Años</dt>
+                                                <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                                                    {{ !empty($campanaDetalle['anos']) ? implode(', ', $campanaDetalle['anos']) : 'No especificado' }}
+                                                </dd>
+                                            </div>
+                                        </dl>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end mt-6 border-t pt-4">
+                            <button
+                                wire:click="cerrarModalDetalle"
+                                class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                            >
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 
     {{-- Scripts para el datepicker --}}
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>

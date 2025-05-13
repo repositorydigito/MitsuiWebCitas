@@ -10,6 +10,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Carbon\Carbon;
 use Filament\Notifications\Notification;
+use App\Models\Local;
 
 class ProgramacionCitasServicio extends Page implements HasForms
 {
@@ -21,7 +22,7 @@ class ProgramacionCitasServicio extends Page implements HasForms
     protected static ?string $title = 'Programación citas de servicio';
     protected static ?string $slug = 'programacion-citas-servicio';
 
-    public $selectedLocal = 'local1';
+    public $selectedLocal = '';
     public $selectedWeek;
     public $timeSlots = [];
     public $minReservationTime = "";
@@ -31,9 +32,23 @@ class ProgramacionCitasServicio extends Page implements HasForms
     public $blockingPeriods = [];
     public $data = [];
 
+    // Variables para rastrear la celda seleccionada
+    public $selectedTime = null;
+    public $selectedDate = null;
+    public $selectedSlotStatus = null; // 'disponible', 'bloqueado', 'reservado'
+
     public function mount(): void
     {
         $this->selectedWeek = now()->startOfWeek();
+
+        // Seleccionar el primer local activo por defecto
+        if (empty($this->selectedLocal)) {
+            $primerLocal = \App\Models\Local::where('activo', true)->orderBy('nombre')->first();
+            if ($primerLocal) {
+                $this->selectedLocal = $primerLocal->codigo;
+            }
+        }
+
         $this->form->fill([
             'selectedLocal' => $this->selectedLocal,
             'minReservationTime' => $this->minReservationTime,
@@ -41,6 +56,7 @@ class ProgramacionCitasServicio extends Page implements HasForms
             'minTimeUnit' => $this->minTimeUnit,
             'maxTimeUnit' => $this->maxTimeUnit,
         ]);
+
         $this->generateTimeSlots();
     }
 
@@ -49,6 +65,7 @@ class ProgramacionCitasServicio extends Page implements HasForms
         // Si se actualiza el local seleccionado, regenerar los slots de tiempo
         if ($name === 'selectedLocal') {
             $this->selectedLocal = $value;
+            $this->resetSelection();
             $this->generateTimeSlots();
         }
     }
@@ -56,13 +73,32 @@ class ProgramacionCitasServicio extends Page implements HasForms
     public function nextWeek()
     {
         $this->selectedWeek->addWeek();
+        $this->resetSelection();
         $this->generateTimeSlots();
     }
 
     public function previousWeek()
     {
         $this->selectedWeek->subWeek();
+        $this->resetSelection();
         $this->generateTimeSlots();
+    }
+
+    /**
+     * Resetea la selección actual
+     */
+    private function resetSelection()
+    {
+        // Limpiar la celda seleccionada si existe
+        if ($this->selectedTime !== null && $this->selectedDate !== null) {
+            if (isset($this->timeSlots[$this->selectedTime][$this->selectedDate])) {
+                $this->timeSlots[$this->selectedTime][$this->selectedDate]['seleccionado'] = false;
+            }
+        }
+
+        $this->selectedTime = null;
+        $this->selectedDate = null;
+        $this->selectedSlotStatus = null;
     }
 
     private function generateTimeSlots()
@@ -89,6 +125,7 @@ class ProgramacionCitasServicio extends Page implements HasForms
             '5:00 PM' => [],
             '5:30 PM' => [],
             '6:00 PM' => [],
+            '6:30 PM' => [],
         ];
 
         // Obtener los días de la semana
@@ -189,11 +226,59 @@ class ProgramacionCitasServicio extends Page implements HasForms
         return redirect()->route('filament.admin.pages.programar-bloqueo', ['local' => $localSeleccionado]);
     }
 
+    /**
+     * Selecciona un slot de tiempo (solo uno a la vez)
+     */
+    public function toggleSlot($time, $date, $status = null)
+    {
+        // Si el slot no existe, inicializarlo
+        if (!isset($this->timeSlots[$time][$date])) {
+            $this->timeSlots[$time][$date] = [
+                'bloqueado' => false,
+                'reservado' => false,
+                'seleccionado' => false,
+            ];
+        }
+
+        // Obtener el estado del slot (bloqueado, reservado o disponible)
+        $slotStatus = 'disponible';
+        if ($status !== null) {
+            $slotStatus = $status;
+        } else if ($this->timeSlots[$time][$date]['bloqueado']) {
+            $slotStatus = 'bloqueado';
+        } else if ($this->timeSlots[$time][$date]['reservado']) {
+            $slotStatus = 'reservado';
+        }
+
+        // Verificar si estamos seleccionando la misma celda que ya está seleccionada
+        if ($this->selectedTime === $time && $this->selectedDate === $date) {
+            // Deseleccionar la celda actual
+            $this->timeSlots[$time][$date]['seleccionado'] = false;
+            $this->selectedTime = null;
+            $this->selectedDate = null;
+            $this->selectedSlotStatus = null;
+        } else {
+            // Deseleccionar la celda anterior si existe
+            if ($this->selectedTime !== null && $this->selectedDate !== null) {
+                if (isset($this->timeSlots[$this->selectedTime][$this->selectedDate])) {
+                    $this->timeSlots[$this->selectedTime][$this->selectedDate]['seleccionado'] = false;
+                }
+            }
+
+            // Seleccionar la nueva celda
+            $this->timeSlots[$time][$date]['seleccionado'] = true;
+            $this->selectedTime = $time;
+            $this->selectedDate = $date;
+            $this->selectedSlotStatus = $slotStatus;
+        }
+    }
+
     protected function getViewData(): array
     {
         return [
             'weekDays' => $this->getWeekDays(),
             'timeSlots' => $this->timeSlots,
+            'selectedSlotStatus' => $this->selectedSlotStatus,
         ];
     }
 
@@ -245,10 +330,9 @@ class ProgramacionCitasServicio extends Page implements HasForms
         return $form
             ->schema([
                 Select::make('selectedLocal')
-                    ->options([
-                        'local1' => 'La molina',
-                        'local2' => 'San Miguel',
-                    ])
+                    ->options(function() {
+                        return Local::getActivosParaSelector();
+                    })
                     ->placeholder('Seleccione un local')
                     ->live()
                     ->required(),

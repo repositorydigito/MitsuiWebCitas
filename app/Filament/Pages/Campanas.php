@@ -4,10 +4,13 @@ namespace App\Filament\Pages;
 
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use Livewire\WithPagination;
+use App\Models\Local;
+use App\Models\Campana;
 
 class Campanas extends Page
 {
@@ -36,13 +39,12 @@ class Campanas extends Page
     // Datos de campañas
     public Collection $campanas;
 
+    // Modal de detalle
+    public bool $modalDetalleVisible = false;
+    public array $campanaDetalle = [];
+
     // Opciones para filtros
-    public array $ciudades = [
-        'Lima',
-        'La Molina',
-        'Canadá',
-        'Arequipa',
-    ];
+    public array $ciudades = [];
 
     public array $estados = [
         'Activo',
@@ -69,102 +71,156 @@ class Campanas extends Page
             Log::info("[CampanasPage] Inicializando rangoFechas desde fechas existentes: {$this->rangoFechas}");
         }
 
+        // Cargar las ciudades (locales) desde la base de datos
+        $this->cargarCiudades();
+
+        // Cargar las campañas
         $this->cargarCampanas();
+    }
+
+    /**
+     * Carga las ciudades (locales) desde la base de datos
+     */
+    private function cargarCiudades(): void
+    {
+        try {
+            // Obtener los locales activos
+            $localesActivos = Local::where('activo', true)
+                ->orderBy('nombre')
+                ->get();
+
+            // Convertir a array de nombres
+            $this->ciudades = $localesActivos->pluck('nombre')->toArray();
+        } catch (\Exception $e) {
+            Log::error("[CampanasPage] Error al cargar ciudades: " . $e->getMessage());
+            $this->ciudades = [];
+        }
     }
 
     public function cargarCampanas(): void
     {
         try {
-            // Aquí se cargarían los datos reales de una API o base de datos
-            // Por ahora, usamos datos de ejemplo
-            $this->campanas = collect([
-                [
-                    'codigo' => 'PQTLUEX',
-                    'nombre' => 'Lubrexpress',
-                    'local' => 'La Molina',
-                    'fecha_inicio' => '30/10/2023',
-                    'fecha_fin' => '30/10/2023',
-                    'estado' => 'Activo',
-                ],
-                [
-                    'codigo' => 'PQTREGPAPA',
-                    'nombre' => 'Regálale a Papá',
-                    'local' => 'Canadá',
-                    'fecha_inicio' => '30/10/2023',
-                    'fecha_fin' => '30/10/2023',
-                    'estado' => 'Inactivo',
-                ],
-                [
-                    'codigo' => 'PQTENCE',
-                    'nombre' => 'Encerado',
-                    'local' => 'La Molina',
-                    'fecha_inicio' => '30/10/2023',
-                    'fecha_fin' => '30/10/2023',
-                    'estado' => 'Activo',
-                ],
-                [
-                    'codigo' => 'PQTRATAPIN',
-                    'nombre' => 'Tratamiento de pintura',
-                    'local' => 'Lima',
-                    'fecha_inicio' => '30/10/2023',
-                    'fecha_fin' => '30/10/2023',
-                    'estado' => 'Inactivo',
-                ],
-                [
-                    'codigo' => 'PQTCUMPLE',
-                    'nombre' => 'Campaña cumpleaños',
-                    'local' => 'Lima',
-                    'fecha_inicio' => '30/10/2023',
-                    'fecha_fin' => '30/10/2023',
-                    'estado' => 'Activo',
-                ],
-                [
-                    'codigo' => 'PQTANIV',
-                    'nombre' => 'Campaña cumpleaños',
-                    'local' => 'Lima',
-                    'fecha_inicio' => '30/10/2023',
-                    'fecha_fin' => '30/10/2023',
-                    'estado' => 'Inactivo',
-                ],
-                [
-                    'codigo' => 'PQTALINEA',
-                    'nombre' => 'Campaña aniversario',
-                    'local' => 'Lima',
-                    'fecha_inicio' => '30/10/2023',
-                    'fecha_fin' => '30/10/2023',
-                    'estado' => 'Activo',
-                ],
-                [
-                    'codigo' => 'PQTALINEA2',
-                    'nombre' => 'Alineamiento de dirección 3D',
-                    'local' => 'Lima',
-                    'fecha_inicio' => '30/10/2023',
-                    'fecha_fin' => '30/10/2023',
-                    'estado' => 'Inactivo',
-                ],
-                [
-                    'codigo' => 'PQTALINEA3',
-                    'nombre' => 'Encerado',
-                    'local' => 'Lima',
-                    'fecha_inicio' => '30/10/2023',
-                    'fecha_fin' => '30/10/2023',
-                    'estado' => 'Activo',
-                ],
-                [
-                    'codigo' => 'PQTALINEA4',
-                    'nombre' => 'Encerado',
-                    'local' => 'Lima',
-                    'fecha_inicio' => '30/10/2023',
-                    'fecha_fin' => '30/10/2023',
-                    'estado' => 'Inactivo',
-                ],
-            ]);
+            Log::info("[CampanasPage] Iniciando carga de campañas");
+
+            // Consulta base para obtener campañas con sus relaciones
+            $query = Campana::with(['imagen', 'modelos', 'anos', 'locales']);
+
+            // Filtrar por ciudad (local)
+            if (!empty($this->ciudadSeleccionada)) {
+                $query->whereHas('locales', function ($q) {
+                    $local = Local::where('nombre', $this->ciudadSeleccionada)->first();
+                    if ($local) {
+                        $q->where('local_codigo', $local->codigo);
+                    }
+                });
+            }
+
+            // Filtrar por estado
+            if (!empty($this->estadoSeleccionado)) {
+                $query->where('estado', $this->estadoSeleccionado);
+            }
+
+            // Filtrar por fecha
+            if (!empty($this->fechaInicio) && !empty($this->fechaFin)) {
+                try {
+                    $fechaInicio = \Carbon\Carbon::createFromFormat('d/m/Y', $this->fechaInicio)->format('Y-m-d');
+                    $fechaFin = \Carbon\Carbon::createFromFormat('d/m/Y', $this->fechaFin)->format('Y-m-d');
+
+                    $query->where(function ($q) use ($fechaInicio, $fechaFin) {
+                        // La campaña está activa durante el período de filtro si:
+                        // 1. La fecha de inicio de la campaña está dentro del período de filtro, o
+                        // 2. La fecha de fin de la campaña está dentro del período de filtro, o
+                        // 3. El período de filtro está completamente dentro del período de la campaña
+                        $q->whereBetween('fecha_inicio', [$fechaInicio, $fechaFin])
+                            ->orWhereBetween('fecha_fin', [$fechaInicio, $fechaFin])
+                            ->orWhere(function ($q2) use ($fechaInicio, $fechaFin) {
+                                $q2->where('fecha_inicio', '<=', $fechaInicio)
+                                    ->where('fecha_fin', '>=', $fechaFin);
+                            });
+                    });
+                } catch (\Exception $e) {
+                    Log::error("[CampanasPage] Error al procesar fechas: " . $e->getMessage());
+                    // No aplicamos el filtro de fechas si hay un error
+                }
+            }
+
+            // Filtrar por búsqueda
+            if (!empty($this->busqueda)) {
+                $busqueda = '%' . $this->busqueda . '%';
+                $query->where(function ($q) use ($busqueda) {
+                    $q->where('codigo', 'like', $busqueda)
+                        ->orWhere('titulo', 'like', $busqueda);
+                });
+            }
+
+            // Ordenar por fecha de inicio (más reciente primero)
+            $query->orderBy('fecha_inicio', 'desc');
+
+            // Ejecutar la consulta
+            $campanas = $query->get();
+
+            Log::info("[CampanasPage] Consulta ejecutada, obtenidas {$campanas->count()} campañas");
+
+            // Transformar los resultados para que coincidan con el formato esperado en la vista
+            $campanasTransformadas = collect();
+
+            foreach ($campanas as $campana) {
+                try {
+                    // Obtener los nombres de los locales
+                    $localesNombres = [];
+
+                    if ($campana->locales && $campana->locales->count() > 0) {
+                        foreach ($campana->locales as $local) {
+                            if (isset($local->pivot) && isset($local->pivot->local_codigo)) {
+                                $nombreLocal = Local::where('codigo', $local->pivot->local_codigo)->value('nombre');
+                                $localesNombres[] = $nombreLocal ?? $local->pivot->local_codigo;
+                            }
+                        }
+                    }
+
+                    // Usar el primer local como local principal para la vista
+                    $localPrincipal = !empty($localesNombres) ? $localesNombres[0] : '';
+
+                    // Obtener la URL de la imagen
+                    $imagenUrl = 'https://via.placeholder.com/150';
+                    if ($campana->imagen) {
+                        try {
+                            $imagenUrl = $this->getImageUrl($campana->imagen);
+                        } catch (\Exception $e) {
+                            Log::error("[CampanasPage] Error al obtener URL de imagen: " . $e->getMessage());
+                        }
+                    }
+
+                    // Crear el array con los datos de la campaña
+                    $campanasTransformadas->push([
+                        'codigo' => $campana->codigo,
+                        'nombre' => $campana->titulo,
+                        'local' => $localPrincipal,
+                        'fecha_inicio' => $campana->fecha_inicio->format('d/m/Y'),
+                        'fecha_fin' => $campana->fecha_fin->format('d/m/Y'),
+                        'estado' => $campana->estado,
+                        // Campos adicionales para uso interno
+                        'id' => $campana->id,
+                        'modelos' => $campana->modelos ? $campana->modelos->pluck('nombre')->toArray() : [],
+                        'anos' => $campana->anos ? $campana->anos->pluck('ano')->toArray() : [],
+                        'locales' => $localesNombres,
+                        'imagen' => $imagenUrl,
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error("[CampanasPage] Error al procesar campaña {$campana->id}: " . $e->getMessage());
+                    // Continuamos con la siguiente campaña
+                }
+            }
+
+            $this->campanas = $campanasTransformadas;
+
+            Log::info("[CampanasPage] Campañas transformadas: {$campanasTransformadas->count()}");
         } catch (\Exception $e) {
-            Log::error("[CampanasPage] Error al cargar campañas: " . $e->getMessage());
+            Log::error("[CampanasPage] Error al cargar campañas: " . $e->getMessage() . "\nTrace: " . $e->getTraceAsString());
             $this->campanas = collect();
             \Filament\Notifications\Notification::make()
                 ->title('Error al Cargar Campañas')
-                ->body('No se pudo obtener la lista de campañas. Intente más tarde.')
+                ->body('No se pudo obtener la lista de campañas: ' . $e->getMessage())
                 ->danger()
                 ->send();
         }
@@ -281,31 +337,190 @@ class Campanas extends Page
 
     public function verDetalle($codigo): void
     {
-        // Implementar la lógica para ver detalle
-        \Filament\Notifications\Notification::make()
-            ->title('Ver detalle')
-            ->body("Ver detalle de la campaña con código: {$codigo}")
-            ->success()
-            ->send();
+        try {
+            Log::info("[CampanasPage] Intentando ver detalle de campaña con código: {$codigo}");
+
+            $campana = Campana::with(['imagen', 'modelos', 'anos', 'locales'])->where('codigo', $codigo)->first();
+
+            if ($campana) {
+                try {
+                    // Obtener los nombres de los locales
+                    $localesNombres = [];
+
+                    if ($campana->locales && $campana->locales->count() > 0) {
+                        foreach ($campana->locales as $local) {
+                            if (isset($local->pivot) && isset($local->pivot->local_codigo)) {
+                                $nombreLocal = Local::where('codigo', $local->pivot->local_codigo)->value('nombre');
+                                $localesNombres[] = $nombreLocal ?? $local->pivot->local_codigo;
+                            }
+                        }
+                    }
+
+                    // Obtener la URL de la imagen
+                    $imagenUrl = null;
+                    if ($campana->imagen) {
+                        try {
+                            $imagenUrl = $this->getImageUrl($campana->imagen);
+                        } catch (\Exception $e) {
+                            Log::error("[CampanasPage] Error al obtener URL de imagen para detalle: " . $e->getMessage());
+                        }
+                    }
+
+                    // Preparar los datos para el modal
+                    $this->campanaDetalle = [
+                        'id' => $campana->id,
+                        'codigo' => $campana->codigo,
+                        'nombre' => $campana->titulo,
+                        'fecha_inicio' => $campana->fecha_inicio->format('d/m/Y'),
+                        'fecha_fin' => $campana->fecha_fin->format('d/m/Y'),
+                        'estado' => $campana->estado,
+                        'modelos' => $campana->modelos ? $campana->modelos->pluck('nombre')->toArray() : [],
+                        'anos' => $campana->anos ? $campana->anos->pluck('ano')->toArray() : [],
+                        'locales' => $localesNombres,
+                        'imagen' => $imagenUrl,
+                    ];
+
+                    // Mostrar el modal
+                    $this->modalDetalleVisible = true;
+
+                    Log::info("[CampanasPage] Mostrando detalle de campaña: {$campana->codigo}");
+                } catch (\Exception $e) {
+                    Log::error("[CampanasPage] Error al procesar detalle de campaña {$campana->id}: " . $e->getMessage());
+                    throw $e; // Re-lanzar la excepción para que sea capturada por el bloque catch exterior
+                }
+            } else {
+                Log::warning("[CampanasPage] Campaña no encontrada con código: {$codigo}");
+                \Filament\Notifications\Notification::make()
+                    ->title('Campaña no encontrada')
+                    ->body("No se encontró la campaña con código: {$codigo}")
+                    ->danger()
+                    ->send();
+            }
+        } catch (\Exception $e) {
+            Log::error("[CampanasPage] Error al ver detalle de campaña: " . $e->getMessage() . "\nTrace: " . $e->getTraceAsString());
+            \Filament\Notifications\Notification::make()
+                ->title('Error')
+                ->body('Ha ocurrido un error al intentar ver el detalle de la campaña: ' . $e->getMessage())
+                ->danger()
+                ->send();
+        }
     }
 
-    public function editar($codigo): void
+    /**
+     * Cierra el modal de detalle
+     */
+    public function cerrarModalDetalle(): void
     {
-        // Implementar la lógica para editar
-        \Filament\Notifications\Notification::make()
-            ->title('Editar')
-            ->body("Editar la campaña con código: {$codigo}")
-            ->success()
-            ->send();
+        $this->modalDetalleVisible = false;
+        $this->campanaDetalle = [];
+    }
+
+    public function editar($codigo)
+    {
+        try {
+            Log::info("[CampanasPage] Intentando editar campaña con código: {$codigo}");
+
+            $campana = Campana::where('codigo', $codigo)->first();
+
+            if (!$campana) {
+                Log::warning("[CampanasPage] Campaña no encontrada con código: {$codigo}");
+                \Filament\Notifications\Notification::make()
+                    ->title('Campaña no encontrada')
+                    ->body("No se encontró la campaña con código: {$codigo}")
+                    ->danger()
+                    ->send();
+                return;
+            }
+
+            // Construir la URL para la redirección
+            $url = '/admin/crear-campana?campana_id=' . $campana->id;
+
+            Log::info("[CampanasPage] Redirigiendo a edición de campaña: {$campana->codigo} con ID: {$campana->id} - URL: {$url}");
+
+            // Usar el método redirect de Livewire
+            return $this->redirect($url);
+
+        } catch (\Exception $e) {
+            Log::error("[CampanasPage] Error al editar campaña: " . $e->getMessage() . "\nTrace: " . $e->getTraceAsString());
+            \Filament\Notifications\Notification::make()
+                ->title('Error')
+                ->body('Ha ocurrido un error al intentar editar la campaña: ' . $e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
+    /**
+     * Genera la URL correcta para una imagen de campaña
+     */
+    private function getImageUrl($imagen): string
+    {
+        // Registrar la ruta original para depuración
+        Log::info("[CampanasPage] Ruta de imagen original: " . $imagen->ruta);
+
+        // Generar la URL directamente usando asset()
+        $url = asset($imagen->ruta);
+
+        // Registrar la URL generada para depuración
+        Log::info("[CampanasPage] URL generada para imagen: " . $url);
+
+        // Verificar si el archivo existe
+        $rutaCompleta = public_path($imagen->ruta);
+        $existe = file_exists($rutaCompleta);
+
+        Log::info("[CampanasPage] Verificación de archivo: " . json_encode([
+            'rutaCompleta' => $rutaCompleta,
+            'existe' => $existe ? 'Sí' : 'No'
+        ]));
+
+        // Devolver la URL
+        return $url;
     }
 
     public function eliminar($codigo): void
     {
-        // Implementar la lógica para eliminar
-        \Filament\Notifications\Notification::make()
-            ->title('Eliminar')
-            ->body("Eliminar la campaña con código: {$codigo}")
-            ->success()
-            ->send();
+        try {
+            $campana = Campana::where('codigo', $codigo)->first();
+
+            if ($campana) {
+                // Eliminar la imagen si existe
+                $imagen = $campana->imagen;
+                if ($imagen) {
+                    // Eliminar el archivo físico
+                    $rutaCompleta = public_path($imagen->ruta);
+                    if (file_exists($rutaCompleta)) {
+                        unlink($rutaCompleta);
+                        Log::info("[CampanasPage] Archivo eliminado: {$rutaCompleta}");
+                    } else {
+                        Log::warning("[CampanasPage] No se pudo eliminar el archivo porque no existe: {$rutaCompleta}");
+                    }
+                }
+
+                // Eliminar la campaña y sus relaciones (las relaciones se eliminarán automáticamente por las restricciones de clave foránea)
+                $campana->delete();
+
+                \Filament\Notifications\Notification::make()
+                    ->title('Campaña eliminada')
+                    ->body("La campaña ha sido eliminada correctamente.")
+                    ->success()
+                    ->send();
+
+                // Recargar las campañas
+                $this->cargarCampanas();
+            } else {
+                \Filament\Notifications\Notification::make()
+                    ->title('Campaña no encontrada')
+                    ->body("No se encontró la campaña con código: {$codigo}")
+                    ->danger()
+                    ->send();
+            }
+        } catch (\Exception $e) {
+            Log::error("[CampanasPage] Error al eliminar campaña: " . $e->getMessage());
+            \Filament\Notifications\Notification::make()
+                ->title('Error')
+                ->body('Ha ocurrido un error al intentar eliminar la campaña.')
+                ->danger()
+                ->send();
+        }
     }
 }

@@ -7,8 +7,9 @@
         <!-- Selector de local -->
         <div class="w-1/3">
             <select wire:model.live="data.selectedLocal" class="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-primary-500 focus:ring-primary-500">
-                <option value="local1">La molina</option>
-                <option value="local2">San Miguel</option>
+                @foreach(\App\Models\Local::where('activo', true)->orderBy('nombre')->get() as $local)
+                    <option value="{{ $local->codigo }}">{{ $local->nombre }}</option>
+                @endforeach
             </select>
         </div>
 
@@ -19,9 +20,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
             </button>
-            <select class="mx-2 rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+            <button class="mx-2 rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-primary-500 focus:ring-primary-500">
                 <option>Semana {{ $selectedWeek->weekOfYear }}, {{ $selectedWeek->format('Y') }}</option>
-            </select>
+            </button>
             <button wire:click="nextWeek" class="p-2 hover:bg-gray-100 rounded-full">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -33,11 +34,7 @@
     <!-- Título de programación -->
     <div class="bg-primary-500 text-white font-semibold p-3 rounded-lg">
         Programación Toyota -
-        @if($selectedLocal === 'local1')
-            La molina
-        @elseif($selectedLocal === 'local2')
-            San Miguel
-        @endif
+        {{ \App\Models\Local::where('codigo', $data['selectedLocal'] ?? $selectedLocal)->value('nombre') ?? 'Seleccione un local' }}
     </div>
 
     <div class="flex justify-between">
@@ -93,23 +90,29 @@
                                             @endphp
 
                                             @if($bloqueado)
-                                                <!-- Slot bloqueado -->
-                                                <div class="w-full h-full bg-white border border-gray-200 rounded flex items-center justify-center">
+                                                <!-- Slot bloqueado - se puede seleccionar -->
+                                                <div
+                                                    wire:click="toggleSlot('{{ $time }}', '{{ $fecha }}', 'bloqueado')"
+                                                    class="w-full h-full {{ $seleccionado ? 'border-2 border-primary-500' : 'bg-white border border-gray-200' }} rounded flex items-center justify-center cursor-pointer"
+                                                >
                                                     <img src="{{ asset('images/lock.svg') }}" alt="Bloqueado" class="w-4 h-4">
                                                 </div>
                                             @elseif($reservado)
-                                                <!-- Slot reservado -->
-                                                <div class="w-full h-full bg-white border border-gray-200 rounded flex items-center justify-center">
+                                                <!-- Slot reservado - se puede seleccionar -->
+                                                <div
+                                                    wire:click="toggleSlot('{{ $time }}', '{{ $fecha }}', 'reservado')"
+                                                    class="w-full h-full {{ $seleccionado ? 'border-2 border-primary-500' : 'bg-white border border-gray-200' }} rounded flex items-center justify-center cursor-pointer"
+                                                >
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                                     </svg>
                                                 </div>
-                                            @elseif($seleccionado)
-                                                <!-- Slot seleccionado -->
-                                                <div class="w-full h-full border-2 border-primary-500 rounded cursor-pointer"></div>
                                             @else
                                                 <!-- Slot disponible -->
-                                                <div class="w-full h-full bg-white border border-gray-200 rounded cursor-pointer hover:bg-blue-50"></div>
+                                                <div
+                                                    wire:click="toggleSlot('{{ $time }}', '{{ $fecha }}', 'disponible')"
+                                                    class="w-full h-full {{ $seleccionado ? 'border-2 border-primary-500' : 'bg-white border border-gray-200 hover:bg-blue-50' }} rounded cursor-pointer"
+                                                ></div>
                                             @endif
                                         </div>
                                     </td>
@@ -123,15 +126,40 @@
 
         <!-- Panel lateral de información y configuraciones -->
         <div>
-            <!-- Espacio disponible -->
-            <div class="border border-primary-500 rounded-lg flex flex-col items-center justify-center h-64 mb-4">
-                <div class="mb-4 bg-white rounded-full p-4">
-                    <!-- Icono de calendario desde archivo SVG -->
-                    <img src="{{ asset('images/calendar.svg') }}" alt="Calendario" class="h-14 w-14">
+            <!-- Panel de información según el tipo de celda seleccionada -->
+            @if($selectedSlotStatus === 'bloqueado')
+                <!-- Espacio bloqueado -->
+                <div class="border border-primary-500 rounded-lg flex flex-col items-center justify-center h-64 mb-4">
+                    <div class="mb-4 bg-white rounded-full p-4">
+                        <!-- Icono de candado desde archivo SVG -->
+                        <img src="{{ asset('images/calendarBlock.svg') }}" alt="Bloqueado" class="h-8 w-8">
+                    </div>
+                    <h3 class="font-semibold text-primary-800 mb-2">Espacio No Disponible</h3>
+                    <p class="text-sm text-center text-gray-600">Este horario está bloqueado, no se</p>
+                    <p class="text-sm text-center text-gray-600 mb-4">puede reservar citas</p>
                 </div>
-                <h3 class="font-semibold text-primary-800 mb-2">Espacio disponible</h3>
-                <p class="text-sm text-center text-gray-600 mb-4">Aún no hay una cita reservada en este espacio</p>
-            </div>
+            @elseif($selectedSlotStatus === 'reservado')
+                <!-- Espacio reservado -->
+                <div class="border border-primary-500 rounded-lg flex flex-col items-center justify-center h-64 mb-4">
+                    <div class="mb-4 bg-white rounded-full p-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-14 w-14 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-primary-800 mb-2">Espacio Reservado</h3>
+                    <p class="text-sm text-center text-gray-600 mb-4">Este horario ya tiene una cita reservada</p>
+                </div>
+            @else
+                <!-- Espacio disponible (por defecto) -->
+                <div class="border border-primary-500 rounded-lg flex flex-col items-center justify-center h-64 mb-4">
+                    <div class="mb-4 bg-white rounded-full p-4">
+                        <!-- Icono de calendario desde archivo SVG -->
+                        <img src="{{ asset('images/calendar.svg') }}" alt="Calendario" class="h-14 w-14">
+                    </div>
+                    <h3 class="font-semibold text-primary-800 mb-2">Espacio disponible</h3>
+                    <p class="text-sm text-center text-gray-600 mb-4">Aún no hay una cita reservada en este espacio</p>
+                </div>
+            @endif
 
             <div class="flex flex-col bg-white rounded-lg shadow p-4">
             <!-- Configuraciones del calendario -->

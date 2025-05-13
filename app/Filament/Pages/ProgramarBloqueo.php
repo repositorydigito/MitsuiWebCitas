@@ -13,6 +13,7 @@ use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Textarea;
 use Carbon\Carbon;
 use Filament\Notifications\Notification;
+use App\Models\Local;
 
 class ProgramarBloqueo extends Page implements HasForms
 {
@@ -40,6 +41,15 @@ class ProgramarBloqueo extends Page implements HasForms
     public $comentarios;
     public $data = [];
 
+    // Errores de validación
+    public $errors = [
+        'local' => false,
+        'fechaInicio' => false,
+        'fechaFin' => false,
+        'horaInicio' => false,
+        'horaFin' => false,
+    ];
+
     public function mount($local = null): void
     {
         // Si se recibe un local, preseleccionarlo
@@ -52,23 +62,65 @@ class ProgramarBloqueo extends Page implements HasForms
 
     public function nextStep()
     {
-        // Validar el formulario antes de avanzar
-        $data = $this->form->getState();
+        // Resetear errores
+        $this->errors = [
+            'local' => false,
+            'fechaInicio' => false,
+            'fechaFin' => false,
+            'horaInicio' => false,
+            'horaFin' => false,
+        ];
+
+        // Validar campos requeridos
+        $hasErrors = false;
+
+        if (empty($this->data['local'])) {
+            $this->errors['local'] = true;
+            $hasErrors = true;
+        }
+
+        if (empty($this->data['fechaInicio'])) {
+            $this->errors['fechaInicio'] = true;
+            $hasErrors = true;
+        }
+
+        if (empty($this->data['fechaFin'])) {
+            $this->errors['fechaFin'] = true;
+            $hasErrors = true;
+        }
+
+        // Solo validar horas si no está marcado "Todo el día"
+        if (empty($this->data['todoDia']) || !$this->data['todoDia']) {
+            if (empty($this->data['horaInicio'])) {
+                $this->errors['horaInicio'] = true;
+                $hasErrors = true;
+            }
+
+            if (empty($this->data['horaFin'])) {
+                $this->errors['horaFin'] = true;
+                $hasErrors = true;
+            }
+        }
+
+        // Si hay errores, no avanzar al siguiente paso
+        if ($hasErrors) {
+            return;
+        }
 
         // Si está marcado "Todo el día", asegurarse de que los horarios sean los correctos
-        if ($data['todoDia']) {
-            $data['horaInicio'] = '08:00'; // 12:00 AM
-            $data['horaFin'] = '18:00';    // 12:00 PM
+        if (!empty($this->data['todoDia']) && $this->data['todoDia']) {
+            $this->data['horaInicio'] = '08:00'; // 8:00 AM
+            $this->data['horaFin'] = '18:00';    // 6:00 PM
         }
 
         // Guardar los datos del formulario
-        $this->local = $data['local'];
-        $this->fechaInicio = $data['fechaInicio'];
-        $this->fechaFin = $data['fechaFin'];
-        $this->horaInicio = $data['horaInicio'];
-        $this->horaFin = $data['horaFin'];
-        $this->todoDia = $data['todoDia'];
-        $this->comentarios = $data['comentarios'];
+        $this->local = $this->data['local'];
+        $this->fechaInicio = $this->data['fechaInicio'];
+        $this->fechaFin = $this->data['fechaFin'];
+        $this->horaInicio = $this->data['horaInicio'];
+        $this->horaFin = $this->data['horaFin'];
+        $this->todoDia = !empty($this->data['todoDia']) ? $this->data['todoDia'] : false;
+        $this->comentarios = !empty($this->data['comentarios']) ? $this->data['comentarios'] : '';
 
         // Avanzar al siguiente paso
         if ($this->currentStep < $this->totalSteps) {
@@ -133,15 +185,24 @@ class ProgramarBloqueo extends Page implements HasForms
         // Este método está vacío, pero es necesario para que funcione el wire:click="$refresh"
     }
 
+    public function debug()
+    {
+        // Método para depurar
+        dd([
+            'data' => $this->data,
+            'errors' => $this->errors,
+            'currentStep' => $this->currentStep,
+        ]);
+    }
+
     public function form(Form $form): Form
     {
         return $form
             ->schema([
                 Select::make('local')
-                    ->options([
-                        'local1' => 'La molina',
-                        'local2' => 'San Miguel',
-                    ])
+                    ->options(function() {
+                        return Local::getActivosParaSelector();
+                    })
                     ->placeholder('Elegir local')
                     ->required(),
 
