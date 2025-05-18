@@ -1,16 +1,16 @@
 <x-filament-panels::page>
-    <p class="text-gray-600 mb-6">Visualiza y gestiona las campañas.</p>
+    <p class="text-gray-600 mb-4">Visualiza y gestiona las campañas.</p>
 
     {{-- Filtros y búsqueda --}}
-    <div class="mb-6 flex flex-wrap items-end gap-4">
+    <div class="mb-4 flex flex-wrap items-end gap-4">
         {{-- Filtro de ciudad --}}
         <div class="w-auto">
-            <label for="ciudad" class="block text-sm font-medium text-gray-700 mb-1">Elegir ciudad</label>
+            <label for="ciudad" class="block text-sm font-medium text-gray-700 mb-2">Elegir ciudad</label>
             <select
                 id="ciudad"
                 wire:model.live="ciudadSeleccionada"
                 class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                style="min-width: 160px;"
+                style="max-width: 150px;"
             >
                 <option value="">Todos</option>
                 @foreach ($ciudades as $ciudad)
@@ -21,12 +21,12 @@
 
         {{-- Filtro de estado --}}
         <div class="w-auto">
-            <label for="estado" class="block text-sm font-medium text-gray-700 mb-1">Elegir estado</label>
+            <label for="estado" class="block text-sm font-medium text-gray-700 mb-2">Elegir estado</label>
             <select
                 id="estado"
                 wire:model.live="estadoSeleccionado"
                 class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                style="min-width: 160px;"
+
             >
                 <option value="">Todos</option>
                 @foreach ($estados as $estado)
@@ -37,23 +37,51 @@
 
         {{-- Filtro de fechas --}}
         <div class="w-auto">
-            <label for="fechas" class="block text-sm font-medium text-gray-700 mb-1">Rango de fechas</label>
-            <div class="relative">
-                <input
-                    type="text"
-                    id="fechas"
-                    wire:model="rangoFechas"
-                    placeholder=""
-                    class="w-auto border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500 datepicker"
-                    style="max-width: 220px;"
-                    autocomplete="off"
+            <label for="fechas" class="block text-sm font-medium text-gray-700 mb-2">Rango de fechas</label>
+            <div class="flex items-center gap-1">
+                <div class="relative">
+                    <input
+                        type="text"
+                        id="fechas"
+                        wire:model="rangoFechas"
+                        class="w-auto border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500 datepicker"
+                        style="max-width: 200px;"
+                        autocomplete="off"
+                        readonly
+                    >
+                </div>
+
+                {{-- Botón para aplicar el filtro --}}
+                <button
+                    type="button"
+                    wire:click="aplicarFiltroFechas"
+                    class="p-2 text-white bg-primary-600 hover:bg-primary-700 rounded-lg focus:outline-none"
+                    title="Aplicar filtro de fechas"
                 >
+                    <svg class="w-4 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </button>
+
+                {{-- Botón para limpiar el filtro --}}
+                @if(!empty($rangoFechas))
+                    <button
+                        type="button"
+                        wire:click="limpiarFiltroFechas"
+                        class="p-2 text-gray-500 hover:text-primary-600 focus:outline-none"
+                        title="Limpiar filtro de fechas"
+                    >
+                        <svg class="w-4 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                @endif
             </div>
         </div>
 
         {{-- Búsqueda --}}
         <div class="w-auto flex-grow">
-            <label for="busqueda" class="block text-sm font-medium text-gray-700 mb-1">Buscar por código o nombre</label>
+            <label for="busqueda" class="block text-sm font-medium text-gray-700 mb-2">Buscar por código o nombre</label>
             <div class="relative">
                 <input
                     type="text"
@@ -67,16 +95,15 @@
         {{-- Botones de acción --}}
         <div class="flex space-x-2 gap-4">
             {{-- Botón para cargar campañas --}}
-            <button
-                type="button"
-                wire:click="cargarCampanas"
+            <a
+                href="{{ \App\Filament\Pages\CargaCampanasPage::getUrl() }}"
                 class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
             >
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
                 </svg>
                 Cargar campañas
-            </button>
+            </a>
 
             {{-- Botón para crear campaña --}}
             <a
@@ -131,8 +158,12 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {{ $campana['nombre'] }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $campana['local'] }}
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                @if(is_array($campana['locales']) && count($campana['locales']) > 0)
+                                    {{ implode(', ', $campana['locales']) }}
+                                @else
+                                    -
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {{ $campana['fecha_inicio'] }}
@@ -149,7 +180,8 @@
                                 <div class="flex justify-center space-x-2 gap-4">
                                     {{-- Botón Ver detalle --}}
                                     <button
-                                        wire:click="verDetalle('{{ $campana['codigo'] }}')"
+                                        x-data="{}"
+                                        x-on:click="$wire.verDetalleJS('{{ $campana['codigo'] }}')"
                                         class="text-primary-600 hover:text-primary-900"
                                         title="Ver detalle"
                                     >
@@ -204,7 +236,7 @@
 
     {{-- Paginación --}}
     <div class="mt-4 flex justify-end">
-        {{ $this->campanasPaginadas->links('vendor.pagination.default') }}
+        {{ $this->campanasPaginadas->appends(request()->except('page'))->links('vendor.pagination.default') }}
     </div>
 
     {{-- Modal para ver detalle de campaña --}}
@@ -216,9 +248,7 @@
             <!-- Modal centrado -->
             <div class="flex items-center justify-center min-h-screen p-4">
                 <!-- Panel del modal -->
-                <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl mx-4 relative z-10"
-                     x-on:click.outside="$wire.cerrarModalDetalle()"
-                >
+                <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl mx-4 relative z-10">
                     <div class="p-6">
                         <div class="flex justify-between items-center mb-4">
                             <h2 class="text-lg font-semibold text-blue-900">Detalle de Campaña</h2>
@@ -268,7 +298,7 @@
                                         <div class="mb-4">
                                             <h3 class="text-base font-semibold leading-7 text-gray-900">Imagen</h3>
                                             <div class="mt-2 flex justify-center">
-                                                <img src="{{ $campanaDetalle['imagen'] }}" alt="Imagen de campaña" class="max-w-full h-auto rounded-lg" style="max-height: 150px;" onerror="this.onerror=null; this.src='https://via.placeholder.com/150'; console.log('Error al cargar imagen:', this.src)">
+                                                <img src="{{ $campanaDetalle['imagen'] }}" alt="Imagen de campaña" class="max-w-full h-auto rounded-lg" style="max-height: 150px;">
                                             </div>
                                         </div>
                                     @endif
@@ -330,6 +360,39 @@
             Livewire.hook('message.processed', (message, component) => {
                 initDatepicker();
             });
+
+            // Escuchar el evento mostrarNotificacion
+            Livewire.on('mostrarNotificacion', (data) => {
+                console.log('Mostrando notificación:', data);
+
+                // Usar la API de notificaciones de Filament
+                if (window.FilamentNotifications) {
+                    const notification = {
+                        title: data.titulo,
+                        body: data.mensaje,
+                    };
+
+                    switch (data.tipo) {
+                        case 'success':
+                            window.FilamentNotifications.success(notification);
+                            break;
+                        case 'error':
+                            window.FilamentNotifications.error(notification);
+                            break;
+                        case 'warning':
+                            window.FilamentNotifications.warning(notification);
+                            break;
+                        default:
+                            window.FilamentNotifications.info(notification);
+                    }
+                }
+            });
+
+            // Escuchar el evento refresh para actualizar la página
+            Livewire.on('refresh', () => {
+                console.log('Refrescando componente...');
+                Livewire.emit('$refresh');
+            });
         });
 
         // Inicializar el datepicker cuando Alpine.js inicialice el componente
@@ -353,22 +416,26 @@
                     dateFormat: "d/m/Y",
                     locale: "es",
                     rangeSeparator: " - ",
-                    altInput: false, // Desactivamos altInput para evitar problemas con Livewire
-                    allowInput: true,
+                    altInput: false,
+                    allowInput: false,
                     disableMobile: true,
+                    showMonths: 2,
+                    maxDate: new Date().fp_incr(365),
+                    minDate: new Date().fp_incr(-365),
                     onChange: function(selectedDates, dateStr, instance) {
-                        // Actualizar el valor en tiempo real
-                        if (selectedDates.length > 0) {
-                            window.livewire.find(datepickerEl.closest('[wire\\:id]').getAttribute('wire:id'))
-                                .set('rangoFechas', dateStr);
-                        }
+                        console.log('Fechas seleccionadas:', dateStr);
                     },
                     onClose: function(selectedDates, dateStr, instance) {
-                        if (selectedDates.length > 0) {
-                            // Enviar el valor al componente Livewire y aplicar el filtro
-                            window.livewire.find(datepickerEl.closest('[wire\\:id]').getAttribute('wire:id'))
-                                .call('aplicarFiltroFechas');
-                        }
+                        console.log('Datepicker cerrado con valor:', dateStr);
+
+                        // Obtener el ID del componente Livewire
+                        const componentId = datepickerEl.closest('[wire\\:id]').getAttribute('wire:id');
+
+                        // Actualizar el valor en el componente Livewire
+                        window.livewire.find(componentId).set('rangoFechas', dateStr);
+
+                        // Aplicar el filtro de fechas
+                        window.livewire.find(componentId).call('aplicarFiltroFechasDirecto', dateStr);
                     }
                 });
 

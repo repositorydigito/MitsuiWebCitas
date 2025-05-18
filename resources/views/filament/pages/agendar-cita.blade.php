@@ -1,7 +1,10 @@
 <x-filament-panels::page>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
     <div class="bg-white rounded-lg shadow-sm p-6">
         <!-- Indicador de progreso -->
-        <div class="flex justify-center items-center mb-8">
+        <div class="flex justify-center items-center mb-4">
             <div class="flex items-center">
                 @for ($i = 1; $i <= $totalPasos; $i++)
                     <div class="flex items-center">
@@ -39,22 +42,22 @@
     </div>
     <div>
         <input
-            type="email"
-            id="emailCliente"
-            wire:model="emailCliente"
-            value="pablo@mitsui.com.pe"
-            placeholder="Email"
+            type="text"
+            id="apellidoCliente"
+            wire:model="apellidoCliente"
+            value="RODRIGUEZ MENDOZA"
+            placeholder="Apellidos"
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50"
             readonly
         >
     </div>
     <div>
         <input
-            type="text"
-            id="apellidoCliente"
-            wire:model="apellidoCliente"
-            value="RODRIGUEZ MENDOZA"
-            placeholder="Apellidos"
+            type="email"
+            id="emailCliente"
+            wire:model="emailCliente"
+            value="pablo@mitsui.com.pe"
+            placeholder="Email"
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50"
             readonly
         >
@@ -79,13 +82,14 @@
             <h2 class="text-xl font-semibold mb-4">2. Elige el local</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @foreach ($locales as $key => $local)
-                    <div class="flex items-start p-3 border rounded-lg {{ $localSeleccionado == $key ? 'border-primary-500 bg-primary-50' : 'border-gray-300' }}">
+                    <div class="flex items-center p-3 border rounded-lg {{ $localSeleccionado == $key ? 'border-primary-500 bg-primary-50' : 'border-gray-300' }}">
                         <div class="flex items-center h-5 mt-1 p-2">
                             <input type="radio" id="local-{{ $key }}" name="local" value="{{ $key }}" wire:model="localSeleccionado" class="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500">
                         </div>
                         <div class="ml-3 text-sm">
                             <label for="local-{{ $key }}" class="font-medium text-gray-700">{{ $local['nombre'] }}</label>
                             <p class="text-gray-500 text-xs">{{ $local['direccion'] }}</p>
+                            <p class="text-gray-500 text-xs">{{ $local['telefono'] }}</p>
                         </div>
                         <div class="ml-auto flex space-x-2 gap-4">
                             <!-- Botón 1: Maps -->
@@ -192,11 +196,36 @@
                             <p class="text-xs mt-2">Esta fecha puede estar bloqueada o todos los horarios están ocupados</p>
                         </div>
                     @else
-                        <div class="flex flex-wrap -mx-1">
+                        <style>
+                            .horarios-grid {
+                                display: grid;
+                                grid-template-columns: repeat(3, 1fr);
+                                gap: 8px;
+                            }
+
+                            .horario-item {
+                                cursor: pointer;
+                            }
+
+                            .horario-card {
+                                width: 100%;
+                                height: 48px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                text-align: center;
+                                border-radius: 0.5rem;
+                                border-width: 1px;
+                                font-size: 0.75rem;
+                                padding: 0.25rem;
+                            }
+                        </style>
+
+                        <div class="horarios-grid">
                             @foreach($horariosDisponibles as $hora)
-                                <div class="w-1/3 px-1 mb-2 cursor-pointer flex-shrink-0">
+                                <div class="horario-item">
                                     <div
-                                        class="w-full text-xs sm:text-sm border rounded-lg p-3 text-center h-12 flex items-center justify-center {{ $horaSeleccionada === $hora ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600' }}"
+                                        class="horario-card {{ $horaSeleccionada === $hora ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600' }}"
                                         wire:click="seleccionarHora('{{ $hora }}')"
                                     >
                                         <span>{{ $hora }}</span>
@@ -216,25 +245,6 @@
                             </div>
                         @endif
                     @endif
-                </div>
-            </div>
-
-            <!-- Resumen de selección -->
-            <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <h3 class="text-lg font-medium text-primary-800 mb-2">Resumen de selección</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Fecha seleccionada</label>
-                        <div class="mt-1 p-2 bg-white border border-gray-300 rounded-md">
-                            {{ $fechaSeleccionada ?: 'No seleccionada' }}
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Hora seleccionada</label>
-                        <div class="mt-1 p-2 bg-white border border-gray-300 rounded-md">
-                            {{ $horaSeleccionada ?: 'No seleccionada' }}
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -344,69 +354,156 @@
 
         <!-- Servicios adicionales -->
         <div class="mb-4">
-            <h2 class="text-xl font-semibold mb-4">5. Campañas y promociones disponibles (opcional)</h2>
+            <h2 class="text-xl font-semibold mb-4">5. Elige un servicio adicional (opcional)</h2>
 
-            <!-- Servicios adicionales tradicionales ocultos por solicitud del cliente -->
-            <!-- Solo se mostrarán las campañas -->
+            <!-- Estilos para el carrusel -->
+            <style>
+                .carousel-container {
+                    position: relative;
+                    width: 100%;
+                    overflow: hidden;
+                }
+
+                .carousel-items {
+                    display: flex;
+                    overflow-x: auto;
+                    scroll-behavior: smooth;
+                    -webkit-overflow-scrolling: touch;
+                    scrollbar-width: none;
+                }
+
+                .carousel-items::-webkit-scrollbar {
+                    display: none;
+                }
+
+                .carousel-item {
+                    flex: 0 0 100%;
+                    width: 100%;
+                    padding: 0 8px;
+                    box-sizing: border-box;
+                }
+
+                @media (min-width: 768px) {
+                    .carousel-item {
+                        flex: 0 0 33.333%;
+                        width: 33.333%;
+                    }
+                }
+
+                .carousel-nav {
+                    position: absolute;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    width: 40px;
+                    height: 40px;
+                    background: white;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                    cursor: pointer;
+                    z-index: 10;
+                    border: 1px solid #e5e7eb;
+                }
+
+                .carousel-nav-left {
+                    left: 5px;
+                }
+
+                .carousel-nav-right {
+                    right: 5px;
+                }
+            </style>
 
             <!-- Campañas disponibles -->
             @if(count($campanasDisponibles) > 0)
                 <div class="mt-2">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        @foreach($campanasDisponibles as $campana)
-                            <div class="relative" x-data="{ selected: {{ in_array('campana_'.$campana['id'], $serviciosAdicionales) ? 'true' : 'false' }} }">
-                                <div
-                                    class="border rounded-lg overflow-hidden cursor-pointer"
-                                    :class="selected ? 'border-primary-500 ring-2 ring-primary-500' : 'border-gray-300'"
-                                    @click="
-                                        selected = !selected;
-                                        if (selected) {
-                                            $wire.serviciosAdicionales = [...$wire.serviciosAdicionales, 'campana_{{ $campana['id'] }}'];
-                                        } else {
-                                            $wire.serviciosAdicionales = $wire.serviciosAdicionales.filter(item => item !== 'campana_{{ $campana['id'] }}');
-                                        }
-                                    "
-                                >
-                                    <img src="{{ $campana['imagen'] }}" alt="{{ $campana['titulo'] }}" class="w-full h-32 object-cover" loading="lazy">
-                                    <div class="p-2" :class="selected ? 'bg-primary-100' : ''">
-                                        <h4 class="text-sm font-medium" :class="selected ? 'text-primary-800' : ''">{{ $campana['titulo'] }}</h4>
-                                        <p class="text-xs text-gray-400 mt-1">
-                                            @if(isset($campana['fecha_fin']))
-                                                Válido hasta: {{ \Carbon\Carbon::parse($campana['fecha_fin'])->format('d/m/Y') }}
-                                            @else
-                                                Campaña permanente
-                                            @endif
-                                        </p>
-                                    </div>
+                    <div x-data="{
+                        activeSlide: 0,
+                        totalSlides: {{ count($campanasDisponibles) }},
+                        slidesPerView: window.innerWidth < 768 ? 1 : 3,
+
+                        init() {
+                            window.addEventListener('resize', () => {
+                                this.slidesPerView = window.innerWidth < 768 ? 1 : 3;
+                            });
+                        },
+
+                        next() {
+                            if (this.activeSlide < this.totalSlides - this.slidesPerView) {
+                                this.activeSlide++;
+                                this.scrollToSlide();
+                            }
+                        },
+
+                        prev() {
+                            if (this.activeSlide > 0) {
+                                this.activeSlide--;
+                                this.scrollToSlide();
+                            }
+                        },
+
+                        scrollToSlide() {
+                            const container = this.$refs.carousel;
+                            const slideWidth = container.offsetWidth / this.slidesPerView;
+                            container.scrollTo({
+                                left: this.activeSlide * slideWidth,
+                                behavior: 'smooth'
+                            });
+                        }
+                    }" x-init="init()" class="carousel-container">
+                        <div x-ref="carousel" class="carousel-items">
+                            @foreach($campanasDisponibles as $index => $campana)
+                                <div class="carousel-item" x-data="{ selected: {{ in_array('campana_'.$campana['id'], $serviciosAdicionales) ? 'true' : 'false' }} }">
                                     <div
-                                        class="absolute top-2 left-2 bg-primary-500 text-white rounded-full p-1"
-                                        x-show="selected"
-                                        style="display: none;"
+                                        class="border rounded-lg overflow-hidden cursor-pointer"
+                                        :class="selected ? 'border-primary-500 ring-2 ring-primary-500' : 'border-gray-300'"
+                                        @click="
+                                            selected = !selected;
+                                            if (selected) {
+                                                $wire.serviciosAdicionales = [...$wire.serviciosAdicionales, 'campana_{{ $campana['id'] }}'];
+                                            } else {
+                                                $wire.serviciosAdicionales = $wire.serviciosAdicionales.filter(item => item !== 'campana_{{ $campana['id'] }}');
+                                            }
+                                        "
                                     >
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                        </svg>
+                                        <img src="{{ $campana['imagen'] }}" alt="{{ $campana['titulo'] }}" class="w-full h-32 object-cover" loading="lazy">
+                                        <div class="p-2" :class="selected ? 'bg-primary-100' : ''">
+                                            <h4 class="text-sm font-medium" :class="selected ? 'text-primary-800' : ''">{{ $campana['titulo'] }}</h4>
+                                            <p class="text-xs text-gray-400 mt-1">
+                                                @if(isset($campana['fecha_fin']))
+                                                    Válido hasta: {{ \Carbon\Carbon::parse($campana['fecha_fin'])->format('d/m/Y') }}
+                                                @else
+                                                    Campaña permanente
+                                                @endif
+                                            </p>
+                                        </div>
+                                        <div
+                                            class="absolute top-2 left-2 bg-primary-500 text-white rounded-full p-1"
+                                            x-show="selected"
+                                            style="display: none;"
+                                        >
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                            </svg>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        @endforeach
-                    </div>
+                            @endforeach
+                        </div>
 
-                    <!-- Información de depuración -->
-                    <div class="mt-4 text-xs text-gray-400">
-                        Total de campañas disponibles: {{ count($campanasDisponibles) }}
-
-                        @if(app()->environment('local'))
-                            <div class="mt-2 p-2 bg-gray-100 rounded text-xs">
-                                <p class="font-semibold">Información de depuración (solo visible en entorno local):</p>
-                                @foreach($campanasDisponibles as $index => $campana)
-                                    <div class="mt-1">
-                                        <p>Campaña #{{ $index+1 }}: {{ $campana['titulo'] }}</p>
-                                        <p>URL de imagen: <a href="{{ $campana['imagen'] }}" target="_blank" class="text-blue-500 underline">{{ $campana['imagen'] }}</a></p>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @endif
+                        <!-- Botones de navegación -->
+                        <div @click="prev()" x-show="activeSlide > 0" class="carousel-nav carousel-nav-left">
+                            <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                        </div>
+                        <div @click="next()" x-show="activeSlide < totalSlides - slidesPerView" class="carousel-nav carousel-nav-right">
+                            <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </div>
                     </div>
                 </div>
             @endif
@@ -481,8 +578,8 @@
                         <tr>
                             <td colspan="2" class="pt-4 pb-2">
                                 <h3 class="font-medium text-success-700 text-lg border-b border-gray-200 pb-1 mb-2">Datos del vehículo</h3>
-                                <!-- Debug: {{ json_encode($vehiculo) }} -->
-                                <div class="text-xs text-gray-500">ID: {{ $vehiculo['id'] ?? 'No disponible' }}</div>
+                                <!-- Debug: {{ json_encode($vehiculo) }}
+                                <div class="text-xs text-gray-500">ID: {{ $vehiculo['id'] ?? 'No disponible' }}</div>-->
                             </td>
                         </tr>
                         <tr>
@@ -526,7 +623,19 @@
                             <td class="py-2 pr-4 w-1/3">
                                 <span class="font-medium text-primary-800">Servicio</span>
                             </td>
-                            <td class="py-2 text-gray-800">{{ $servicioSeleccionado }}</td>
+                            <td class="py-2 text-gray-800">
+                                @if($servicioSeleccionado == 'Mantenimiento periódico')
+                                    Mantenimiento periódico
+                                @elseif($servicioSeleccionado == 'Consultas / otros 1')
+                                    Campañas / otros
+                                @elseif($servicioSeleccionado == 'Consultas / otros 2')
+                                    Reparación
+                                @elseif($servicioSeleccionado == 'Consultas / otros 3')
+                                    Llamado a revisión
+                                @else
+                                    {{ $servicioSeleccionado }}
+                                @endif
+                            </td>
                         </tr>
 
                         @if ($servicioSeleccionado == 'Mantenimiento periódico')
@@ -674,7 +783,19 @@
                             <td class="py-2 pr-4 w-1/3">
                                 <span class="font-medium text-primary-800">Servicio</span>
                             </td>
-                            <td class="py-2 text-gray-800">{{ $servicioSeleccionado }}</td>
+                            <td class="py-2 text-gray-800">
+                                @if($servicioSeleccionado == 'Mantenimiento periódico')
+                                    Mantenimiento periódico
+                                @elseif($servicioSeleccionado == 'Consultas / otros 1')
+                                    Campañas / otros
+                                @elseif($servicioSeleccionado == 'Consultas / otros 2')
+                                    Reparación
+                                @elseif($servicioSeleccionado == 'Consultas / otros 3')
+                                    Llamado a revisión
+                                @else
+                                    {{ $servicioSeleccionado }}
+                                @endif
+                            </td>
                         </tr>
 
                         @if ($servicioSeleccionado == 'Mantenimiento periódico')
@@ -717,6 +838,152 @@
                 <button type="button" wire:click="cerrarYVolverACitas" class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-danger-500">
                     Cerrar
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Pop-ups -->
+    <div x-data="{ show: @entangle('mostrarModalPopups') }" x-show="show" x-cloak class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Fondo oscuro -->
+            <div x-show="show" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 transition-opacity">
+                <div class="absolute inset-0 bg-black/50"></div>
+            </div>
+
+            <!-- Modal -->
+            <div x-show="show" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <!-- Botón de cerrar -->
+                <div class="absolute top-0 right-0 p-4">
+                    <button @click="show = false" wire:click="$refresh; $redirect('{{ \App\Filament\Pages\Vehiculos::getUrl() }}')" type="button" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Contenido del modal -->
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                                ¿Deseas conocer nuestros servicios?
+                            </h3>
+                            <p class="text-sm text-gray-500 mb-4">
+                                Recibe información sobre nuestros servicios. Elige uno y
+                            </p>
+                            <p class="text-sm text-gray-500 mb-4">
+                                recibirás un mensaje por whatsapp.
+                            </p>
+
+                            <!-- Lista de pop-ups -->
+                            <div class="mt-4 space-y-4">
+                                @foreach($popupsDisponibles as $popup)
+                                    <div class="flex items-center border rounded-lg p-2 {{ in_array($popup['id'], $popupsSeleccionados) ? 'border-primary-500 bg-primary-50' : 'border-gray-300' }}">
+                                        <div class="flex items-center h-5">
+                                            <input
+                                                type="checkbox"
+                                                id="popup-{{ $popup['id'] }}"
+                                                wire:click="togglePopup({{ $popup['id'] }})"
+                                                {{ in_array($popup['id'], $popupsSeleccionados) ? 'checked' : '' }}
+                                                class="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                                            >
+                                        </div>
+                                        <div class="ml-3 text-sm flex-grow">
+                                            <label for="popup-{{ $popup['id'] }}" class="font-medium text-gray-700">{{ $popup['nombre'] }}</label>
+                                        </div>
+                                        <div>
+                                            <img src="{{ $popup['imagen'] }}" alt="{{ $popup['nombre'] }}" class="h-24 w-32 object-contain">
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones del modal -->
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button wire:click="solicitarInformacion" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Solicitar información
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Resumen de Pop-ups -->
+    <div x-data="{ show: @entangle('mostrarModalResumenPopups') }" x-show="show" x-cloak class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Fondo oscuro -->
+            <div x-show="show" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 transition-opacity">
+                <div class="absolute inset-0 bg-black/50"></div>
+            </div>
+
+            <!-- Modal -->
+            <div x-show="show" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <!-- Botón de cerrar -->
+                <div class="absolute top-0 right-0 px-4 pt-4">
+                    <button @click="show = false" wire:click="cerrarResumen" type="button" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Contenido del modal -->
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4 text-center">
+                                Resumen
+                            </h3>
+
+                            <!-- Mensaje de éxito -->
+                            <div class="bg-green-100 border-l-4 border-green-500 text-primary-600 mb-4 pt-4">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-5 w-5 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm">Datos guardados con éxito</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p class="text-sm text-gray-700 mb-1 text-center">
+                                Pronto serás contactado por whatsapp para recibir
+                            </p>
+                            <p class="text-sm text-gray-700 mb-4 text-center">
+                                más información sobre los siguientes servicios.
+                            </p>
+
+                            <!-- Lista de pop-ups seleccionados -->
+                            <div class="mt-4 space-y-4">
+                                @foreach($popupsDisponibles as $popup)
+                                    @if(in_array($popup['id'], $popupsSeleccionados))
+                                        <div class="flex items-center border rounded-lg p-2 border-gray-300">
+                                            <div class="ml-3 text-sm flex-grow">
+                                                <span class="font-medium text-gray-700">{{ $popup['nombre'] }}</span>
+                                            </div>
+                                            <div class="ml-auto">
+                                                <img src="{{ $popup['imagen'] }}" alt="{{ $popup['nombre'] }}" class="h-24 w-32 object-contain">
+                                            </div>
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones del modal -->
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button wire:click="cerrarResumen" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cerrar
+                    </button>
+                </div>
             </div>
         </div>
     </div>

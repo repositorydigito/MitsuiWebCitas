@@ -138,6 +138,9 @@ return [
         \App\Providers\VehiculosServiceProvider::class,
         \App\Providers\FilamentServiceProvider::class,
         \App\Providers\C4CServiceProvider::class,
+        \App\Providers\LivewireServiceProvider::class,
     ])->toArray(),
+
+
 
 ];

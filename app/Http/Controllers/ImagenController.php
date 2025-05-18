@@ -27,18 +27,28 @@ class ImagenController extends Controller
             $rutaCompleta = $imagen->ruta;
             Log::info("[ImagenController] Ruta completa de la imagen: {$rutaCompleta}");
 
+            // Normalizar la ruta para evitar problemas con separadores
+            $rutaNormalizada = str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $rutaCompleta);
+            Log::info("[ImagenController] Ruta normalizada: {$rutaNormalizada}");
+
+            // Obtener el nombre del archivo
+            $nombreArchivo = basename($rutaNormalizada);
+            Log::info("[ImagenController] Nombre del archivo: {$nombreArchivo}");
+
             // Verificar en múltiples ubicaciones posibles
             $rutasAVerificar = [
-                // Ruta específica para las imágenes de campañas
-                storage_path('app/private/public/images/campanas/' . basename($rutaCompleta)),
-                // Ruta completa en storage
-                storage_path('app/' . $rutaCompleta),
-                // Ruta en storage/private
-                storage_path('app/private/' . $rutaCompleta),
+                // Ruta específica para las imágenes de campañas (con separadores correctos)
+                storage_path('app' . DIRECTORY_SEPARATOR . 'private' . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'campanas' . DIRECTORY_SEPARATOR . $nombreArchivo),
+                // Ruta completa en storage (con separadores correctos)
+                storage_path('app' . DIRECTORY_SEPARATOR . $rutaNormalizada),
+                // Ruta en storage/private (con separadores correctos)
+                storage_path('app' . DIRECTORY_SEPARATOR . 'private' . DIRECTORY_SEPARATOR . $rutaNormalizada),
+                // Ruta en storage/private/public/images/campanas (con nombre de archivo)
+                storage_path('app' . DIRECTORY_SEPARATOR . 'private' . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'campanas' . DIRECTORY_SEPARATOR . $nombreArchivo),
                 // Ruta en public
-                public_path($rutaCompleta),
+                public_path($rutaNormalizada),
                 // Ruta directa
-                $rutaCompleta
+                $rutaNormalizada
             ];
 
             foreach ($rutasAVerificar as $ruta) {

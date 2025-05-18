@@ -210,4 +210,38 @@ class Vehiculos extends Page
     {
         return 'vendor.pagination.default';
     }
+
+    public function eliminarVehiculo($vehiculoId): void
+    {
+        try {
+            // Buscar el vehículo en la base de datos
+            $vehiculo = Vehicle::where('vehicle_id', $vehiculoId)->first();
+
+            if ($vehiculo) {
+                // Eliminar el vehículo (soft delete)
+                $vehiculo->delete();
+
+                \Filament\Notifications\Notification::make()
+                    ->title('Vehículo retirado')
+                    ->body("El vehículo ha sido retirado correctamente.")
+                    ->success()
+                    ->send();
+
+                // Recargar los vehículos
+                $this->cargarVehiculos();
+            } else {
+                \Filament\Notifications\Notification::make()
+                    ->title('Error')
+                    ->body("No se encontró el vehículo con ID: {$vehiculoId}")
+                    ->danger()
+                    ->send();
+            }
+        } catch (\Exception $e) {
+            \Filament\Notifications\Notification::make()
+                ->title('Error')
+                ->body("Ha ocurrido un error al retirar el vehículo: " . $e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
 }

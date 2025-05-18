@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             ServiceTypeSeeder::class,
             AdditionalServiceSeeder::class,
             VehicleSeeder::class,
+            PopUpSeeder::class,
         ]);
     }
 }

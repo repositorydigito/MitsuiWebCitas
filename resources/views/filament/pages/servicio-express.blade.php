@@ -2,16 +2,29 @@
 <div class="flex items-center justify-between mb-4">
     <p class="text-gray-600">Registra los vehículos que son parte de servicio Express.</p>
 
-    <button
-        type="button"
-        wire:click="registrarVehiculo"
-        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-    >
-        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-        </svg>
-        Registrar vehículo
-    </button>
+    <div class="flex space-x-4 gap-4">
+        <button
+            type="button"
+            wire:click="descargarPlantilla"
+            class="inline-flex items-center px-4 py-2 text-sm font-medium text-primary-600 bg-white border border-primary-600 rounded-lg hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+        >
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+            </svg>
+            Descargar plantilla
+        </button>
+
+        <button
+            type="button"
+            wire:click="registrarVehiculo"
+            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+        >
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Registrar vehículo
+        </button>
+    </div>
 </div>
 
 
@@ -62,22 +75,24 @@
                                 <div class="flex justify-center items-center gap-6">
                                     <button
                                         wire:click="editar({{ $vehiculo['id'] }})"
-                                        class="text-primary-600 hover:text-primary-900"
+                                        class="text-primary-600 hover:text-primary-900 flex"
                                         title="Editar"
                                     >
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                         </svg>
+                                        Editar
                                     </button>
 
                                     <button
                                         wire:click="eliminar({{ $vehiculo['id'] }})"
-                                        class="text-primary-600 hover:text-primary-900"
+                                        class="text-primary-600 hover:text-primary-900 flex"
                                         title="Eliminar"
                                     >
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                         </svg>
+                                        Eliminar
                                     </button>
 
                                     <div class="inline-flex items-center">
@@ -146,7 +161,7 @@
                             Registrar vehículos
                         </h3>
                         <div class="w-full">
-                            <p class="text-sm text-gray-700 text-center mb-6">
+                            <p class="text-sm text-gray-700 text-center mb-4">
                                 Selecciona el archivo xlsx con el listado de modelos para realizar una carga masiva.
                             </p>
 
@@ -158,7 +173,13 @@
                                     </div>
                                     <label for="file-upload" class="cursor-pointer bg-primary-600 text-white px-4 py-2 rounded-r-md hover:bg-primary-700">
                                         Seleccionar archivo
-                                        <input id="file-upload" type="file" wire:model="archivoExcel" class="hidden" accept=".xlsx,.xls" />
+                                        <input
+                                            id="file-upload"
+                                            type="file"
+                                            wire:model.live="archivoExcel"
+                                            class="hidden"
+                                            accept=".xlsx,.xls"
+                                        />
                                     </label>
                                 </div>
 
@@ -169,6 +190,115 @@
                                     class="w-full sm:w-1/2 inline-flex justify-center items-center px-4 py-3 bg-primary-600 text-white font-medium rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                                 >
                                     Registrar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Modal de Edición -->
+    @if($isEditModalOpen)
+    <div class="fixed inset-0 z-[9999] overflow-hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <!-- Overlay de fondo oscuro (clic para cerrar) -->
+        <div class="fixed inset-0 bg-black/50" aria-hidden="true" wire:click="cerrarModalEdicion"></div>
+
+        <!-- Contenedor para centrar vertical y horizontalmente -->
+        <div class="flex items-center justify-center min-h-screen px-4 py-6 text-center">
+
+            <!-- Modal -->
+            <div class="relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all max-w-lg w-full z-[9999]" @click.stop>
+                <!-- Contenido del modal -->
+                <div class="bg-white px-6 pt-6 pb-6 relative">
+                    <!-- Botón de cerrar en la esquina superior derecha -->
+                    <div class="absolute top-0 right-0 pt-3 pr-3 z-[10000]">
+                        <button type="button" wire:click="cerrarModalEdicion" class="bg-white rounded-md text-gray-600 hover:text-gray-900 focus:outline-none">
+                            <span class="sr-only">Cerrar</span>
+                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="flex flex-col items-center">
+                        <h3 class="text-xl font-bold text-primary-600 text-center mb-4" id="modal-title">
+                            Editar vehículo
+                        </h3>
+                        <div class="w-full">
+                            <div class="flex flex-col space-y-4">
+                                <!-- Campo Modelo -->
+                                <div class="flex flex-col">
+                                    <label for="modelo" class="text-sm font-medium text-gray-700 mb-1">Modelo</label>
+                                    <input
+                                        type="text"
+                                        id="modelo"
+                                        wire:model.live="vehiculoEnEdicion.modelo"
+                                        class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                        placeholder="Ingrese el modelo"
+                                    >
+                                </div>
+
+                                <!-- Campo Marca -->
+                                <div class="flex flex-col">
+                                    <label for="marca" class="text-sm font-medium text-gray-700 mb-1">Marca</label>
+                                    <input
+                                        type="text"
+                                        id="marca"
+                                        wire:model.live="vehiculoEnEdicion.marca"
+                                        class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                        placeholder="Ingrese la marca"
+                                    >
+                                </div>
+
+                                <!-- Campo Año -->
+                                <div class="flex flex-col">
+                                    <label for="ano" class="text-sm font-medium text-gray-700 mb-1">Año</label>
+                                    <input
+                                        type="text"
+                                        id="ano"
+                                        wire:model.live="vehiculoEnEdicion.ano"
+                                        class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                        placeholder="Ingrese el año"
+                                    >
+                                </div>
+
+                                <!-- Campo Mantenimiento -->
+                                <div class="flex flex-col">
+                                    <label for="mantenimiento" class="text-sm font-medium text-gray-700 mb-1">Mantenimiento</label>
+                                    <input
+                                        type="text"
+                                        id="mantenimiento"
+                                        wire:model.live="vehiculoEnEdicion.mantenimiento"
+                                        class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                        placeholder="Ingrese el mantenimiento"
+                                    >
+                                </div>
+
+                                <!-- Campo Local -->
+                                <div class="flex flex-col">
+                                    <label for="local" class="text-sm font-medium text-gray-700 mb-1">Local</label>
+                                    <select
+                                        id="local"
+                                        wire:model.live="vehiculoEnEdicion.local"
+                                        class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                    >
+                                        <option value="">Seleccione un local</option>
+                                        @foreach($localesDisponibles as $codigo => $nombre)
+                                            <option value="{{ $nombre }}">{{ $nombre }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <!-- Botón de guardar -->
+                                <button
+                                    type="button"
+                                    wire:click="guardarCambios"
+                                    class="w-full inline-flex justify-center items-center px-4 py-3 bg-primary-600 text-white font-medium rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 mt-4"
+                                >
+                                    Guardar cambios
                                 </button>
                             </div>
                         </div>

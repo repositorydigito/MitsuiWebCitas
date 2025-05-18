@@ -1,3 +1,7 @@
+@php
+    use Illuminate\Support\Str;
+@endphp
+
 <x-filament-panels::page>
     <h3>Selecciona el vehículo para agendar una cita</h3>
 
@@ -15,7 +19,7 @@
                     >
                 </div>
             </div>
-            
+
             <div class="flex gap-2">
                 <button type="button" class="flex-1 inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-primary-500 bg-white border border-primary-500 rounded-lg hover:bg-blue-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1">
                     <svg class="w-4 h-4 mr-1 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="currentColor">
@@ -136,7 +140,7 @@
                     @endphp
 
                     @if($currentPaginator && $currentPaginator->total() > 0)
-                        
+
                     {{-- Vista móvil: tarjetas --}}
                         <div class="lg:hidden space-y-4 mb-4">
                             @foreach ($currentPaginator->items() as $vehiculo)
@@ -146,6 +150,12 @@
                                             <div class="h-16 w-20 rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center border border-gray-200 dark:border-gray-600 mr-3">
                                                 @if(isset($vehiculo['foto_url']))
                                                     <img src="{{ $vehiculo['foto_url'] }}" alt="Vehículo {{ $vehiculo['modver'] }}" class="h-full w-full object-cover">
+                                                @elseif(Str::contains($vehiculo['modver'], 'COROLLA CROSS'))
+                                                    <img src="{{ asset('images/CorollaCross.jpeg') }}" alt="Vehículo {{ $vehiculo['modver'] }}" class="h-full w-full object-cover">
+                                                @elseif(Str::contains($vehiculo['modver'], 'ETIOS'))
+                                                    <img src="{{ asset('images/Etios.jpeg') }}" alt="Vehículo {{ $vehiculo['modver'] }}" class="h-full w-full object-cover">
+                                                @elseif(Str::contains($vehiculo['modver'], 'YARIS CROSS'))
+                                                    <img src="{{ asset('images/YarisCross.jpeg') }}" alt="Vehículo {{ $vehiculo['modver'] }}" class="h-full w-full object-cover">
                                                 @else
                                                     <div class="text-center p-1">
                                                         <img src="{{ asset('images/no-image.svg') }}" alt="Sin imagen" class="h-10 w-10 mx-auto">
@@ -173,7 +183,10 @@
                                                 </svg>
                                                 Ver detalle
                                             </a>
-                                            <button type="button" class="gap-1 inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium text-primary-500 bg-white border border-primary-500 rounded hover:bg-danger-50 focus:ring-2 focus:ring-danger-500 focus:ring-offset-1">
+                                            <button
+                                                wire:click="eliminarVehiculo('{{ $vehiculo['vhclie'] }}')"
+                                                onclick="return confirm('¿Estás seguro de que deseas retirar este vehículo?')"
+                                                class="gap-1 inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium text-primary-500 bg-white border border-primary-500 rounded hover:bg-danger-50 focus:ring-2 focus:ring-danger-500 focus:ring-offset-1">
                                                 <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                                     <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
                                                 </svg>
@@ -225,11 +238,17 @@
                                                 <div class="h-14 w-16 rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center border border-gray-200 dark:border-gray-600">
                                                     @if(isset($vehiculo['foto_url']))
                                                         <img src="{{ $vehiculo['foto_url'] }}" alt="Vehículo {{ $vehiculo['modver'] }}" class="h-full w-full object-cover">
+                                                    @elseif(Str::contains($vehiculo['modver'], 'COROLLA CROSS'))
+                                                        <img src="{{ asset('images/CorollaCross.jpeg') }}" alt="Vehículo {{ $vehiculo['modver'] }}" class="h-full w-full object-cover">
+                                                    @elseif(Str::contains($vehiculo['modver'], 'ETIOS'))
+                                                        <img src="{{ asset('images/Etios.jpeg') }}" alt="Vehículo {{ $vehiculo['modver'] }}" class="h-full w-full object-cover">
+                                                    @elseif(Str::contains($vehiculo['modver'], 'YARIS CROSS'))
+                                                        <img src="{{ asset('images/YarisCross.jpeg') }}" alt="Vehículo {{ $vehiculo['modver'] }}" class="h-full w-full object-cover">
                                                     @else
                                                     <div class="text-center p-1">
-                                                    <img src="{{ asset('images/no-image.svg') }}" alt="Sin imagen" class="h-10 w-10 mx-auto">
-                                                    <span class="text-xs text-gray-500 dark:text-gray-400 block">Sin foto</span>
-                                                </div>
+                                                        <img src="{{ asset('images/no-image.svg') }}" alt="Sin imagen" class="h-10 w-10 mx-auto">
+                                                        <span class="text-xs text-gray-500 dark:text-gray-400 block">Sin foto</span>
+                                                    </div>
                                                     @endif
                                                 </div>
                                             </div>
@@ -264,7 +283,10 @@
                                                     </svg>
                                                     Ver detalle
                                                 </a>
-                                                <button type="button" class="inline-flex items-center px-2 py-1 text-sm font-medium text-primary-500 bg-white rounded hover:bg-danger-50 focus:ring-2 focus:ring-danger-500 focus:ring-offset-1">
+                                                <button
+                                                    wire:click="eliminarVehiculo('{{ $vehiculo['vhclie'] }}')"
+                                                    onclick="return confirm('¿Estás seguro de que deseas retirar este vehículo?')"
+                                                    class="inline-flex items-center px-2 py-1 text-sm font-medium text-primary-500 bg-white rounded hover:bg-danger-50 focus:ring-2 focus:ring-danger-500 focus:ring-offset-1">
                                                     <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                                         <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
                                                     </svg>

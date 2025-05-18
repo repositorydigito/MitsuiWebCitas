@@ -61,7 +61,7 @@ class AgendarCita extends Page
     public array $horariosDisponibles = [];
 
     // Servicios adicionales
-    public array $serviciosAdicionales = ['restauracion_faros'];
+    public array $serviciosAdicionales = [];
 
     // Comentarios
     public string $comentarios = '';
@@ -70,6 +70,12 @@ class AgendarCita extends Page
     public int $pasoActual = 1;
     public int $totalPasos = 3;
     public bool $citaAgendada = false;
+
+    // Modales de pop-ups
+    public bool $mostrarModalPopups = false;
+    public bool $mostrarModalResumenPopups = false;
+    public array $popupsSeleccionados = [];
+    public array $popupsDisponibles = [];
 
 
     // Locales disponibles
@@ -107,6 +113,89 @@ class AgendarCita extends Page
 
     // Campañas disponibles
     public array $campanasDisponibles = [];
+
+    /**
+     * Carga los pop-ups disponibles desde la base de datos
+     */
+    protected function cargarPopups(): void
+    {
+        try {
+            // Obtener los pop-ups activos
+            $popups = \App\Models\PopUp::where('activo', true)->get();
+
+            Log::info("[AgendarCita] Consultando pop-ups activos. Total encontrados: " . $popups->count());
+
+            if ($popups->isNotEmpty()) {
+                $this->popupsDisponibles = [];
+
+                foreach ($popups as $popup) {
+                    $imagenUrl = $popup->imagen_path;
+
+                    // Si la imagen es una ruta relativa, convertirla a URL completa
+                    if (!filter_var($imagenUrl, FILTER_VALIDATE_URL)) {
+                        $imagenUrl = asset('storage/' . $imagenUrl);
+                    }
+
+                    $this->popupsDisponibles[] = [
+                        'id' => $popup->id,
+                        'nombre' => $popup->nombre,
+                        'imagen' => $imagenUrl,
+                        'url_wp' => $popup->url_wp,
+                    ];
+
+                    Log::info("[AgendarCita] Pop-up cargado: ID: {$popup->id}, Nombre: {$popup->nombre}");
+                }
+
+                Log::info("[AgendarCita] Pop-ups disponibles cargados: " . count($this->popupsDisponibles));
+            } else {
+                Log::info("[AgendarCita] No se encontraron pop-ups activos, cargando ejemplos");
+
+                // Si no hay pop-ups en la base de datos, crear algunos pop-ups de ejemplo
+                $this->popupsDisponibles = [
+                    [
+                        'id' => 1,
+                        'nombre' => 'Compra de paquete de mantenimientos prepagados',
+                        'imagen' => asset('images/toyota-value.jpg'),
+                        'url_wp' => 'https://api.whatsapp.com/send?phone=51987654321&text=Hola,%20me%20interesa%20el%20paquete%20de%20mantenimientos%20prepagados',
+                    ],
+                    [
+                        'id' => 2,
+                        'nombre' => 'Compra/Venta de auto seminuevo',
+                        'imagen' => asset('images/mitsui-seminuevos.jpg'),
+                        'url_wp' => 'https://api.whatsapp.com/send?phone=51987654321&text=Hola,%20me%20interesa%20la%20compra/venta%20de%20auto%20seminuevo',
+                    ],
+                    [
+                        'id' => 3,
+                        'nombre' => 'Renovación de auto',
+                        'imagen' => asset('images/renovacion-auto.jpg'),
+                        'url_wp' => 'https://api.whatsapp.com/send?phone=51987654321&text=Hola,%20me%20interesa%20renovar%20mi%20auto',
+                    ],
+                    [
+                        'id' => 4,
+                        'nombre' => 'Venta de SOAT',
+                        'imagen' => asset('images/soat.jpg'),
+                        'url_wp' => 'https://api.whatsapp.com/send?phone=51987654321&text=Hola,%20me%20interesa%20adquirir%20un%20SOAT',
+                    ],
+                    [
+                        'id' => 5,
+                        'nombre' => 'Alquiler de auto (Kinto share)',
+                        'imagen' => asset('images/kinto-share.jpg'),
+                        'url_wp' => 'https://api.whatsapp.com/send?phone=51987654321&text=Hola,%20me%20interesa%20el%20alquiler%20de%20auto%20Kinto%20Share',
+                    ],
+                    [
+                        'id' => 6,
+                        'nombre' => 'Seguro Toyota',
+                        'imagen' => asset('images/seguro-toyota.jpg'),
+                        'url_wp' => 'https://api.whatsapp.com/send?phone=51987654321&text=Hola,%20me%20interesa%20el%20seguro%20Toyota',
+                    ],
+                ];
+
+                Log::info("[AgendarCita] Pop-ups de ejemplo cargados: " . count($this->popupsDisponibles));
+            }
+        } catch (\Exception $e) {
+            Log::error("[AgendarCita] Error al cargar pop-ups: " . $e->getMessage());
+        }
+    }
 
     public function mount($vehiculoId = null): void
     {
@@ -195,6 +284,9 @@ class AgendarCita extends Page
 
         // Cargar los servicios adicionales desde la base de datos
         $this->cargarServiciosAdicionales();
+
+        // Cargar los pop-ups disponibles
+        $this->cargarPopups();
 
         // Inicializar el calendario con el mes y año actual
         $fechaActual = Carbon::now();
@@ -294,9 +386,19 @@ class AgendarCita extends Page
     protected function cargarServiciosAdicionales(): void
     {
         // Por solicitud del cliente, no cargamos los servicios adicionales tradicionales
-        $this->opcionesServiciosAdicionales = [];
+        $this->opcionesServiciosAdicionales = [
+            // Mapeo de servicios adicionales tradicionales para mostrar nombres descriptivos en el resumen
+            'restauracion_faros' => 'Restauración de faros',
+            'lavado_motor' => 'Lavado de motor',
+            'lavado_salon' => 'Lavado de salón',
+            'tratamiento_cuero' => 'Tratamiento de cuero',
+            'pulido_carroceria' => 'Pulido de carrocería',
+            'cambio_aceite' => 'Cambio de aceite',
+            'revision_frenos' => 'Revisión de frenos',
+            'alineacion_balanceo' => 'Alineación y balanceo',
+        ];
 
-        Log::info("[AgendarCita] Servicios adicionales tradicionales no cargados por solicitud del cliente");
+        Log::info("[AgendarCita] Servicios adicionales tradicionales no cargados por solicitud del cliente, pero se han definido nombres descriptivos para el resumen");
 
         // Cargar campañas activas
         $this->cargarCampanas();
@@ -308,14 +410,17 @@ class AgendarCita extends Page
     protected function cargarCampanas(): void
     {
         try {
-            // Obtener todas las campañas sin filtrar por fecha o estado
-            $campanas = Campana::all();
+            // Obtener solo las campañas con estado Activo
+            $campanas = Campana::where('estado', 'Activo')->get();
 
             Log::info("[AgendarCita] Consultando campañas activas. Total encontradas: " . $campanas->count());
 
-            // Verificar si hay campañas en la base de datos
-            $todasLasCampanas = Campana::all();
-            Log::info("[AgendarCita] Total de campañas en la base de datos: " . $todasLasCampanas->count());
+            // Verificar si hay campañas activas en la base de datos
+            $todasLasCampanas = Campana::where('estado', 'Activo')->get();
+            Log::info("[AgendarCita] Total de campañas activas en la base de datos: " . $todasLasCampanas->count());
+
+            // Inicializar el array de opciones de servicios adicionales para campañas
+            $this->opcionesServiciosAdicionales = [];
 
             foreach ($todasLasCampanas as $index => $campana) {
                 Log::info("[AgendarCita] Campaña #{$index} en DB: ID: {$campana->id}, Código: {$campana->codigo}, Título: {$campana->titulo}, Estado: {$campana->estado}, Fecha inicio: {$campana->fecha_inicio}, Fecha fin: {$campana->fecha_fin}");
@@ -369,7 +474,12 @@ class AgendarCita extends Page
                 $this->campanasDisponibles = [];
 
                 foreach ($campanas as $campana) {
-                    // Todas las campañas se muestran sin filtrar
+                    // Verificar que la campaña esté activa
+                    if ($campana->estado !== 'Activo') {
+                        Log::info("[AgendarCita] Campaña {$campana->id} no está activa, omitiendo");
+                        continue;
+                    }
+
                     // Obtener la imagen de la campaña desde la tabla campana_imagenes
                     $imagenObj = DB::table('campana_imagenes')->where('campana_id', $campana->id)->first();
 
@@ -406,6 +516,9 @@ class AgendarCita extends Page
                         'fecha_fin' => $campana->fecha_fin,
                     ];
 
+                    // Agregar al array de opciones de servicios adicionales para mostrar en el resumen
+                    $this->opcionesServiciosAdicionales['campana_' . $campana->id] = $campana->titulo;
+
                     Log::info("[AgendarCita] Campaña cargada: ID: {$campana->id}, Título: {$campana->titulo}, Imagen: {$imagen}");
                 }
 
@@ -441,6 +554,11 @@ class AgendarCita extends Page
                     ],
                 ];
 
+                // Agregar al array de opciones de servicios adicionales para mostrar en el resumen
+                foreach ($this->campanasDisponibles as $campana) {
+                    $this->opcionesServiciosAdicionales['campana_' . $campana['id']] = $campana['titulo'];
+                }
+
                 Log::info("[AgendarCita] Creadas campañas de prueba: " . count($this->campanasDisponibles));
             }
         } catch (\Exception $e) {
@@ -465,6 +583,11 @@ class AgendarCita extends Page
                     'fecha_fin' => now()->addDays(15)->format('Y-m-d'),
                 ],
             ];
+
+            // Agregar al array de opciones de servicios adicionales para mostrar en el resumen
+            foreach ($this->campanasDisponibles as $campana) {
+                $this->opcionesServiciosAdicionales['campana_' . $campana['id']] = $campana['titulo'];
+            }
 
             Log::info("[AgendarCita] Creadas campañas de prueba por error: " . count($this->campanasDisponibles));
         }
@@ -626,9 +749,13 @@ class AgendarCita extends Page
                         if ($campanaEncontrada) {
                             // Crear un servicio adicional para la campaña si no existe
                             $nombreServicio = "Campaña: " . $campanaEncontrada['titulo'];
+                            // Generar un código único para el servicio adicional basado en el ID de la campaña
+                            $codigoServicio = 'CAMP-' . str_pad($campanaId, 5, '0', STR_PAD_LEFT);
+
                             $additionalService = AdditionalService::firstOrCreate(
-                                ['name' => $nombreServicio],
+                                ['code' => $codigoServicio],
                                 [
+                                    'name' => $nombreServicio,
                                     'description' => $campanaEncontrada['descripcion'],
                                     'is_active' => true,
                                     'price' => 0, // Precio promocional
@@ -645,8 +772,34 @@ class AgendarCita extends Page
                             Log::warning("[AgendarCita] No se encontró la campaña con ID: {$campanaId}");
                         }
                     } else {
-                        // Ignoramos los servicios adicionales tradicionales por solicitud del cliente
-                        Log::info("[AgendarCita] Ignorando servicio adicional tradicional: {$servicioAdicionalKey}");
+                        // Procesar servicios adicionales tradicionales
+                        Log::info("[AgendarCita] Procesando servicio adicional tradicional: {$servicioAdicionalKey}");
+
+                        // Generar un código único para el servicio adicional
+                        $codigoServicio = 'SERV-' . strtoupper(substr(str_replace('_', '-', $servicioAdicionalKey), 0, 10));
+
+                        // Buscar el servicio adicional en la base de datos por código
+                        $additionalService = AdditionalService::where('code', $codigoServicio)->first();
+
+                        if (!$additionalService) {
+                            // Si no existe, crear uno nuevo
+                            $additionalService = AdditionalService::create([
+                                'code' => $codigoServicio,
+                                'name' => $this->opcionesServiciosAdicionales[$servicioAdicionalKey] ?? $servicioAdicionalKey,
+                                'description' => 'Servicio adicional seleccionado por el cliente',
+                                'is_active' => true,
+                                'price' => 0, // Precio por defecto
+                            ]);
+
+                            Log::info("[AgendarCita] Creado nuevo servicio adicional: {$additionalService->name} con código {$codigoServicio}");
+                        }
+
+                        // Adjuntar el servicio a la cita
+                        $appointment->additionalServices()->attach($additionalService->id, [
+                            'notes' => "Servicio adicional seleccionado por el cliente"
+                        ]);
+
+                        Log::info("[AgendarCita] Servicio adicional adjuntado a la cita: {$additionalService->name}");
                     }
                 }
             }
@@ -774,11 +927,122 @@ class AgendarCita extends Page
         Log::info("[AgendarCita] Estado de la variable vehiculo después de avanzar al paso 2:", $this->vehiculo ?? ['vehiculo' => 'null']);
     }
 
-    // Método para cerrar y volver a la página de citas
+    // Método para cerrar y mostrar el modal de pop-ups
     public function cerrarYVolverACitas(): void
     {
-        // Redirigir a la página de vehículos (o citas en el futuro)
+        // Mostrar el modal de pop-ups si hay pop-ups disponibles
+        if (!empty($this->popupsDisponibles)) {
+            $this->mostrarModalPopups = true;
+            Log::info("[AgendarCita] Mostrando modal de pop-ups con " . count($this->popupsDisponibles) . " opciones");
+        } else {
+            Log::info("[AgendarCita] No hay pop-ups disponibles para mostrar");
+            // Si no hay pop-ups disponibles, redirigir a la página de vehículos
+            $this->redirect(Vehiculos::getUrl());
+        }
+    }
+
+    /**
+     * Método para seleccionar/deseleccionar un pop-up
+     */
+    public function togglePopup(int $popupId): void
+    {
+        // Verificar si el pop-up ya está seleccionado
+        $index = array_search($popupId, $this->popupsSeleccionados);
+
+        if ($index !== false) {
+            // Si ya está seleccionado, quitarlo
+            unset($this->popupsSeleccionados[$index]);
+            $this->popupsSeleccionados = array_values($this->popupsSeleccionados); // Reindexar el array
+            Log::info("[AgendarCita] Pop-up {$popupId} deseleccionado");
+        } else {
+            // Si no está seleccionado, agregarlo
+            $this->popupsSeleccionados[] = $popupId;
+            Log::info("[AgendarCita] Pop-up {$popupId} seleccionado");
+        }
+    }
+
+    /**
+     * Método para solicitar información sobre los pop-ups seleccionados
+     */
+    public function solicitarInformacion(): void
+    {
+        // Verificar si hay pop-ups seleccionados
+        if (empty($this->popupsSeleccionados)) {
+            // Si no hay pop-ups seleccionados, mostrar notificación
+            \Filament\Notifications\Notification::make()
+                ->title('Sin selección')
+                ->body('No has seleccionado ningún servicio adicional.')
+                ->warning()
+                ->send();
+
+            // Cerrar el modal de pop-ups
+            $this->mostrarModalPopups = false;
+            return;
+        }
+
+        // Cerrar el modal de pop-ups y mostrar el modal de resumen
+        $this->mostrarModalPopups = false;
+        $this->mostrarModalResumenPopups = true;
+
+        Log::info("[AgendarCita] Mostrando resumen de pop-ups seleccionados: " . implode(', ', $this->popupsSeleccionados));
+    }
+
+    /**
+     * Método para cerrar el modal de resumen y volver a la página de vehículos
+     */
+    public function cerrarResumen(): void
+    {
+        // Cerrar el modal de resumen
+        $this->mostrarModalResumenPopups = false;
+
+        // Guardar los pop-ups seleccionados en la base de datos o enviar notificación
+        $this->guardarPopupsSeleccionados();
+
+        // Redirigir a la página de vehículos
         $this->redirect(Vehiculos::getUrl());
+    }
+
+    /**
+     * Método para guardar los pop-ups seleccionados
+     */
+    protected function guardarPopupsSeleccionados(): void
+    {
+        try {
+            // Si no hay pop-ups seleccionados, no hacer nada
+            if (empty($this->popupsSeleccionados)) {
+                Log::info("[AgendarCita] No hay pop-ups seleccionados para guardar");
+                return;
+            }
+
+            // Obtener los pop-ups seleccionados
+            $popupsSeleccionados = [];
+            foreach ($this->popupsDisponibles as $popup) {
+                if (in_array($popup['id'], $this->popupsSeleccionados)) {
+                    $popupsSeleccionados[] = $popup;
+                }
+            }
+
+            // Aquí se podría implementar la lógica para guardar los pop-ups seleccionados
+            // Por ejemplo, enviar un correo, guardar en la base de datos, etc.
+
+            Log::info("[AgendarCita] Pop-ups seleccionados guardados: " . json_encode($popupsSeleccionados));
+
+            // Mostrar notificación de éxito
+            \Filament\Notifications\Notification::make()
+                ->title('Solicitud Enviada')
+                ->body('Tu solicitud de información ha sido enviada. Pronto te contactaremos.')
+                ->success()
+                ->send();
+        } catch (\Exception $e) {
+            Log::error("[AgendarCita] Error al guardar pop-ups seleccionados: " . $e->getMessage());
+
+            // Mostrar notificación de error
+            \Filament\Notifications\Notification::make()
+                ->title('Error')
+                ->body('Ocurrió un error al procesar tu solicitud. Por favor, intenta nuevamente.')
+                ->danger()
+                ->send();
+        }
     }
 
     /**

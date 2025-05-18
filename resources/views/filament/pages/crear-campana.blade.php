@@ -1,7 +1,7 @@
 <x-filament-panels::page>
     <div class="bg-white rounded-lg shadow-sm p-6">
         <!-- Título de la página -->
-        <div class="mb-6 text-center">
+        <div class="mb-4 text-center">
             <h1 class="text-2xl font-bold text-gray-900">{{ $modoEdicion ? 'Editar Campaña' : 'Crear Nueva Campaña' }}</h1>
             @if($modoEdicion)
                 <p class="text-gray-600 mt-1">Estás editando la campaña: {{ $tituloCampana }}</p>
@@ -276,7 +276,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                                         </svg>
                                         <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Haz clic para subir</span> o arrastra y suelta</p>
-                                        <p class="text-xs text-gray-500">PNG, JPG o JPEG (MAX. 2MB)</p>
+                                        <p class="text-xs text-gray-500">PNG, JPG o JPEG (MAX. 10MB)</p>
                                     </div>
                                     <input
                                         id="imagen"
@@ -297,7 +297,13 @@
                                 <div class="mt-4">
                                     <h3 class="text-sm font-medium text-gray-700 mb-2">Vista previa:</h3>
                                     <div class="relative">
-                                        <img src="{{ $imagenPreview }}" alt="Vista previa" class="max-w-full h-auto rounded-lg border border-gray-300" style="max-height: 200px;" onerror="this.onerror=null; this.src='https://via.placeholder.com/150'; console.log('Error al cargar imagen:', this.src)">
+                                        <img
+                                            src="{{ $imagenPreview }}"
+                                            alt="Vista previa"
+                                            class="max-w-full h-auto rounded-lg border border-gray-300"
+                                            style="max-height: 200px;"
+                                            onerror="this.onerror=null; this.src='https://via.placeholder.com/150'; console.log('Error al cargar imagen:', this.src); document.dispatchEvent(new CustomEvent('imagen-error', {detail: {mensaje: 'Error al cargar la vista previa de la imagen'}}));"
+                                        >
                                         <button
                                             type="button"
                                             wire:click="$set('imagen', null)"
@@ -418,7 +424,13 @@
                             <tr>
                                 <td class="px-6 py-3 text-sm font-medium text-primary-600 bg-gray-50">Imagen</td>
                                 <td class="px-6 py-3 text-sm text-gray-900">
-                                    <img src="{{ $imagenPreview }}" alt="Imagen de campaña" class="max-w-full h-auto rounded-lg" style="max-height: 100px;" onerror="this.onerror=null; this.src='https://via.placeholder.com/150'; console.log('Error al cargar imagen:', this.src)">
+                                    <img
+                                        src="{{ $imagenPreview }}"
+                                        alt="Imagen de campaña"
+                                        class="max-w-full h-auto rounded-lg"
+                                        style="max-height: 100px;"
+                                        onerror="this.onerror=null; this.src='https://via.placeholder.com/150'; console.log('Error al cargar imagen:', this.src); document.dispatchEvent(new CustomEvent('imagen-error', {detail: {mensaje: 'Error al cargar la imagen en el resumen'}}));"
+                                    >
                                 </td>
                             </tr>
                             @endif
@@ -483,7 +495,13 @@
                             <tr>
                                 <td class="px-6 py-3 text-sm font-medium text-primary-600 bg-gray-50">Imagen</td>
                                 <td class="px-6 py-3 text-sm text-gray-900">
-                                    <img src="{{ $imagenPreview }}" alt="Imagen de campaña" class="max-w-full h-auto rounded-lg" style="max-height: 100px;" onerror="this.onerror=null; this.src='https://via.placeholder.com/150'; console.log('Error al cargar imagen:', this.src)">
+                                    <img
+                                        src="{{ $imagenPreview }}"
+                                        alt="Imagen de campaña"
+                                        class="max-w-full h-auto rounded-lg"
+                                        style="max-height: 100px;"
+                                        onerror="this.onerror=null; this.src='https://via.placeholder.com/150'; console.log('Error al cargar imagen:', this.src); document.dispatchEvent(new CustomEvent('imagen-error', {detail: {mensaje: 'Error al cargar la imagen en la confirmación'}}));"
+                                    >
                                 </td>
                             </tr>
                             @endif
@@ -545,11 +563,35 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             initDatepickers();
+            setupImageErrorHandling();
         });
 
         document.addEventListener('livewire:navigated', function () {
             initDatepickers();
+            setupImageErrorHandling();
         });
+
+        function setupImageErrorHandling() {
+            // Escuchar eventos de error de imagen
+            document.addEventListener('imagen-error', function(event) {
+                console.error('Error de imagen:', event.detail.mensaje);
+
+                // Mostrar notificación al usuario usando Filament
+                window.dispatchEvent(new CustomEvent('notify', {
+                    detail: {
+                        message: event.detail.mensaje,
+                        icon: 'warning',
+                        iconColor: 'danger',
+                        timeout: 5000
+                    }
+                }));
+
+                // También notificar a Livewire para que pueda manejar el error
+                if (window.Livewire) {
+                    window.Livewire.dispatch('imagenError', { mensaje: event.detail.mensaje });
+                }
+            });
+        }
 
         function initDatepickers() {
             // Datepicker para fecha de inicio

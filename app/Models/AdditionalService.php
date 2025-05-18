@@ -42,7 +42,7 @@ class AdditionalService extends Model
      */
     public function appointments(): BelongsToMany
     {
-        return $this->belongsToMany(Appointment::class)
+        return $this->belongsToMany(Appointment::class, 'appointment_additional_service')
             ->withPivot('price', 'notes')
             ->withTimestamps();
     }
