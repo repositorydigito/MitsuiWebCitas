@@ -44,6 +44,7 @@ class MiCuenta extends Page
 
     // Variables para el modo de edición
     public int $pasoActual = 1;
+
     public bool $modoEdicion = false;
 
     // Datos temporales para la edición

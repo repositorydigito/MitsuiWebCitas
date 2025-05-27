@@ -4,32 +4,34 @@ namespace App\Filament\Pages;
 
 use App\Models\Modelo;
 use App\Models\ModeloAno;
-use Filament\Pages\Page;
-use Filament\Forms\Form;
-use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Textarea;
+use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
-use Illuminate\Support\Facades\Validator;
+use Filament\Pages\Page;
 
 class AdministrarModelos extends Page implements HasForms
 {
     use InteractsWithForms;
 
     protected static string $view = 'filament.pages.administrar-modelos';
+
     protected static ?string $navigationIcon = 'heroicon-o-truck';
+
     protected static ?string $navigationLabel = 'Administrar Modelos';
+
     protected static ?string $title = 'Administrar Modelos';
+
     protected static ?string $slug = 'administrar-modelos';
 
     // Variables para el formulario de modelos
     public $modelos = [];
+
     public $modalVisible = false;
+
     public $editMode = false;
+
     public $currentModeloId = null;
+
     public $formData = [
         'codigo' => '',
         'nombre' => '',
@@ -37,13 +39,16 @@ class AdministrarModelos extends Page implements HasForms
         'descripcion' => '',
         'activo' => true,
     ];
-    
+
     // Variables para el formulario de años
     public $anosModalVisible = false;
+
     public $currentModeloNombre = '';
+
     public $modeloAnosData = [];
+
     public $nuevoAno = '';
-    
+
     // Errores de validación
     public $errors = [
         'codigo' => false,
@@ -64,7 +69,7 @@ class AdministrarModelos extends Page implements HasForms
     public function abrirModal($id = null)
     {
         $this->resetearFormulario();
-        
+
         if ($id) {
             $modelo = Modelo::findOrFail($id);
             $this->formData = [
@@ -80,7 +85,7 @@ class AdministrarModelos extends Page implements HasForms
             $this->editMode = false;
             $this->currentModeloId = null;
         }
-        
+
         $this->modalVisible = true;
     }
 
@@ -98,7 +103,7 @@ class AdministrarModelos extends Page implements HasForms
             'descripcion' => '',
             'activo' => true,
         ];
-        
+
         $this->errors = [
             'codigo' => false,
             'nombre' => false,
@@ -113,27 +118,27 @@ class AdministrarModelos extends Page implements HasForms
             'codigo' => false,
             'nombre' => false,
         ];
-        
+
         // Validar campos requeridos
         $hasErrors = false;
-        
+
         if (empty($this->formData['codigo'])) {
             $this->errors['codigo'] = true;
             $hasErrors = true;
         }
-        
+
         if (empty($this->formData['nombre'])) {
             $this->errors['nombre'] = true;
             $hasErrors = true;
         }
-        
+
         // Si hay errores, no continuar
         if ($hasErrors) {
             return;
         }
-        
+
         // Validar que el código sea único
-        if (!$this->editMode) {
+        if (! $this->editMode) {
             $existeCodigo = Modelo::where('codigo', $this->formData['codigo'])->exists();
             if ($existeCodigo) {
                 $this->errors['codigo'] = true;
@@ -142,10 +147,11 @@ class AdministrarModelos extends Page implements HasForms
                     ->title('El código ya existe')
                     ->body('Por favor, elige otro código para el modelo.')
                     ->send();
+
                 return;
             }
         }
-        
+
         try {
             if ($this->editMode) {
                 // Actualizar modelo existente
@@ -156,7 +162,7 @@ class AdministrarModelos extends Page implements HasForms
                     'descripcion' => $this->formData['descripcion'],
                     'activo' => $this->formData['activo'],
                 ]);
-                
+
                 Notification::make()
                     ->success()
                     ->title('Modelo actualizado')
@@ -171,7 +177,7 @@ class AdministrarModelos extends Page implements HasForms
                     'descripcion' => $this->formData['descripcion'],
                     'activo' => $this->formData['activo'],
                 ]);
-                
+
                 // Crear años por defecto para el nuevo modelo
                 $anos = ['2018', '2019', '2020', '2021', '2022', '2023', '2024'];
                 foreach ($anos as $ano) {
@@ -181,14 +187,14 @@ class AdministrarModelos extends Page implements HasForms
                         'activo' => true,
                     ]);
                 }
-                
+
                 Notification::make()
                     ->success()
                     ->title('Modelo creado')
                     ->body('El modelo ha sido creado correctamente.')
                     ->send();
             }
-            
+
             // Recargar modelos y cerrar modal
             $this->cargarModelos();
             $this->cerrarModal();
@@ -196,7 +202,7 @@ class AdministrarModelos extends Page implements HasForms
             Notification::make()
                 ->danger()
                 ->title('Error')
-                ->body('Ha ocurrido un error: ' . $e->getMessage())
+                ->body('Ha ocurrido un error: '.$e->getMessage())
                 ->send();
         }
     }
@@ -206,19 +212,19 @@ class AdministrarModelos extends Page implements HasForms
         try {
             $modelo = Modelo::findOrFail($id);
             $modelo->delete();
-            
+
             Notification::make()
                 ->success()
                 ->title('Modelo eliminado')
                 ->body('El modelo ha sido eliminado correctamente.')
                 ->send();
-            
+
             $this->cargarModelos();
         } catch (\Exception $e) {
             Notification::make()
                 ->danger()
                 ->title('Error')
-                ->body('Ha ocurrido un error: ' . $e->getMessage())
+                ->body('Ha ocurrido un error: '.$e->getMessage())
                 ->send();
         }
     }
@@ -228,21 +234,21 @@ class AdministrarModelos extends Page implements HasForms
         try {
             $modelo = Modelo::findOrFail($id);
             $modelo->update([
-                'activo' => !$modelo->activo,
+                'activo' => ! $modelo->activo,
             ]);
-            
+
             Notification::make()
                 ->success()
                 ->title('Estado actualizado')
                 ->body('El estado del modelo ha sido actualizado correctamente.')
                 ->send();
-            
+
             $this->cargarModelos();
         } catch (\Exception $e) {
             Notification::make()
                 ->danger()
                 ->title('Error')
-                ->body('Ha ocurrido un error: ' . $e->getMessage())
+                ->body('Ha ocurrido un error: '.$e->getMessage())
                 ->send();
         }
     }
@@ -267,40 +273,42 @@ class AdministrarModelos extends Page implements HasForms
     {
         // Resetear error
         $this->errors['nuevoAno'] = false;
-        
+
         // Validar año
-        if (empty($this->nuevoAno) || !is_numeric($this->nuevoAno) || strlen($this->nuevoAno) !== 4) {
+        if (empty($this->nuevoAno) || ! is_numeric($this->nuevoAno) || strlen($this->nuevoAno) !== 4) {
             $this->errors['nuevoAno'] = true;
+
             return;
         }
-        
+
         try {
             // Verificar si el año ya existe para este modelo
             $existeAno = ModeloAno::where('modelo_id', $this->currentModeloId)
                 ->where('ano', $this->nuevoAno)
                 ->exists();
-                
+
             if ($existeAno) {
                 Notification::make()
                     ->warning()
                     ->title('Año duplicado')
                     ->body('Este año ya existe para este modelo.')
                     ->send();
+
                 return;
             }
-            
+
             // Crear nuevo año
             ModeloAno::create([
                 'modelo_id' => $this->currentModeloId,
                 'ano' => $this->nuevoAno,
                 'activo' => true,
             ]);
-            
+
             // Recargar años
             $modelo = Modelo::with('anos')->findOrFail($this->currentModeloId);
             $this->modeloAnosData = $modelo->anos->sortByDesc('ano')->values()->toArray();
             $this->nuevoAno = '';
-            
+
             Notification::make()
                 ->success()
                 ->title('Año agregado')
@@ -310,7 +318,7 @@ class AdministrarModelos extends Page implements HasForms
             Notification::make()
                 ->danger()
                 ->title('Error')
-                ->body('Ha ocurrido un error: ' . $e->getMessage())
+                ->body('Ha ocurrido un error: '.$e->getMessage())
                 ->send();
         }
     }
@@ -320,13 +328,13 @@ class AdministrarModelos extends Page implements HasForms
         try {
             $modeloAno = ModeloAno::findOrFail($id);
             $modeloAno->update([
-                'activo' => !$modeloAno->activo,
+                'activo' => ! $modeloAno->activo,
             ]);
-            
+
             // Recargar años
             $modelo = Modelo::with('anos')->findOrFail($this->currentModeloId);
             $this->modeloAnosData = $modelo->anos->sortByDesc('ano')->values()->toArray();
-            
+
             Notification::make()
                 ->success()
                 ->title('Estado actualizado')
@@ -336,7 +344,7 @@ class AdministrarModelos extends Page implements HasForms
             Notification::make()
                 ->danger()
                 ->title('Error')
-                ->body('Ha ocurrido un error: ' . $e->getMessage())
+                ->body('Ha ocurrido un error: '.$e->getMessage())
                 ->send();
         }
     }
@@ -346,11 +354,11 @@ class AdministrarModelos extends Page implements HasForms
         try {
             $modeloAno = ModeloAno::findOrFail($id);
             $modeloAno->delete();
-            
+
             // Recargar años
             $modelo = Modelo::with('anos')->findOrFail($this->currentModeloId);
             $this->modeloAnosData = $modelo->anos->sortByDesc('ano')->values()->toArray();
-            
+
             Notification::make()
                 ->success()
                 ->title('Año eliminado')
@@ -360,7 +368,7 @@ class AdministrarModelos extends Page implements HasForms
             Notification::make()
                 ->danger()
                 ->title('Error')
-                ->body('Ha ocurrido un error: ' . $e->getMessage())
+                ->body('Ha ocurrido un error: '.$e->getMessage())
                 ->send();
         }
     }

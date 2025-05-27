@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\C4C\AppointmentService;
 use App\Services\C4C\AppointmentQueryService;
+use App\Services\C4C\AppointmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -25,9 +25,6 @@ class AppointmentController extends Controller
 
     /**
      * Create a new controller instance.
-     *
-     * @param AppointmentService $appointmentService
-     * @param AppointmentQueryService $appointmentQueryService
      */
     public function __construct(
         AppointmentService $appointmentService,
@@ -40,7 +37,6 @@ class AppointmentController extends Controller
     /**
      * Create a new appointment.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function create(Request $request)
@@ -60,7 +56,7 @@ class AppointmentController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => $validator->errors()->first(),
-                'data' => null
+                'data' => null,
             ], 422);
         }
 
@@ -76,8 +72,7 @@ class AppointmentController extends Controller
     /**
      * Update an existing appointment.
      *
-     * @param Request $request
-     * @param string $uuid
+     * @param  string  $uuid
      * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $uuid)
@@ -93,7 +88,7 @@ class AppointmentController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => $validator->errors()->first(),
-                'data' => null
+                'data' => null,
             ], 422);
         }
 
@@ -109,7 +104,7 @@ class AppointmentController extends Controller
     /**
      * Delete an appointment.
      *
-     * @param string $uuid
+     * @param  string  $uuid
      * @return \Illuminate\Http\JsonResponse
      */
     public function delete($uuid)
@@ -126,7 +121,6 @@ class AppointmentController extends Controller
     /**
      * Get pending appointments for a customer.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function getPendingAppointments(Request $request)
@@ -142,7 +136,7 @@ class AppointmentController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => $validator->errors()->first(),
-                'data' => null
+                'data' => null,
             ], 422);
         }
 

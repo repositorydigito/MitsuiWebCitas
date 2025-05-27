@@ -11,55 +11,55 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('campanas', function (Blueprint $table) {
+        Schema::create('campaigns', function (Blueprint $table) {
             $table->id();
             $table->string('codigo')->unique();
             $table->string('titulo');
-            $table->date('fecha_inicio');
-            $table->date('fecha_fin');
-            $table->time('hora_inicio')->nullable();
-            $table->time('hora_fin')->nullable();
-            $table->boolean('todo_dia')->default(false);
+            $table->date('start_date');
+            $table->date('end_date');
+            $table->time('start_time')->nullable();
+            $table->time('end_time')->nullable();
+            $table->boolean('all_day')->default(false);
             $table->enum('estado', ['Activo', 'Inactivo'])->default('Activo');
             $table->timestamps();
         });
 
         // Tabla pivote para la relación muchos a muchos entre campañas y modelos
-        Schema::create('campana_modelos', function (Blueprint $table) {
+        Schema::create('campaign_models', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('campana_id')->constrained('campanas')->onDelete('cascade');
-            $table->foreignId('modelo_id')->constrained('modelos')->onDelete('cascade');
+            $table->foreignId('campaign_id')->constrained('campaigns')->onDelete('cascade');
+            $table->foreignId('model_id')->constrained('models')->onDelete('cascade');
             $table->timestamps();
 
             // Índice único para evitar duplicados
-            $table->unique(['campana_id', 'modelo_id']);
+            $table->unique(['campaign_id', 'model_id']);
         });
 
         // Tabla pivote para la relación muchos a muchos entre campañas y años
-        Schema::create('campana_anos', function (Blueprint $table) {
+        Schema::create('campaign_years', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('campana_id')->constrained('campanas')->onDelete('cascade');
-            $table->string('ano');
+            $table->foreignId('campaign_id')->constrained('campaigns')->onDelete('cascade');
+            $table->string('year');
             $table->timestamps();
 
             // Índice único para evitar duplicados
-            $table->unique(['campana_id', 'ano']);
+            $table->unique(['campaign_id', 'year']);
         });
 
         // Tabla pivote para la relación muchos a muchos entre campañas y locales
-        Schema::create('campana_locales', function (Blueprint $table) {
+        Schema::create('campaign_premises', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('campana_id')->constrained('campanas')->onDelete('cascade');
-            $table->string('local_codigo');
+            $table->foreignId('campaign_id')->constrained('campaigns')->onDelete('cascade');
+            $table->string('premise_code');
             $table->timestamps();
 
             // Índice único para evitar duplicados
-            $table->unique(['campana_id', 'local_codigo']);
+            $table->unique(['campaign_id', 'premise_code']);
 
-            // Clave foránea para local_codigo
-            $table->foreign('local_codigo')
+            // Clave foránea para premise_code
+            $table->foreign('premise_code')
                 ->references('codigo')
-                ->on('locales')
+                ->on('premises')
                 ->onDelete('cascade');
         });
     }
@@ -69,9 +69,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('campana_locales');
-        Schema::dropIfExists('campana_anos');
-        Schema::dropIfExists('campana_modelos');
-        Schema::dropIfExists('campanas');
+        Schema::dropIfExists('campaign_premises');
+        Schema::dropIfExists('campaign_years');
+        Schema::dropIfExists('campaign_models');
+        Schema::dropIfExists('campaigns');
     }
 };

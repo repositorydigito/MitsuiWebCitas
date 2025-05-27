@@ -167,20 +167,20 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
-                            <label for="horario_apertura" class="block text-sm font-medium text-gray-700 mb-1">Horario de apertura</label>
+                            <label for="opening_time" class="block text-sm font-medium text-gray-700 mb-1">Horario de apertura</label>
                             <input
                                 type="time"
-                                wire:model="formData.horario_apertura"
-                                id="horario_apertura"
+                                wire:model="formData.opening_time"
+                                id="opening_time"
                                 class="w-full rounded-lg border border-primary-500 text-gray-700 py-2 px-3"
                             >
                         </div>
                         <div>
-                            <label for="horario_cierre" class="block text-sm font-medium text-gray-700 mb-1">Horario de cierre</label>
+                            <label for="closing_time" class="block text-sm font-medium text-gray-700 mb-1">Horario de cierre</label>
                             <input
                                 type="time"
-                                wire:model="formData.horario_cierre"
-                                id="horario_cierre"
+                                wire:model="formData.closing_time"
+                                id="closing_time"
                                 class="w-full rounded-lg border border-primary-500 text-gray-700 py-2 px-3"
                             >
                         </div>

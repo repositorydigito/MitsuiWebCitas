@@ -29,10 +29,10 @@ class CustomerService
         $localWsdl = storage_path('wsdl/querycustomerin.wsdl');
         if (file_exists($localWsdl)) {
             $this->wsdl = $localWsdl;
-            Log::info('CustomerService usando WSDL local: ' . $localWsdl);
+            Log::info('CustomerService usando WSDL local: '.$localWsdl);
         } else {
             $this->wsdl = config('c4c.services.customer.wsdl');
-            Log::info('CustomerService usando WSDL remoto: ' . $this->wsdl);
+            Log::info('CustomerService usando WSDL remoto: '.$this->wsdl);
         }
 
         $this->method = config('c4c.services.customer.method');
@@ -41,7 +41,6 @@ class CustomerService
     /**
      * Find a customer by DNI.
      *
-     * @param string $dni
      * @return array
      */
     public function findByDNI(string $dni)
@@ -54,8 +53,8 @@ class CustomerService
                         'IntervalBoundaryTypeCode' => '1',
                         'LowerBoundaryName' => $dni,
                         'UpperBoundaryName' => '',
-                    ]
-                ]
+                    ],
+                ],
             ],
             'ProcessingConditions' => [
                 'QueryHitsMaximumNumberValue' => 20,
@@ -72,14 +71,13 @@ class CustomerService
         return [
             'success' => false,
             'error' => $result['error'] ?? 'Customer not found',
-            'data' => null
+            'data' => null,
         ];
     }
 
     /**
      * Find a customer by RUC.
      *
-     * @param string $ruc
      * @return array
      */
     public function findByRUC(string $ruc)
@@ -94,8 +92,8 @@ class CustomerService
                         'IntervalBoundaryTypeCode' => '1',
                         'LowerBoundaryName' => $ruc,
                         'UpperBoundaryName' => '',
-                    ]
-                ]
+                    ],
+                ],
             ],
             'ProcessingConditions' => [
                 'QueryHitsMaximumNumberValue' => 20,
@@ -109,7 +107,7 @@ class CustomerService
             $formattedResult = $this->formatCustomerData($result['data']);
 
             // Si tenemos resultados, intentamos filtrar para encontrar coincidencias exactas
-            if ($formattedResult['success'] && !empty($formattedResult['data'])) {
+            if ($formattedResult['success'] && ! empty($formattedResult['data'])) {
                 // Buscar coincidencias exactas por RUC
                 $exactMatches = [];
 
@@ -134,8 +132,8 @@ class CustomerService
                 }
 
                 // Si encontramos coincidencias exactas, actualizamos el resultado
-                if (!empty($exactMatches)) {
-                    Log::info("Se encontraron " . count($exactMatches) . " coincidencias exactas para el RUC: {$ruc}");
+                if (! empty($exactMatches)) {
+                    Log::info('Se encontraron '.count($exactMatches)." coincidencias exactas para el RUC: {$ruc}");
                     $formattedResult['data'] = $exactMatches;
                     $formattedResult['count'] = count($exactMatches);
                 } else {
@@ -147,17 +145,17 @@ class CustomerService
         }
 
         Log::warning("No se encontró ningún cliente con RUC: {$ruc}");
+
         return [
             'success' => false,
             'error' => $result['error'] ?? 'Customer not found',
-            'data' => null
+            'data' => null,
         ];
     }
 
     /**
      * Find a customer by Carnet de Extranjería.
      *
-     * @param string $ce
      * @return array
      */
     public function findByCE(string $ce)
@@ -170,8 +168,8 @@ class CustomerService
                         'IntervalBoundaryTypeCode' => '1',
                         'LowerBoundaryName' => $ce,
                         'UpperBoundaryName' => '',
-                    ]
-                ]
+                    ],
+                ],
             ],
             'ProcessingConditions' => [
                 'QueryHitsMaximumNumberValue' => 20,
@@ -188,14 +186,13 @@ class CustomerService
         return [
             'success' => false,
             'error' => $result['error'] ?? 'Customer not found',
-            'data' => null
+            'data' => null,
         ];
     }
 
     /**
      * Find a customer by Passport.
      *
-     * @param string $passport
      * @return array
      */
     public function findByPassport(string $passport)
@@ -208,8 +205,8 @@ class CustomerService
                         'IntervalBoundaryTypeCode' => '1',
                         'LowerBoundaryName' => $passport,
                         'UpperBoundaryName' => '',
-                    ]
-                ]
+                    ],
+                ],
             ],
             'ProcessingConditions' => [
                 'QueryHitsMaximumNumberValue' => 20,
@@ -226,20 +223,20 @@ class CustomerService
         return [
             'success' => false,
             'error' => $result['error'] ?? 'Customer not found',
-            'data' => null
+            'data' => null,
         ];
     }
 
     /**
      * Format customer data from SOAP response.
      *
-     * @param object $response
+     * @param  object  $response
      * @return array
      */
     protected function formatCustomerData($response)
     {
         // Verificar si hay clientes en la respuesta
-        if (!isset($response->Customer) && isset($response->ProcessingConditions)) {
+        if (! isset($response->Customer) && isset($response->ProcessingConditions)) {
             // No hay clientes, pero hay información de procesamiento
             return [
                 'success' => false,
@@ -254,7 +251,7 @@ class CustomerService
         }
 
         // Si no hay información de clientes ni de procesamiento, es un error
-        if (!isset($response->Customer) && !isset($response->ProcessingConditions)) {
+        if (! isset($response->Customer) && ! isset($response->ProcessingConditions)) {
             return [
                 'success' => false,
                 'error' => 'Invalid response format',
@@ -267,7 +264,7 @@ class CustomerService
         $customerData = $response->Customer;
 
         // If only one customer is returned, convert to array
-        if (!is_array($customerData)) {
+        if (! is_array($customerData)) {
             $customerData = [$customerData];
         }
 
@@ -423,8 +420,7 @@ class CustomerService
                     'sales_organisation_id' => $customer->SalesArrangement->SalesOrganisationID ?? null,
                     'distribution_channel_code' => $customer->SalesArrangement->DistributionChannelCode ?? null,
                     'sales_group_id' => $customer->SalesArrangement->SalesGroupID ?? null,
-                    'complete_delivery_requested_indicator' =>
-                        isset($customer->SalesArrangement->CompleteDeliveryRequestedIndicator) &&
+                    'complete_delivery_requested_indicator' => isset($customer->SalesArrangement->CompleteDeliveryRequestedIndicator) &&
                         $customer->SalesArrangement->CompleteDeliveryRequestedIndicator === 'true',
                     'currency_code' => $customer->SalesArrangement->CurrencyCode ?? null,
                     'customer_group_code' => $customer->SalesArrangement->CustomerGroupCode ?? null,

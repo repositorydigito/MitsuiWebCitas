@@ -2,10 +2,10 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\Local;
 use Filament\Pages\Page;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
-use App\Models\Local;
 
 class Kpis extends Page
 {
@@ -21,10 +21,15 @@ class Kpis extends Page
 
     // Propiedades para filtros
     public string $fechaInicio = '';
+
     public string $fechaFin = '';
+
     public string $rangoFechas = '';
+
     public string $marcaSeleccionada = 'Toyota';
+
     public string $localSeleccionado = 'Todos';
+
     public string $tipoSeleccionado = 'Post Venta';
 
     // Datos de KPIs
@@ -32,7 +37,9 @@ class Kpis extends Page
 
     // Opciones para los selectores
     public array $marcas = ['Toyota', 'Lexus', 'Hino'];
+
     public array $locales = [];
+
     public array $tipos = ['Post Venta', 'Venta', 'Todos'];
 
     public function mount(): void
@@ -43,7 +50,7 @@ class Kpis extends Page
 
         $this->fechaInicio = $fechaInicio->format('d/m/Y');
         $this->fechaFin = $fechaFin->format('d/m/Y');
-        $this->rangoFechas = $this->fechaInicio . ' - ' . $this->fechaFin;
+        $this->rangoFechas = $this->fechaInicio.' - '.$this->fechaFin;
 
         // Cargar locales desde la base de datos
         $this->cargarLocales();
@@ -64,9 +71,9 @@ class Kpis extends Page
             // Agregar la opción "Todos" al principio
             $this->locales = ['Todos' => 'Todos'] + $localesActivos;
 
-            Log::info("[KpisPage] Locales cargados: " . json_encode($this->locales));
+            Log::info('[KpisPage] Locales cargados: '.json_encode($this->locales));
         } catch (\Exception $e) {
-            Log::error("[KpisPage] Error al cargar locales: " . $e->getMessage());
+            Log::error('[KpisPage] Error al cargar locales: '.$e->getMessage());
 
             // Si hay un error, usar algunos valores por defecto
             $this->locales = ['Todos' => 'Todos'];
@@ -82,13 +89,13 @@ class Kpis extends Page
                 $nombreLocalSeleccionado = $this->locales[$this->localSeleccionado];
             }
 
-            Log::info("[KpisPage] Cargando KPIs con filtros: ", [
+            Log::info('[KpisPage] Cargando KPIs con filtros: ', [
                 'fechaInicio' => $this->fechaInicio,
                 'fechaFin' => $this->fechaFin,
                 'marca' => $this->marcaSeleccionada,
                 'local_codigo' => $this->localSeleccionado,
                 'local_nombre' => $nombreLocalSeleccionado,
-                'tipo' => $this->tipoSeleccionado
+                'tipo' => $this->tipoSeleccionado,
             ]);
 
             // Aquí normalmente consultarías a la base de datos
@@ -177,7 +184,7 @@ class Kpis extends Page
             ]);
 
         } catch (\Exception $e) {
-            Log::error("[KpisPage] Error al cargar KPIs: " . $e->getMessage());
+            Log::error('[KpisPage] Error al cargar KPIs: '.$e->getMessage());
             $this->kpis = collect([]);
         }
     }
@@ -185,7 +192,7 @@ class Kpis extends Page
     public function aplicarFiltros(): void
     {
         // Procesar el rango de fechas si está presente
-        if (!empty($this->rangoFechas)) {
+        if (! empty($this->rangoFechas)) {
             $fechas = explode(' - ', $this->rangoFechas);
             if (count($fechas) === 2) {
                 $this->fechaInicio = trim($fechas[0]);

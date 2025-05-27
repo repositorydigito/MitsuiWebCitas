@@ -12,7 +12,7 @@ class PopUp extends Model
         'medidas',
         'formato',
         'url_wp',
-        'activo'
+        'activo',
     ];
 
     protected $casts = [

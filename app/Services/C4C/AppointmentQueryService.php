@@ -2,8 +2,8 @@
 
 namespace App\Services\C4C;
 
-use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class AppointmentQueryService
 {
@@ -30,10 +30,10 @@ class AppointmentQueryService
         $localWsdl = storage_path('wsdl/wscitas.wsdl');
         if (file_exists($localWsdl)) {
             $this->wsdl = $localWsdl;
-            Log::info('AppointmentQueryService usando WSDL local: ' . $localWsdl);
+            Log::info('AppointmentQueryService usando WSDL local: '.$localWsdl);
         } else {
             $this->wsdl = config('c4c.services.appointment_query.wsdl');
-            Log::info('AppointmentQueryService usando WSDL remoto: ' . $this->wsdl);
+            Log::info('AppointmentQueryService usando WSDL remoto: '.$this->wsdl);
         }
 
         $this->method = config('c4c.services.appointment_query.method');
@@ -42,8 +42,6 @@ class AppointmentQueryService
     /**
      * Get pending appointments for a customer.
      *
-     * @param string $customerId
-     * @param array $options
      * @return array
      */
     public function getPendingAppointments(string $customerId, array $options = [])
@@ -52,11 +50,12 @@ class AppointmentQueryService
 
         // Validar ID de cliente
         if (empty($customerId)) {
-            Log::error("ID de cliente requerido");
+            Log::error('ID de cliente requerido');
+
             return [
                 'success' => false,
-                'error' => "ID de cliente requerido",
-                'data' => null
+                'error' => 'ID de cliente requerido',
+                'data' => null,
             ];
         }
 
@@ -64,7 +63,7 @@ class AppointmentQueryService
         $statusCodes = $options['status_codes'] ?? [1, 2]; // Por defecto: Generada y Confirmada
 
         // Asegurar que statusCodes sea un array
-        if (!is_array($statusCodes)) {
+        if (! is_array($statusCodes)) {
             $statusCodes = [$statusCodes];
         }
 
@@ -92,8 +91,8 @@ class AppointmentQueryService
                 'SelectionByzEstadoCita_5PEND6QL5482763O1SFB05YP5' => [
                     'InclusionExclusionCode' => 'I',
                     'IntervalBoundaryTypeCode' => '3', // Range
-                    'LowerBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5' => (string)min($statusCodes),
-                    'UpperBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5' => (string)max($statusCodes),
+                    'LowerBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5' => (string) min($statusCodes),
+                    'UpperBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5' => (string) max($statusCodes),
                 ],
             ],
             'ProcessingConditions' => [
@@ -143,15 +142,13 @@ class AppointmentQueryService
         return [
             'success' => false,
             'error' => $result['error'] ?? 'Error al consultar citas pendientes',
-            'data' => null
+            'data' => null,
         ];
     }
 
     /**
      * Get all appointments for a customer.
      *
-     * @param string $customerId
-     * @param array $options
      * @return array
      */
     public function getAllAppointments(string $customerId, array $options = [])
@@ -160,11 +157,12 @@ class AppointmentQueryService
 
         // Validar ID de cliente
         if (empty($customerId)) {
-            Log::error("ID de cliente requerido");
+            Log::error('ID de cliente requerido');
+
             return [
                 'success' => false,
-                'error' => "ID de cliente requerido",
-                'data' => null
+                'error' => 'ID de cliente requerido',
+                'data' => null,
             ];
         }
 
@@ -241,15 +239,13 @@ class AppointmentQueryService
         return [
             'success' => false,
             'error' => $result['error'] ?? 'Error al consultar citas',
-            'data' => null
+            'data' => null,
         ];
     }
 
     /**
      * Get appointments by vehicle plate.
      *
-     * @param string $vehiclePlate
-     * @param array $options
      * @return array
      */
     public function getAppointmentsByVehiclePlate(string $vehiclePlate, array $options = [])
@@ -258,11 +254,12 @@ class AppointmentQueryService
 
         // Validar placa de vehículo
         if (empty($vehiclePlate)) {
-            Log::error("Placa de vehículo requerida");
+            Log::error('Placa de vehículo requerida');
+
             return [
                 'success' => false,
-                'error' => "Placa de vehículo requerida",
-                'data' => null
+                'error' => 'Placa de vehículo requerida',
+                'data' => null,
             ];
         }
 
@@ -330,15 +327,13 @@ class AppointmentQueryService
         return [
             'success' => false,
             'error' => $result['error'] ?? 'Error al consultar citas por placa de vehículo',
-            'data' => null
+            'data' => null,
         ];
     }
 
     /**
      * Get appointments by center.
      *
-     * @param string $centerId
-     * @param array $options
      * @return array
      */
     public function getAppointmentsByCenter(string $centerId, array $options = [])
@@ -347,11 +342,12 @@ class AppointmentQueryService
 
         // Validar ID de centro
         if (empty($centerId)) {
-            Log::error("ID de centro requerido");
+            Log::error('ID de centro requerido');
+
             return [
                 'success' => false,
-                'error' => "ID de centro requerido",
-                'data' => null
+                'error' => 'ID de centro requerido',
+                'data' => null,
             ];
         }
 
@@ -428,16 +424,13 @@ class AppointmentQueryService
         return [
             'success' => false,
             'error' => $result['error'] ?? 'Error al consultar citas por centro',
-            'data' => null
+            'data' => null,
         ];
     }
 
     /**
      * Get appointments by date range.
      *
-     * @param string $startDate
-     * @param string $endDate
-     * @param array $options
      * @return array
      */
     public function getAppointmentsByDateRange(string $startDate, string $endDate, array $options = [])
@@ -449,11 +442,12 @@ class AppointmentQueryService
             $startDateObj = Carbon::parse($startDate);
             $endDateObj = Carbon::parse($endDate);
         } catch (\Exception $e) {
-            Log::error("Formato de fecha inválido: " . $e->getMessage());
+            Log::error('Formato de fecha inválido: '.$e->getMessage());
+
             return [
                 'success' => false,
-                'error' => "Formato de fecha inválido: " . $e->getMessage(),
-                'data' => null
+                'error' => 'Formato de fecha inválido: '.$e->getMessage(),
+                'data' => null,
             ];
         }
 
@@ -527,14 +521,14 @@ class AppointmentQueryService
         return [
             'success' => false,
             'error' => $result['error'] ?? 'Error al consultar citas por rango de fechas',
-            'data' => null
+            'data' => null,
         ];
     }
 
     /**
      * Format appointment query response data.
      *
-     * @param object $response
+     * @param  object  $response
      * @return array
      */
     protected function formatAppointmentQueryResponse($response)
@@ -556,14 +550,14 @@ class AppointmentQueryService
             return [
                 'success' => false,
                 'error' => implode('; ', $errors) ?: 'Error en la consulta de citas',
-                'data' => null
+                'data' => null,
             ];
         }
 
         $appointments = [];
 
         // Verificar si hay citas en la respuesta
-        if (!isset($response->Activity)) {
+        if (! isset($response->Activity)) {
             // No hay citas, pero la consulta fue exitosa
             return [
                 'success' => true,

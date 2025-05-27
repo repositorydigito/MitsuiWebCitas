@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('campana_imagenes', function (Blueprint $table) {
+        Schema::create('campaign_images', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('campana_id')->constrained('campanas')->onDelete('cascade');
+            $table->foreignId('campaign_id')->constrained('campaigns')->onDelete('cascade');
             $table->string('ruta');
             $table->string('nombre_original');
             $table->string('mime_type');
@@ -21,7 +21,7 @@ return new class extends Migration
             $table->timestamps();
 
             // Índice único para asegurar que cada campaña tenga solo una imagen
-            $table->unique('campana_id');
+            $table->unique('campaign_id');
         });
     }
 
@@ -30,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('campana_imagenes');
+        Schema::dropIfExists('campaign_images');
     }
 };

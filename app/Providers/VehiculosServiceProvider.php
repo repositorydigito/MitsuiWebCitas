@@ -3,10 +3,9 @@
 namespace App\Providers;
 
 use App\Models\Vehiculo;
+use App\Services\MockVehiculoService;
 use App\Services\VehiculoSoapService;
 use App\Services\VehiculoWebServiceHealthCheck;
-use App\Services\MockVehiculoService;
-use Filament\Support\Facades\FilamentView;
 use Illuminate\Support\ServiceProvider;
 
 class VehiculosServiceProvider extends ServiceProvider
@@ -24,12 +23,12 @@ class VehiculosServiceProvider extends ServiceProvider
                 config('vehiculos_webservice.health_check_interval', 300)
             );
         });
-        
+
         // Registrar el servicio de datos mock
         $this->app->singleton(MockVehiculoService::class, function ($app) {
-            return new MockVehiculoService();
+            return new MockVehiculoService;
         });
-        
+
         // Registrar el servicio SOAP de vehículos
         $this->app->singleton(VehiculoSoapService::class, function ($app) {
             return new VehiculoSoapService(
@@ -49,7 +48,7 @@ class VehiculosServiceProvider extends ServiceProvider
         Vehiculo::macro('getKeyName', function () {
             return 'numpla';
         });
-        
+
         Vehiculo::macro('getRouteKeyName', function () {
             return 'numpla';
         });

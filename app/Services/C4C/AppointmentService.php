@@ -2,7 +2,6 @@
 
 namespace App\Services\C4C;
 
-use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class AppointmentService
@@ -33,7 +32,6 @@ class AppointmentService
     /**
      * Create a new appointment.
      *
-     * @param array $data
      * @return array
      */
     public function create(array $data)
@@ -45,7 +43,7 @@ class AppointmentService
                 return [
                     'success' => false,
                     'error' => "Field {$field} is required",
-                    'data' => null
+                    'data' => null,
                 ];
             }
         }
@@ -86,27 +84,25 @@ class AppointmentService
                 'y6s:zEstadoCita' => config('c4c.status_codes.appointment.generated'),
                 'y6s:zVieneHCP' => 'X',
                 'y6s:zExpress' => $data['express'] ?? 'false',
-            ]
+            ],
         ];
 
         $result = C4CClient::call($this->wsdl, $this->method, $params);
-        
+
         if ($result['success']) {
             return $this->formatAppointmentResponse($result['data']);
         }
-        
+
         return [
             'success' => false,
             'error' => $result['error'] ?? 'Failed to create appointment',
-            'data' => null
+            'data' => null,
         ];
     }
 
     /**
      * Update an existing appointment.
      *
-     * @param string $uuid
-     * @param array $data
      * @return array
      */
     public function update(string $uuid, array $data)
@@ -115,7 +111,7 @@ class AppointmentService
             return [
                 'success' => false,
                 'error' => 'Appointment UUID is required',
-                'data' => null
+                'data' => null,
             ];
         }
 
@@ -123,7 +119,7 @@ class AppointmentService
             'AppointmentActivity' => [
                 'actionCode' => config('c4c.status_codes.action.update'),
                 'UUID' => $uuid,
-            ]
+            ],
         ];
 
         // Add optional fields if provided
@@ -155,22 +151,21 @@ class AppointmentService
         $params['AppointmentActivity']['y6s:zVieneHCP'] = 'X';
 
         $result = C4CClient::call($this->wsdl, $this->method, $params);
-        
+
         if ($result['success']) {
             return $this->formatAppointmentResponse($result['data']);
         }
-        
+
         return [
             'success' => false,
             'error' => $result['error'] ?? 'Failed to update appointment',
-            'data' => null
+            'data' => null,
         ];
     }
 
     /**
      * Delete an appointment.
      *
-     * @param string $uuid
      * @return array
      */
     public function delete(string $uuid)
@@ -179,7 +174,7 @@ class AppointmentService
             return [
                 'success' => false,
                 'error' => 'Appointment UUID is required',
-                'data' => null
+                'data' => null,
             ];
         }
 
@@ -190,26 +185,26 @@ class AppointmentService
                 'LifeCycleStatusCode' => config('c4c.status_codes.lifecycle.cancelled'),
                 'y6s:zEstadoCita' => config('c4c.status_codes.appointment.deleted'),
                 'y6s:zVieneHCP' => 'X',
-            ]
+            ],
         ];
 
         $result = C4CClient::call($this->wsdl, $this->method, $params);
-        
+
         if ($result['success']) {
             return $this->formatAppointmentResponse($result['data']);
         }
-        
+
         return [
             'success' => false,
             'error' => $result['error'] ?? 'Failed to delete appointment',
-            'data' => null
+            'data' => null,
         ];
     }
 
     /**
      * Format appointment response data.
      *
-     * @param object $response
+     * @param  object  $response
      * @return array
      */
     protected function formatAppointmentResponse($response)
@@ -217,24 +212,24 @@ class AppointmentService
         // Check for errors in the response
         if (isset($response->Log) && isset($response->Log->MaximumLogItemSeverityCode) && $response->Log->MaximumLogItemSeverityCode >= 3) {
             $errors = [];
-            
+
             if (isset($response->Log->Item)) {
                 $items = is_array($response->Log->Item) ? $response->Log->Item : [$response->Log->Item];
-                
+
                 foreach ($items as $item) {
                     if ($item->SeverityCode >= 2) {
                         $errors[] = $item->Note ?? 'Unknown error';
                     }
                 }
             }
-            
+
             return [
                 'success' => false,
                 'error' => implode('; ', $errors) ?: 'Error in appointment operation',
-                'data' => null
+                'data' => null,
             ];
         }
-        
+
         // Process successful response
         if (isset($response->AppointmentActivity)) {
             return [
@@ -244,14 +239,14 @@ class AppointmentService
                     'uuid' => $response->AppointmentActivity->UUID ?? null,
                     'id' => $response->AppointmentActivity->ID ?? null,
                     'change_state_id' => $response->AppointmentActivity->ChangeStateID ?? null,
-                ]
+                ],
             ];
         }
-        
+
         return [
             'success' => true,
             'error' => null,
-            'data' => null
+            'data' => null,
         ];
     }
 }

@@ -9,10 +9,10 @@ class CampanaImagen extends Model
 {
     use HasFactory;
 
-    protected $table = 'campana_imagenes';
+    protected $table = 'campaign_images';
 
     protected $fillable = [
-        'campana_id',
+        'campaign_id',
         'ruta',
         'nombre_original',
         'mime_type',
@@ -24,6 +24,6 @@ class CampanaImagen extends Model
      */
     public function campana()
     {
-        return $this->belongsTo(Campana::class);
+        return $this->belongsTo(Campana::class, 'campaign_id');
     }
 }

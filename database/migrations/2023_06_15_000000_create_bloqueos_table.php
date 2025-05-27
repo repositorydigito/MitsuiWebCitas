@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('bloqueos', function (Blueprint $table) {
+        Schema::create('blockades', function (Blueprint $table) {
             $table->id();
             $table->string('local');
-            $table->date('fecha_inicio');
-            $table->date('fecha_fin');
-            $table->string('hora_inicio')->nullable();
-            $table->string('hora_fin')->nullable();
-            $table->boolean('todo_dia')->default(false);
+            $table->date('start_date');
+            $table->date('end_date');
+            $table->string('start_time')->nullable();
+            $table->string('end_time')->nullable();
+            $table->boolean('all_day')->default(false);
             $table->text('comentarios')->nullable();
             $table->timestamps();
         });
@@ -29,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('bloqueos');
+        Schema::dropIfExists('blockades');
     }
 };

@@ -1,14 +1,13 @@
 <x-filament-panels::page>
-<div class="flex items-center justify-between mb-4">
-    <p class="text-gray-600">Registra los vehículos que son parte de servicio Express.</p>
-
+<p class="text-gray-600">Registra los vehículos que son parte de servicio Express.</p>
+<div class="flex items-center justify-end mb-4">
     <div class="flex space-x-4 gap-4">
         <button
             type="button"
             wire:click="descargarPlantilla"
-            class="inline-flex items-center px-4 py-2 text-sm font-medium text-primary-600 bg-white border border-primary-600 rounded-lg hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            class="inline-flex items-center gap-2 px-2 py-2 text-sm font-medium text-primary-600 bg-white border border-primary-600 rounded-lg hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
         >
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
             </svg>
             Descargar plantilla
@@ -17,9 +16,9 @@
         <button
             type="button"
             wire:click="registrarVehiculo"
-            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            class="inline-flex items-center gap-2 px-2 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
         >
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
             </svg>
             Registrar vehículo
@@ -63,10 +62,14 @@
                                 {{ $vehiculo['marca'] }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $vehiculo['ano'] }}
+                                {{ $vehiculo['year'] }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $vehiculo['mantenimiento'] }}
+                                @if(is_array($vehiculo['mantenimiento']))
+                                    {{ implode(', ', $vehiculo['mantenimiento']) }}
+                                @else
+                                    {{ $vehiculo['mantenimiento'] }}
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ $vehiculo['local'] }}
@@ -255,11 +258,11 @@
 
                                 <!-- Campo Año -->
                                 <div class="flex flex-col">
-                                    <label for="ano" class="text-sm font-medium text-gray-700 mb-1">Año</label>
+                                    <label for="year" class="text-sm font-medium text-gray-700 mb-1">Año</label>
                                     <input
                                         type="text"
-                                        id="ano"
-                                        wire:model.live="vehiculoEnEdicion.ano"
+                                        id="year"
+                                        wire:model.live="vehiculoEnEdicion.year"
                                         class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                         placeholder="Ingrese el año"
                                     >
@@ -267,14 +270,38 @@
 
                                 <!-- Campo Mantenimiento -->
                                 <div class="flex flex-col">
-                                    <label for="mantenimiento" class="text-sm font-medium text-gray-700 mb-1">Mantenimiento</label>
-                                    <input
-                                        type="text"
-                                        id="mantenimiento"
-                                        wire:model.live="vehiculoEnEdicion.mantenimiento"
-                                        class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                        placeholder="Ingrese el mantenimiento"
-                                    >
+                                    <label class="text-sm font-medium text-gray-700 mb-1">Tipos de Mantenimiento</label>
+                                    <div class="space-y-2 max-h-32 overflow-y-auto border border-gray-300 rounded-md p-2">
+                                        @php
+                                            $tiposMantenimiento = [
+                                                '10,000 Km',
+                                                '20,000 Km',
+                                                '30,000 Km',
+                                                '40,000 Km',
+                                                '50,000 Km',
+                                                '60,000 Km',
+                                                '70,000 Km',
+                                                '80,000 Km',
+                                                '90,000 Km',
+                                                '100,000 Km'
+                                            ];
+                                        @endphp
+                                        @foreach($tiposMantenimiento as $tipo)
+                                            <div class="flex items-center">
+                                                <input
+                                                    type="checkbox"
+                                                    id="mantenimiento_{{ $loop->index }}"
+                                                    value="{{ $tipo }}"
+                                                    wire:model="vehiculoEnEdicion.mantenimiento"
+                                                    class="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                                                >
+                                                <label for="mantenimiento_{{ $loop->index }}" class="ml-2 text-sm text-gray-700">
+                                                    {{ $tipo }}
+                                                </label>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                    <p class="mt-1 text-xs text-gray-500">Selecciona uno o más tipos de mantenimiento</p>
                                 </div>
 
                                 <!-- Campo Local -->

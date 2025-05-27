@@ -9,7 +9,6 @@ class MockCustomerService
     /**
      * Find a customer by DNI.
      *
-     * @param string $dni
      * @return array
      */
     public function findByDNI(string $dni)
@@ -178,7 +177,6 @@ class MockCustomerService
     /**
      * Find a customer by RUC.
      *
-     * @param string $ruc
      * @return array
      */
     public function findByRUC(string $ruc)
@@ -412,7 +410,6 @@ class MockCustomerService
     /**
      * Find a customer by Carnet de Extranjería.
      *
-     * @param string $ce
      * @return array
      */
     public function findByCE(string $ce)
@@ -580,7 +577,6 @@ class MockCustomerService
     /**
      * Find a customer by Passport.
      *
-     * @param string $passport
      * @return array
      */
     public function findByPassport(string $passport)

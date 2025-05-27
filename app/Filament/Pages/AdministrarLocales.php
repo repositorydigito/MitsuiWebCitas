@@ -3,41 +3,44 @@
 namespace App\Filament\Pages;
 
 use App\Models\Local;
-use Filament\Pages\Page;
-use Filament\Forms\Form;
-use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\TimePicker;
-use Filament\Forms\Components\Toggle;
+use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
-use Illuminate\Support\Facades\Validator;
+use Filament\Pages\Page;
 
 class AdministrarLocales extends Page implements HasForms
 {
     use InteractsWithForms;
 
     protected static string $view = 'filament.pages.administrar-locales';
+
     protected static ?string $navigationIcon = 'heroicon-o-building-office';
+
     protected static ?string $navigationLabel = 'Administrar Locales';
+
     protected static ?string $title = 'Administrar Locales';
+
     protected static ?string $slug = 'administrar-locales';
 
     // Variables para el formulario
     public $locales = [];
+
     public $modalVisible = false;
+
     public $editMode = false;
+
     public $currentLocalId = null;
+
     public $formData = [
         'codigo' => '',
         'nombre' => '',
         'direccion' => '',
         'telefono' => '',
-        'horario_apertura' => '08:00',
-        'horario_cierre' => '18:00',
+        'opening_time' => '08:00',
+        'closing_time' => '18:00',
         'activo' => true,
     ];
-    
+
     // Errores de validación
     public $errors = [
         'codigo' => false,
@@ -57,7 +60,7 @@ class AdministrarLocales extends Page implements HasForms
     public function abrirModal($id = null)
     {
         $this->resetearFormulario();
-        
+
         if ($id) {
             $local = Local::findOrFail($id);
             $this->formData = [
@@ -65,8 +68,8 @@ class AdministrarLocales extends Page implements HasForms
                 'nombre' => $local->nombre,
                 'direccion' => $local->direccion,
                 'telefono' => $local->telefono,
-                'horario_apertura' => $local->horario_apertura,
-                'horario_cierre' => $local->horario_cierre,
+                'opening_time' => $local->opening_time,
+                'closing_time' => $local->closing_time,
                 'activo' => $local->activo,
             ];
             $this->editMode = true;
@@ -75,7 +78,7 @@ class AdministrarLocales extends Page implements HasForms
             $this->editMode = false;
             $this->currentLocalId = null;
         }
-        
+
         $this->modalVisible = true;
     }
 
@@ -91,11 +94,11 @@ class AdministrarLocales extends Page implements HasForms
             'nombre' => '',
             'direccion' => '',
             'telefono' => '',
-            'horario_apertura' => '08:00',
-            'horario_cierre' => '18:00',
+            'opening_time' => '08:00',
+            'closing_time' => '18:00',
             'activo' => true,
         ];
-        
+
         $this->errors = [
             'codigo' => false,
             'nombre' => false,
@@ -109,27 +112,27 @@ class AdministrarLocales extends Page implements HasForms
             'codigo' => false,
             'nombre' => false,
         ];
-        
+
         // Validar campos requeridos
         $hasErrors = false;
-        
+
         if (empty($this->formData['codigo'])) {
             $this->errors['codigo'] = true;
             $hasErrors = true;
         }
-        
+
         if (empty($this->formData['nombre'])) {
             $this->errors['nombre'] = true;
             $hasErrors = true;
         }
-        
+
         // Si hay errores, no continuar
         if ($hasErrors) {
             return;
         }
-        
+
         // Validar que el código sea único
-        if (!$this->editMode) {
+        if (! $this->editMode) {
             $existeCodigo = Local::where('codigo', $this->formData['codigo'])->exists();
             if ($existeCodigo) {
                 $this->errors['codigo'] = true;
@@ -138,10 +141,11 @@ class AdministrarLocales extends Page implements HasForms
                     ->title('El código ya existe')
                     ->body('Por favor, elige otro código para el local.')
                     ->send();
+
                 return;
             }
         }
-        
+
         try {
             if ($this->editMode) {
                 // Actualizar local existente
@@ -150,11 +154,11 @@ class AdministrarLocales extends Page implements HasForms
                     'nombre' => $this->formData['nombre'],
                     'direccion' => $this->formData['direccion'],
                     'telefono' => $this->formData['telefono'],
-                    'horario_apertura' => $this->formData['horario_apertura'],
-                    'horario_cierre' => $this->formData['horario_cierre'],
+                    'opening_time' => $this->formData['opening_time'],
+                    'closing_time' => $this->formData['closing_time'],
                     'activo' => $this->formData['activo'],
                 ]);
-                
+
                 Notification::make()
                     ->success()
                     ->title('Local actualizado')
@@ -167,18 +171,18 @@ class AdministrarLocales extends Page implements HasForms
                     'nombre' => $this->formData['nombre'],
                     'direccion' => $this->formData['direccion'],
                     'telefono' => $this->formData['telefono'],
-                    'horario_apertura' => $this->formData['horario_apertura'],
-                    'horario_cierre' => $this->formData['horario_cierre'],
+                    'opening_time' => $this->formData['opening_time'],
+                    'closing_time' => $this->formData['closing_time'],
                     'activo' => $this->formData['activo'],
                 ]);
-                
+
                 Notification::make()
                     ->success()
                     ->title('Local creado')
                     ->body('El local ha sido creado correctamente.')
                     ->send();
             }
-            
+
             // Recargar locales y cerrar modal
             $this->cargarLocales();
             $this->cerrarModal();
@@ -186,7 +190,7 @@ class AdministrarLocales extends Page implements HasForms
             Notification::make()
                 ->danger()
                 ->title('Error')
-                ->body('Ha ocurrido un error: ' . $e->getMessage())
+                ->body('Ha ocurrido un error: '.$e->getMessage())
                 ->send();
         }
     }
@@ -196,19 +200,19 @@ class AdministrarLocales extends Page implements HasForms
         try {
             $local = Local::findOrFail($id);
             $local->delete();
-            
+
             Notification::make()
                 ->success()
                 ->title('Local eliminado')
                 ->body('El local ha sido eliminado correctamente.')
                 ->send();
-            
+
             $this->cargarLocales();
         } catch (\Exception $e) {
             Notification::make()
                 ->danger()
                 ->title('Error')
-                ->body('Ha ocurrido un error: ' . $e->getMessage())
+                ->body('Ha ocurrido un error: '.$e->getMessage())
                 ->send();
         }
     }
@@ -218,21 +222,21 @@ class AdministrarLocales extends Page implements HasForms
         try {
             $local = Local::findOrFail($id);
             $local->update([
-                'activo' => !$local->activo,
+                'activo' => ! $local->activo,
             ]);
-            
+
             Notification::make()
                 ->success()
                 ->title('Estado actualizado')
                 ->body('El estado del local ha sido actualizado correctamente.')
                 ->send();
-            
+
             $this->cargarLocales();
         } catch (\Exception $e) {
             Notification::make()
                 ->danger()
                 ->title('Error')
-                ->body('Ha ocurrido un error: ' . $e->getMessage())
+                ->body('Ha ocurrido un error: '.$e->getMessage())
                 ->send();
         }
     }

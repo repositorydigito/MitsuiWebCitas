@@ -80,11 +80,11 @@
         <!-- Local -->
         <div class="mb-4">
             <h2 class="text-xl font-semibold mb-4">2. Elige el local</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" wire:key="locales-container-{{ $localSeleccionado }}">
                 @foreach ($locales as $key => $local)
-                    <div class="flex items-center p-3 border rounded-lg {{ $localSeleccionado == $key ? 'border-primary-500 bg-primary-50' : 'border-gray-300' }}">
+                    <div class="flex items-center p-3 border rounded-lg {{ $localSeleccionado == $key ? 'border-primary-500 bg-primary-50' : 'border-gray-300' }}" wire:key="local-{{ $key }}">
                         <div class="flex items-center h-5 mt-1 p-2">
-                            <input type="radio" id="local-{{ $key }}" name="local" value="{{ $key }}" wire:model="localSeleccionado" class="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500">
+                            <input type="radio" id="local-{{ $key }}" name="local" value="{{ $key }}" wire:model.live="localSeleccionado" class="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500">
                         </div>
                         <div class="ml-3 text-sm">
                             <label for="local-{{ $key }}" class="font-medium text-gray-700">{{ $local['nombre'] }}</label>
@@ -269,24 +269,22 @@
                     @if ($servicioSeleccionado == 'Mantenimiento periódico')
                         <div class="mt-4 mb-4">
                             <label for="tipoMantenimiento" class="block text-sm font-medium text-gray-700 mb-2">Tipo de mantenimiento</label>
-                            <select id="tipoMantenimiento" wire:model="tipoMantenimiento" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50">
-                                <option value="Mantenimiento 10000 Km">Mantenimiento 10,000 Km</option>
-                                <option value="Mantenimiento 20000 Km">Mantenimiento 20,000 Km</option>
-                                <option value="Mantenimiento 30000 Km">Mantenimiento 30,000 Km</option>
+                            <select id="tipoMantenimiento" wire:model.live="tipoMantenimiento" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50">
+                                <option value="10,000 Km">10,000 Km</option>
+                                <option value="20,000 Km">20,000 Km</option>
+                                <option value="30,000 Km">30,000 Km</option>
                             </select>
                         </div>
 
                         <div class="mt-4">
                             <p class="text-sm font-medium text-gray-700 mb-2">Modalidad</p>
-                            <div class="space-y-2">
-                                <div class="flex items-center">
-                                    <input type="radio" id="modalidad-express" name="modalidad" value="Express (Duración 1h-30 min)" wire:model="modalidadServicio" class="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500">
-                                    <label for="modalidad-express" class="p-2 text-sm text-gray-700">Express (Duración 1h 30 min)</label>
-                                </div>
-                                <div class="flex items-center">
-                                    <input type="radio" id="modalidad-regular" name="modalidad" value="Regular" wire:model="modalidadServicio" class="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500">
-                                    <label for="modalidad-regular" class="p-2 text-sm text-gray-700">Regular</label>
-                                </div>
+                            <div class="space-y-2" wire:key="modalidades-{{ $localSeleccionado }}-{{ $tipoMantenimiento }}">
+                                @foreach($modalidadesDisponibles as $value => $label)
+                                    <div class="flex items-center">
+                                        <input type="radio" id="modalidad-{{ $loop->index }}" name="modalidad" value="{{ $value }}" wire:model="modalidadServicio" class="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500">
+                                        <label for="modalidad-{{ $loop->index }}" class="p-2 text-sm text-gray-700">{{ $label }}</label>
+                                    </div>
+                                @endforeach
                             </div>
                         </div>
                     @endif
@@ -356,6 +354,8 @@
         <div class="mb-4">
             <h2 class="text-xl font-semibold mb-4">5. Elige un servicio adicional (opcional)</h2>
 
+
+
             <!-- Estilos para el carrusel -->
             <style>
                 .carousel-container {
@@ -418,7 +418,7 @@
 
             <!-- Campañas disponibles -->
             @if(count($campanasDisponibles) > 0)
-                <div class="mt-2">
+                <div class="mt-2" wire:key="campanas-container-{{ $localSeleccionado }}-{{ count($campanasDisponibles) }}">
                     <div x-data="{
                         activeSlide: 0,
                         totalSlides: {{ count($campanasDisponibles) }},
@@ -455,10 +455,10 @@
                     }" x-init="init()" class="carousel-container">
                         <div x-ref="carousel" class="carousel-items">
                             @foreach($campanasDisponibles as $index => $campana)
-                                <div class="carousel-item" x-data="{ selected: {{ in_array('campana_'.$campana['id'], $serviciosAdicionales) ? 'true' : 'false' }} }">
+                                <div class="carousel-item" x-data="{ selected: {{ in_array('campana_'.$campana['id'], $serviciosAdicionales) ? 'true' : 'false' }} }" wire:key="campana-{{ $campana['id'] }}">
                                     <div
                                         class="border rounded-lg overflow-hidden cursor-pointer"
-                                        :class="selected ? 'border-primary-500 ring-2 ring-primary-500' : 'border-gray-300'"
+                                        :class="selected ? 'border-primary-500 border-2' : 'border-gray-300'"
                                         @click="
                                             selected = !selected;
                                             if (selected) {
@@ -468,7 +468,7 @@
                                             }
                                         "
                                     >
-                                        <img src="{{ $campana['imagen'] }}" alt="{{ $campana['titulo'] }}" class="w-full h-32 object-cover" loading="lazy">
+                                        <img src="{{ $campana['imagen'] }}" alt="{{ $campana['titulo'] }}" class="w-full h-96 object-cover" loading="lazy">
                                         <div class="p-2" :class="selected ? 'bg-primary-100' : ''">
                                             <h4 class="text-sm font-medium" :class="selected ? 'text-primary-800' : ''">{{ $campana['titulo'] }}</h4>
                                             <p class="text-xs text-gray-400 mt-1">
@@ -510,7 +510,7 @@
 
             @if(count($campanasDisponibles) == 0)
                 <div class="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
-                    <svg class="w-12 h-12 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <svg class="w-8 h-8 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                     <p>No hay campañas disponibles en este momento</p>

@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Appointment extends Model
@@ -62,7 +62,7 @@ class Appointment extends Model
         static::creating(function ($appointment) {
             // Generar número de cita único si no se ha proporcionado
             if (empty($appointment->appointment_number)) {
-                $appointment->appointment_number = 'CITA-' . date('Ymd') . '-' . strtoupper(Str::random(5));
+                $appointment->appointment_number = 'CITA-'.date('Ymd').'-'.strtoupper(Str::random(5));
             }
         });
     }

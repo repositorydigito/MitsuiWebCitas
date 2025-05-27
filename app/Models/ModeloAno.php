@@ -9,11 +9,11 @@ class ModeloAno extends Model
 {
     use HasFactory;
 
-    protected $table = 'modelo_anos';
+    protected $table = 'model_years';
 
     protected $fillable = [
-        'modelo_id',
-        'ano',
+        'model_id',
+        'year',
         'activo',
     ];
 
@@ -34,10 +34,10 @@ class ModeloAno extends Model
      */
     public static function getAnosActivosParaModelo($modeloId)
     {
-        return self::where('modelo_id', $modeloId)
+        return self::where('model_id', $modeloId)
             ->where('activo', true)
-            ->orderBy('ano', 'desc')
-            ->pluck('ano')
+            ->orderBy('year', 'desc')
+            ->pluck('year')
             ->toArray();
     }
 
@@ -47,8 +47,8 @@ class ModeloAno extends Model
     public static function getAnosActivosParaSelector()
     {
         return self::where('activo', true)
-            ->orderBy('ano', 'desc')
-            ->pluck('ano')
+            ->orderBy('year', 'desc')
+            ->pluck('year')
             ->unique()
             ->toArray();
     }

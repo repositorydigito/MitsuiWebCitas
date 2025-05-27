@@ -22,19 +22,25 @@ class AgregarVehiculo extends Page
 
     // Datos del formulario
     public string $placa = '';
+
     public string $modelo = '';
+
     public string $anio = '';
+
     public string $kilometraje = '';
+
     public string $color = '';
+
     public string $marca = 'Z01'; // Por defecto TOYOTA
 
     // Paso actual
     public int $pasoActual = 1;
+
     public int $totalPasos = 3;
 
     public function mount(): void
     {
-        Log::info("[AgregarVehiculo] Inicializando página de agregar vehículo");
+        Log::info('[AgregarVehiculo] Inicializando página de agregar vehículo');
     }
 
     // Método para avanzar al siguiente paso (botón "Continuar")
@@ -48,27 +54,30 @@ class AgregarVehiculo extends Page
                     ->body('Por favor complete todos los campos obligatorios.')
                     ->warning()
                     ->send();
+
                 return;
             }
 
             // Validar formato de placa (ejemplo: ABC-123)
-            if (!preg_match('/^[A-Z0-9]{3,4}-[0-9]{3,4}$/i', $this->placa)) {
+            if (! preg_match('/^[A-Z0-9]{3,4}-[0-9]{3,4}$/i', $this->placa)) {
                 \Filament\Notifications\Notification::make()
                     ->title('Formato Incorrecto')
                     ->body('La placa debe tener un formato válido (ejemplo: ABC-123).')
                     ->warning()
                     ->send();
+
                 return;
             }
 
             // Validar año (debe ser un número entre 1900 y el año actual + 1)
-            $currentYear = (int)date('Y');
-            if (!is_numeric($this->anio) || (int)$this->anio < 1900 || (int)$this->anio > ($currentYear + 1)) {
+            $currentYear = (int) date('Y');
+            if (! is_numeric($this->anio) || (int) $this->anio < 1900 || (int) $this->anio > ($currentYear + 1)) {
                 \Filament\Notifications\Notification::make()
                     ->title('Año Inválido')
                     ->body("El año debe ser un número entre 1900 y {$currentYear}.")
                     ->warning()
                     ->send();
+
                 return;
             }
 
@@ -110,11 +119,12 @@ class AgregarVehiculo extends Page
                     ->body('Por favor complete todos los campos obligatorios.')
                     ->danger()
                     ->send();
+
                 return;
             }
 
             // Determinar el nombre de la marca basado en el código
-            $brandName = match($this->marca) {
+            $brandName = match ($this->marca) {
                 'Z01' => 'TOYOTA',
                 'Z02' => 'LEXUS',
                 'Z03' => 'HINO',
@@ -124,18 +134,18 @@ class AgregarVehiculo extends Page
             // Generar datos aleatorios para simular datos reales
             $randomData = [
                 'color' => $this->color ?: $this->getRandomColor(),
-                'mileage' => !empty($this->kilometraje) ? (int)$this->kilometraje : rand(1000, 50000),
+                'mileage' => ! empty($this->kilometraje) ? (int) $this->kilometraje : rand(1000, 50000),
                 'last_service_date' => now()->subMonths(rand(1, 6)),
                 'last_service_mileage' => rand(1000, 30000),
                 'next_service_date' => now()->addMonths(rand(1, 6)),
                 'next_service_mileage' => rand(5000, 60000),
-                'has_prepaid_maintenance' => (bool)rand(0, 1),
+                'has_prepaid_maintenance' => (bool) rand(0, 1),
                 'prepaid_maintenance_expiry' => now()->addYears(rand(1, 3)),
             ];
 
             // Crear el vehículo en la base de datos
-            $vehicle = new Vehicle();
-            $vehicle->vehicle_id = 'VH' . Str::random(8);
+            $vehicle = new Vehicle;
+            $vehicle->vehicle_id = 'VH'.Str::random(8);
             $vehicle->license_plate = strtoupper($this->placa);
             $vehicle->model = $this->modelo;
             $vehicle->year = $this->anio;
@@ -161,11 +171,11 @@ class AgregarVehiculo extends Page
                 ->success()
                 ->send();
         } catch (\Exception $e) {
-            Log::error("[AgregarVehiculo] Error al guardar vehículo: " . $e->getMessage());
+            Log::error('[AgregarVehiculo] Error al guardar vehículo: '.$e->getMessage());
 
             \Filament\Notifications\Notification::make()
                 ->title('Error al Guardar')
-                ->body('Ocurrió un error al guardar el vehículo: ' . $e->getMessage())
+                ->body('Ocurrió un error al guardar el vehículo: '.$e->getMessage())
                 ->danger()
                 ->send();
         }
@@ -173,14 +183,12 @@ class AgregarVehiculo extends Page
 
     /**
      * Obtener un color aleatorio.
-     *
-     * @return string
      */
     private function getRandomColor(): string
     {
         $colors = [
             'Blanco', 'Negro', 'Gris', 'Plata', 'Rojo', 'Azul', 'Verde',
-            'Amarillo', 'Naranja', 'Marrón', 'Beige', 'Dorado', 'Bronce'
+            'Amarillo', 'Naranja', 'Marrón', 'Beige', 'Dorado', 'Bronce',
         ];
 
         return $colors[array_rand($colors)];

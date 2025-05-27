@@ -13,10 +13,21 @@
                 <div class="relative">
                     <input
                         type="text"
-                        wire:model.debounce.300ms="search"
-                        placeholder="Buscar por placa"
-                        class="w-full pl-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-800 dark:text-white"
+                        wire:model.live="search"
+                        placeholder="Buscar por placa o modelo"
+                        class="w-full pl-4 pr-10 py-2 rounded-lg border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-800 dark:text-white"
                     >
+                    @if($search)
+                        <button
+                            wire:click="limpiarBusqueda"
+                            class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                            title="Limpiar búsqueda"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    @endif
                 </div>
             </div>
 
@@ -52,10 +63,21 @@
                 <div class="relative">
                     <input
                         type="text"
-                        wire:model.debounce.300ms="search"
-                        placeholder="Buscar por placa"
-                        class="w-full pl-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-800 dark:text-white"
+                        wire:model.live="search"
+                        placeholder="Buscar por placa o modelo"
+                        class="w-full pl-4 pr-10 py-2 rounded-lg border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-800 dark:text-white"
                     >
+                    @if($search)
+                        <button
+                            wire:click="limpiarBusqueda"
+                            class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                            title="Limpiar búsqueda"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    @endif
                 </div>
             </div>
             <div class="flex gap-2">
@@ -312,13 +334,28 @@
                     @else
                         {{-- Mensaje de no hay vehículos (responsive) --}}
                         <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm py-6 px-4 mb-4 w-full text-center">
-                            <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="w-8 h-8 mx-auto text-gray-400 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <p class="text-gray-500 dark:text-gray-400 text-lg font-medium mb-2">No se encontraron vehículos</p>
-                            <p class="text-gray-500 dark:text-gray-400 text-sm max-w-md mx-auto">No hay vehículos registrados para la marca {{ $marcaActual }}.</p>
+                            @if($search)
+                                <p class="text-gray-500 dark:text-gray-400 text-sm max-w-md mx-auto mb-4">
+                                    No hay vehículos que coincidan con la búsqueda "<strong>{{ $search }}</strong>" para la marca {{ $marcaActual }}.
+                                </p>
+                                <button
+                                    wire:click="limpiarBusqueda"
+                                    class="inline-flex gap-2 items-center px-3 py-1 text-sm font-medium text-primary-500 bg-white border border-primary-500 rounded hover:bg-gray-50 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 mb-3"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    Limpiar búsqueda
+                                </button>
+                            @else
+                                <p class="text-gray-500 dark:text-gray-400 text-sm max-w-md mx-auto">No hay vehículos registrados para la marca {{ $marcaActual }}.</p>
+                            @endif
                             <div class="mt-4">
-                                <a href="{{ \App\Filament\Pages\AgregarVehiculo::getUrl() }}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-primary-500 bg-white border border-primary-500 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">
+                                <a href="{{ \App\Filament\Pages\AgregarVehiculo::getUrl() }}" class="inline-flex gap-2 items-center px-4 py-2 text-sm font-medium text-primary-500 bg-white border border-primary-500 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">
                                     <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                         <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
                                     </svg>

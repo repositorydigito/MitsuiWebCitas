@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('vehiculos_express', function (Blueprint $table) {
+        Schema::create('vehicles_express', function (Blueprint $table) {
             $table->id();
             $table->string('modelo');
             $table->string('marca');
-            $table->string('ano');
+            $table->string('year');
             $table->string('mantenimiento');
             $table->string('local');
             $table->boolean('activo')->default(true);
@@ -28,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('vehiculos_express');
+        Schema::dropIfExists('vehicles_express');
     }
 };

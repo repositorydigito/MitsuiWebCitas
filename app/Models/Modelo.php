@@ -9,7 +9,7 @@ class Modelo extends Model
 {
     use HasFactory;
 
-    protected $table = 'modelos';
+    protected $table = 'models';
 
     protected $fillable = [
         'codigo',

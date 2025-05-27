@@ -2,16 +2,8 @@
 
 namespace App\Providers;
 
-use App\Filament\Pages\Vehiculos;
 use App\Filament\Pages\MiCuenta;
-use Filament\Panel;
-use Filament\PanelProvider;
-use Filament\Support\Assets\AlpineComponent;
-use Filament\Support\Assets\Asset;
-use Filament\Support\Assets\Css;
-use Filament\Support\Assets\Js;
-use Filament\Support\Facades\FilamentAsset;
-use Filament\Support\Facades\FilamentIcon;
+use App\Filament\Pages\Vehiculos;
 use Illuminate\Support\ServiceProvider;
 
 class FilamentServiceProvider extends ServiceProvider

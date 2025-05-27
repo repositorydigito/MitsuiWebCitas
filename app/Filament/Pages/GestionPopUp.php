@@ -2,20 +2,21 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\PopUp;
 use Filament\Pages\Page;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
-use App\Models\PopUp;
 use Illuminate\Support\Facades\Storage;
-use Livewire\WithFileUploads;
-use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\ImageManager;
+use Livewire\WithFileUploads;
 
 class GestionPopUp extends Page
 {
     use WithFileUploads;
+
     protected static ?string $navigationIcon = 'heroicon-o-photo';
 
     protected static ?string $navigationLabel = 'Gestión Pop up';
@@ -26,8 +27,11 @@ class GestionPopUp extends Page
 
     // Propiedades para la tabla
     public Collection $popups;
+
     public int $perPage = 5;
+
     public int $currentPage = 1;
+
     public int $page = 1;
 
     // Propiedad para búsqueda
@@ -38,14 +42,20 @@ class GestionPopUp extends Page
 
     // Modal para ver imagen
     public bool $isModalOpen = false;
+
     public string $imagenUrl = '';
+
     public string $imagenNombre = '';
 
     // Modal para agregar/editar popup
     public bool $isFormModalOpen = false;
+
     public ?array $popupEnEdicion = null;
+
     public string $accionFormulario = 'crear';
+
     public $imagen; // Propiedad para la imagen subida
+
     public $imagenPreview = null; // Para mostrar la vista previa de la imagen
 
     public function mount(): void
@@ -67,8 +77,8 @@ class GestionPopUp extends Page
                 $imagenUrl = $popup->imagen_path;
 
                 // Si la imagen es una ruta relativa, convertirla a URL completa
-                if (!filter_var($imagenUrl, FILTER_VALIDATE_URL)) {
-                    $imagenUrl = asset('storage/' . $imagenUrl);
+                if (! filter_var($imagenUrl, FILTER_VALIDATE_URL)) {
+                    $imagenUrl = asset('storage/'.$imagenUrl);
                 }
 
                 $this->popups->push([
@@ -87,14 +97,14 @@ class GestionPopUp extends Page
                 $this->estadoPopups[$popup['id']] = $popup['activo'];
             }
 
-            Log::info("[GestionPopUp] Se cargaron " . $this->popups->count() . " popups desde la base de datos");
+            Log::info('[GestionPopUp] Se cargaron '.$this->popups->count().' popups desde la base de datos');
         } catch (\Exception $e) {
-            Log::error("[GestionPopUp] Error al cargar popups: " . $e->getMessage());
+            Log::error('[GestionPopUp] Error al cargar popups: '.$e->getMessage());
 
             // Mostrar notificación de error
             \Filament\Notifications\Notification::make()
                 ->title('Error al cargar popups')
-                ->body('Ha ocurrido un error al cargar los popups: ' . $e->getMessage())
+                ->body('Ha ocurrido un error al cargar los popups: '.$e->getMessage())
                 ->danger()
                 ->send();
 
@@ -108,7 +118,7 @@ class GestionPopUp extends Page
         // Filtrar por nombre si hay una búsqueda
         $popupsFiltrados = $this->popups;
 
-        if (!empty($this->busqueda)) {
+        if (! empty($this->busqueda)) {
             $terminoBusqueda = strtolower($this->busqueda);
             $popupsFiltrados = $this->popups->filter(function ($popup) use ($terminoBusqueda) {
                 return str_contains(strtolower($popup['nombre']), $terminoBusqueda);
@@ -136,13 +146,14 @@ class GestionPopUp extends Page
     {
         try {
             // Actualizar el estado en la memoria
-            $this->estadoPopups[$id] = !$this->estadoPopups[$id];
+            $this->estadoPopups[$id] = ! $this->estadoPopups[$id];
 
             // Actualizar el estado en la colección de popups
             $this->popups = $this->popups->map(function ($popup) use ($id) {
                 if ($popup['id'] === $id) {
                     $popup['activo'] = $this->estadoPopups[$id];
                 }
+
                 return $popup;
             });
 
@@ -161,17 +172,17 @@ class GestionPopUp extends Page
 
             Log::info("[GestionPopUp] Se actualizó el estado del popup {$id} a {$estado}");
         } catch (\Exception $e) {
-            Log::error("[GestionPopUp] Error al actualizar estado del popup {$id}: " . $e->getMessage());
+            Log::error("[GestionPopUp] Error al actualizar estado del popup {$id}: ".$e->getMessage());
 
             // Mostrar notificación de error
             \Filament\Notifications\Notification::make()
                 ->title('Error al actualizar estado')
-                ->body('Ha ocurrido un error al actualizar el estado del popup: ' . $e->getMessage())
+                ->body('Ha ocurrido un error al actualizar el estado del popup: '.$e->getMessage())
                 ->danger()
                 ->send();
 
             // Revertir el cambio en la memoria
-            $this->estadoPopups[$id] = !$this->estadoPopups[$id];
+            $this->estadoPopups[$id] = ! $this->estadoPopups[$id];
 
             // Recargar los popups para asegurar consistencia
             $this->cargarPopups();
@@ -229,12 +240,12 @@ class GestionPopUp extends Page
                 throw new \Exception("No se encontró el popup con ID {$id}");
             }
         } catch (\Exception $e) {
-            Log::error("[GestionPopUp] Error al editar popup {$id}: " . $e->getMessage());
+            Log::error("[GestionPopUp] Error al editar popup {$id}: ".$e->getMessage());
 
             // Mostrar notificación de error
             \Filament\Notifications\Notification::make()
                 ->title('Error al editar popup')
-                ->body('Ha ocurrido un error al editar el popup: ' . $e->getMessage())
+                ->body('Ha ocurrido un error al editar el popup: '.$e->getMessage())
                 ->danger()
                 ->send();
         }
@@ -257,10 +268,10 @@ class GestionPopUp extends Page
             // Crear o actualizar el popup
             $popup = null;
 
-            if ($this->accionFormulario === 'editar' && !empty($this->popupEnEdicion['id'])) {
+            if ($this->accionFormulario === 'editar' && ! empty($this->popupEnEdicion['id'])) {
                 $popup = PopUp::findOrFail($this->popupEnEdicion['id']);
             } else {
-                $popup = new PopUp();
+                $popup = new PopUp;
             }
 
             $popup->nombre = $this->popupEnEdicion['nombre'];
@@ -270,12 +281,12 @@ class GestionPopUp extends Page
             // Procesar la imagen si se ha subido una nueva
             if ($this->imagen) {
                 // Crear directorio si no existe
-                if (!Storage::disk('public')->exists('popups')) {
+                if (! Storage::disk('public')->exists('popups')) {
                     Storage::disk('public')->makeDirectory('popups');
                 }
 
                 // Procesar la imagen con Intervention Image
-                $manager = new ImageManager(new Driver());
+                $manager = new ImageManager(new Driver);
                 $img = $manager->read($this->imagen->getRealPath());
 
                 // Obtener dimensiones y formato
@@ -288,15 +299,15 @@ class GestionPopUp extends Page
                 $popup->formato = strtoupper($formato);
 
                 // Generar nombre único para la imagen
-                $nombreArchivo = 'popup_' . time() . '.' . $formato;
-                $rutaImagen = 'popups/' . $nombreArchivo;
+                $nombreArchivo = 'popup_'.time().'.'.$formato;
+                $rutaImagen = 'popups/'.$nombreArchivo;
 
                 // Guardar la imagen en el almacenamiento
-                $img->save(storage_path('app/public/' . $rutaImagen));
+                $img->save(storage_path('app/public/'.$rutaImagen));
 
                 // Guardar la ruta en la base de datos
                 $popup->imagen_path = $rutaImagen;
-            } else if ($this->accionFormulario === 'editar') {
+            } elseif ($this->accionFormulario === 'editar') {
                 // Si estamos editando y no se ha subido una nueva imagen, mantener las dimensiones y formato existentes
                 if (isset($this->popupEnEdicion['medidas'])) {
                     $popup->medidas = $this->popupEnEdicion['medidas'];
@@ -321,7 +332,7 @@ class GestionPopUp extends Page
             // Mostrar notificación de éxito
             \Filament\Notifications\Notification::make()
                 ->title('Popup guardado')
-                ->body("El popup ha sido guardado correctamente")
+                ->body('El popup ha sido guardado correctamente')
                 ->success()
                 ->send();
 
@@ -332,12 +343,12 @@ class GestionPopUp extends Page
             $this->reset(['imagen', 'imagenPreview']);
             $this->cargarPopups();
         } catch (\Exception $e) {
-            Log::error("[GestionPopUp] Error al guardar popup: " . $e->getMessage());
+            Log::error('[GestionPopUp] Error al guardar popup: '.$e->getMessage());
 
             // Mostrar notificación de error
             \Filament\Notifications\Notification::make()
                 ->title('Error al guardar popup')
-                ->body('Ha ocurrido un error al guardar el popup: ' . $e->getMessage())
+                ->body('Ha ocurrido un error al guardar el popup: '.$e->getMessage())
                 ->danger()
                 ->send();
         }
@@ -367,7 +378,7 @@ class GestionPopUp extends Page
             $this->imagenPreview = $this->imagen->temporaryUrl();
 
             // Obtener información de la imagen
-            $manager = new ImageManager(new Driver());
+            $manager = new ImageManager(new Driver);
             $img = $manager->read($this->imagen->getRealPath());
             $width = $img->width();
             $height = $img->height();
@@ -379,12 +390,12 @@ class GestionPopUp extends Page
 
             Log::info("[GestionPopUp] Imagen subida: {$width}x{$height} {$formato}");
         } catch (\Exception $e) {
-            Log::error("[GestionPopUp] Error al procesar imagen: " . $e->getMessage());
+            Log::error('[GestionPopUp] Error al procesar imagen: '.$e->getMessage());
 
             // Mostrar notificación de error
             \Filament\Notifications\Notification::make()
                 ->title('Error al procesar imagen')
-                ->body('Ha ocurrido un error al procesar la imagen: ' . $e->getMessage())
+                ->body('Ha ocurrido un error al procesar la imagen: '.$e->getMessage())
                 ->danger()
                 ->send();
 

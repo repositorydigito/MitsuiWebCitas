@@ -2,15 +2,14 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\Campana;
+use App\Models\Local;
 use Filament\Pages\Page;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Livewire\WithPagination;
-use App\Models\Local;
-use App\Models\Campana;
 
 class Campanas extends Page
 {
@@ -30,10 +29,15 @@ class Campanas extends Page
 
     // Propiedades para filtros
     public string $ciudadSeleccionada = '';
+
     public string $estadoSeleccionado = '';
+
     public string $fechaInicio = '';
+
     public string $fechaFin = '';
+
     public string $busqueda = '';
+
     public string $rangoFechas = '';
 
     // Datos de campañas
@@ -41,6 +45,7 @@ class Campanas extends Page
 
     // Modal de detalle
     public bool $modalDetalleVisible = false;
+
     public array $campanaDetalle = [];
 
     // Opciones para filtros
@@ -65,9 +70,9 @@ class Campanas extends Page
     {
         // Por defecto, no aplicamos ningún filtro de fecha
         // Solo inicializamos rangoFechas si ya tenemos fechas establecidas (por ejemplo, desde la URL)
-        if (!empty($this->fechaInicio) && !empty($this->fechaFin) && empty($this->rangoFechas)) {
+        if (! empty($this->fechaInicio) && ! empty($this->fechaFin) && empty($this->rangoFechas)) {
             // Si tenemos fechas pero no rangoFechas, inicializar rangoFechas
-            $this->rangoFechas = $this->fechaInicio . ' - ' . $this->fechaFin;
+            $this->rangoFechas = $this->fechaInicio.' - '.$this->fechaFin;
             Log::info("[CampanasPage] Inicializando rangoFechas desde fechas existentes: {$this->rangoFechas}");
         }
 
@@ -90,9 +95,9 @@ class Campanas extends Page
             // Extraer solo los nombres (valores) del array asociativo
             $this->ciudades = array_values($localesActivos);
 
-            Log::info("[CampanasPage] Ciudades cargadas: " . implode(', ', $this->ciudades));
+            Log::info('[CampanasPage] Ciudades cargadas: '.implode(', ', $this->ciudades));
         } catch (\Exception $e) {
-            Log::error("[CampanasPage] Error al cargar ciudades: " . $e->getMessage());
+            Log::error('[CampanasPage] Error al cargar ciudades: '.$e->getMessage());
             $this->ciudades = [];
         }
     }
@@ -105,17 +110,17 @@ class Campanas extends Page
     public function cargarCampanas(): void
     {
         try {
-            Log::info("[CampanasPage] Iniciando carga de campañas");
+            Log::info('[CampanasPage] Iniciando carga de campañas');
 
             // Consulta base para obtener campañas con sus relaciones
             $query = Campana::with(['imagen', 'modelos', 'anos', 'locales']);
 
             // Filtrar por ciudad (local)
-            if (!empty($this->ciudadSeleccionada)) {
+            if (! empty($this->ciudadSeleccionada)) {
                 $query->whereHas('locales', function ($q) {
                     $local = Local::where('nombre', $this->ciudadSeleccionada)->first();
                     if ($local) {
-                        $q->where('local_codigo', $local->codigo);
+                        $q->where('premise_code', $local->codigo);
                     }
                 });
 
@@ -123,12 +128,12 @@ class Campanas extends Page
             }
 
             // Filtrar por estado
-            if (!empty($this->estadoSeleccionado)) {
+            if (! empty($this->estadoSeleccionado)) {
                 $query->where('estado', $this->estadoSeleccionado);
             }
 
             // Filtrar por fecha
-            if (!empty($this->fechaInicio) && !empty($this->fechaFin)) {
+            if (! empty($this->fechaInicio) && ! empty($this->fechaFin)) {
                 try {
                     // Convertir las fechas de string a objetos Carbon
                     $fechaInicio = \Carbon\Carbon::createFromFormat('d/m/Y', $this->fechaInicio)->startOfDay();
@@ -146,11 +151,11 @@ class Campanas extends Page
                         // 1. La fecha de inicio de la campaña está dentro del período de filtro, o
                         // 2. La fecha de fin de la campaña está dentro del período de filtro, o
                         // 3. El período de filtro está completamente dentro del período de la campaña
-                        $q->whereBetween('fecha_inicio', [$fechaInicioSql, $fechaFinSql])
-                            ->orWhereBetween('fecha_fin', [$fechaInicioSql, $fechaFinSql])
+                        $q->whereBetween('start_date', [$fechaInicioSql, $fechaFinSql])
+                            ->orWhereBetween('end_date', [$fechaInicioSql, $fechaFinSql])
                             ->orWhere(function ($q2) use ($fechaInicioSql, $fechaFinSql) {
-                                $q2->where('fecha_inicio', '<=', $fechaInicioSql)
-                                    ->where('fecha_fin', '>=', $fechaFinSql);
+                                $q2->where('start_date', '<=', $fechaInicioSql)
+                                    ->where('end_date', '>=', $fechaFinSql);
                             });
                     });
 
@@ -161,16 +166,16 @@ class Campanas extends Page
                     }, $bindings), $query->toSql());
 
                     Log::info("[CampanasPage] Consulta SQL con filtro de fechas: {$sqlWithBindings}");
-                    Log::info("[CampanasPage] Filtro de fechas aplicado correctamente en la consulta SQL");
+                    Log::info('[CampanasPage] Filtro de fechas aplicado correctamente en la consulta SQL');
 
                 } catch (\Exception $e) {
-                    Log::error("[CampanasPage] Error al procesar fechas: " . $e->getMessage());
-                    Log::error("[CampanasPage] Stack trace: " . $e->getTraceAsString());
+                    Log::error('[CampanasPage] Error al procesar fechas: '.$e->getMessage());
+                    Log::error('[CampanasPage] Stack trace: '.$e->getTraceAsString());
 
                     // Notificar al usuario del error
                     \Filament\Notifications\Notification::make()
                         ->title('Error en filtro de fechas')
-                        ->body('Ha ocurrido un error al aplicar el filtro de fechas: ' . $e->getMessage())
+                        ->body('Ha ocurrido un error al aplicar el filtro de fechas: '.$e->getMessage())
                         ->danger()
                         ->send();
 
@@ -180,12 +185,12 @@ class Campanas extends Page
                     $this->rangoFechas = '';
                 }
             } else {
-                Log::info("[CampanasPage] No se aplicó filtro de fechas en la consulta SQL (fechas vacías)");
+                Log::info('[CampanasPage] No se aplicó filtro de fechas en la consulta SQL (fechas vacías)');
             }
 
             // Filtrar por búsqueda
-            if (!empty($this->busqueda)) {
-                $busqueda = '%' . $this->busqueda . '%';
+            if (! empty($this->busqueda)) {
+                $busqueda = '%'.$this->busqueda.'%';
                 $query->where(function ($q) use ($busqueda) {
                     $q->where('codigo', 'like', $busqueda)
                         ->orWhere('titulo', 'like', $busqueda);
@@ -193,7 +198,7 @@ class Campanas extends Page
             }
 
             // Ordenar por fecha de inicio (más reciente primero)
-            $query->orderBy('fecha_inicio', 'desc');
+            $query->orderBy('start_date', 'desc');
 
             // Ejecutar la consulta
             $campanas = $query->get();
@@ -209,32 +214,32 @@ class Campanas extends Page
                     $localesNombres = [];
 
                     // Obtener los locales directamente de la tabla pivote
-                    $localesPivot = \DB::table('campana_locales')
-                        ->where('campana_id', $campana->id)
+                    $localesPivot = \DB::table('campaign_premises')
+                        ->where('campaign_id', $campana->id)
                         ->get();
 
                     foreach ($localesPivot as $pivotItem) {
-                        $localCodigo = $pivotItem->local_codigo;
+                        $localCodigo = $pivotItem->premise_code;
                         $local = Local::where('codigo', $localCodigo)->first();
                         if ($local) {
                             $localesNombres[] = $local->nombre;
                         } else {
-                            $localesNombres[] = $localCodigo . ' (No encontrado)';
+                            $localesNombres[] = $localCodigo.' (No encontrado)';
                         }
                     }
 
                     // Si no se encontraron locales en la tabla pivote, intentar con la relación
                     if (empty($localesNombres) && $campana->locales && $campana->locales->count() > 0) {
                         foreach ($campana->locales as $local) {
-                            if (isset($local->pivot) && isset($local->pivot->local_codigo)) {
-                                $nombreLocal = Local::where('codigo', $local->pivot->local_codigo)->value('nombre');
-                                $localesNombres[] = $nombreLocal ?? $local->pivot->local_codigo;
+                            if (isset($local->pivot) && isset($local->pivot->premise_code)) {
+                                $nombreLocal = Local::where('codigo', $local->pivot->premise_code)->value('nombre');
+                                $localesNombres[] = $nombreLocal ?? $local->pivot->premise_code;
                             }
                         }
                     }
 
                     // Registrar información sobre los locales encontrados
-                    Log::info("[CampanasPage] Campaña {$campana->codigo} tiene " . count($localesNombres) . " locales: " . implode(', ', $localesNombres));
+                    Log::info("[CampanasPage] Campaña {$campana->codigo} tiene ".count($localesNombres).' locales: '.implode(', ', $localesNombres));
 
                     // Obtener la URL de la imagen
                     $imagenUrl = 'https://via.placeholder.com/150';
@@ -242,14 +247,14 @@ class Campanas extends Page
                         try {
                             $imagenUrl = $this->getImageUrl($campana->imagen);
                         } catch (\Exception $e) {
-                            Log::error("[CampanasPage] Error al obtener URL de imagen: " . $e->getMessage());
+                            Log::error('[CampanasPage] Error al obtener URL de imagen: '.$e->getMessage());
                         }
                     }
 
                     // Obtener los años directamente de la tabla pivote
-                    $anosPivot = \DB::table('campana_anos')
-                        ->where('campana_id', $campana->id)
-                        ->pluck('ano')
+                    $anosPivot = \DB::table('campaign_years')
+                        ->where('campaign_id', $campana->id)
+                        ->pluck('year')
                         ->toArray();
 
                     // Obtener los modelos
@@ -262,8 +267,8 @@ class Campanas extends Page
                     $campanasTransformadas->push([
                         'codigo' => $campana->codigo,
                         'nombre' => $campana->titulo,
-                        'fecha_inicio' => $campana->fecha_inicio->format('d/m/Y'),
-                        'fecha_fin' => $campana->fecha_fin->format('d/m/Y'),
+                        'fecha_inicio' => $campana->start_date->format('d/m/Y'),
+                        'fecha_fin' => $campana->end_date->format('d/m/Y'),
                         'estado' => $campana->estado,
                         // Campos adicionales para uso interno
                         'id' => $campana->id,
@@ -273,7 +278,7 @@ class Campanas extends Page
                         'imagen' => $imagenUrl,
                     ]);
                 } catch (\Exception $e) {
-                    Log::error("[CampanasPage] Error al procesar campaña {$campana->id}: " . $e->getMessage());
+                    Log::error("[CampanasPage] Error al procesar campaña {$campana->id}: ".$e->getMessage());
                     // Continuamos con la siguiente campaña
                 }
             }
@@ -282,11 +287,11 @@ class Campanas extends Page
 
             Log::info("[CampanasPage] Campañas transformadas: {$campanasTransformadas->count()}");
         } catch (\Exception $e) {
-            Log::error("[CampanasPage] Error al cargar campañas: " . $e->getMessage() . "\nTrace: " . $e->getTraceAsString());
+            Log::error('[CampanasPage] Error al cargar campañas: '.$e->getMessage()."\nTrace: ".$e->getTraceAsString());
             $this->campanas = collect();
             \Filament\Notifications\Notification::make()
                 ->title('Error al Cargar Campañas')
-                ->body('No se pudo obtener la lista de campañas: ' . $e->getMessage())
+                ->body('No se pudo obtener la lista de campañas: '.$e->getMessage())
                 ->danger()
                 ->send();
         }
@@ -301,11 +306,11 @@ class Campanas extends Page
                 in_array($this->ciudadSeleccionada, $campana['locales']));
 
             // Registrar información de depuración para el filtro de ciudad
-            if (!empty($this->ciudadSeleccionada)) {
-                Log::debug("[CampanasPage] Filtro de ciudad para campaña {$campana['codigo']}: " .
-                    "Ciudad seleccionada: {$this->ciudadSeleccionada}, " .
-                    "Locales de la campaña: " . (isset($campana['locales']) ? implode(', ', $campana['locales']) : 'Ninguno') . ", " .
-                    "Resultado: " . ($pasaFiltroCiudad ? 'Pasa' : 'No pasa'));
+            if (! empty($this->ciudadSeleccionada)) {
+                Log::debug("[CampanasPage] Filtro de ciudad para campaña {$campana['codigo']}: ".
+                    "Ciudad seleccionada: {$this->ciudadSeleccionada}, ".
+                    'Locales de la campaña: '.(isset($campana['locales']) ? implode(', ', $campana['locales']) : 'Ninguno').', '.
+                    'Resultado: '.($pasaFiltroCiudad ? 'Pasa' : 'No pasa'));
             }
 
             $pasaFiltroEstado = empty($this->estadoSeleccionado) || $campana['estado'] === $this->estadoSeleccionado;
@@ -317,7 +322,7 @@ class Campanas extends Page
             $pasaFiltroFechas = true; // Por defecto, todas las campañas pasan el filtro de fechas
 
             // Solo aplicamos el filtro de fechas si se ha seleccionado un rango
-            if (!empty($this->fechaInicio) && !empty($this->fechaFin)) {
+            if (! empty($this->fechaInicio) && ! empty($this->fechaFin)) {
                 try {
                     // Convertir las fechas de string a objetos Carbon
                     $fechaInicioCampana = \Carbon\Carbon::createFromFormat('d/m/Y', $campana['fecha_inicio'])->startOfDay();
@@ -339,20 +344,20 @@ class Campanas extends Page
                         ($fechaInicioCampana->lte($fechaInicioFiltro) && $fechaFinCampana->gte($fechaFinFiltro))
                     );
 
-                    Log::info("[CampanasPage] Filtro de fechas para campaña {$campana['codigo']}: " .
-                        "Campaña: {$fechaInicioCampana->format('d/m/Y')} - {$fechaFinCampana->format('d/m/Y')}, " .
-                        "Filtro: {$fechaInicioFiltro->format('d/m/Y')} - {$fechaFinFiltro->format('d/m/Y')}, " .
-                        "Resultado: " . ($pasaFiltroFechas ? 'Pasa' : 'No pasa'));
+                    Log::info("[CampanasPage] Filtro de fechas para campaña {$campana['codigo']}: ".
+                        "Campaña: {$fechaInicioCampana->format('d/m/Y')} - {$fechaFinCampana->format('d/m/Y')}, ".
+                        "Filtro: {$fechaInicioFiltro->format('d/m/Y')} - {$fechaFinFiltro->format('d/m/Y')}, ".
+                        'Resultado: '.($pasaFiltroFechas ? 'Pasa' : 'No pasa'));
 
                 } catch (\Exception $e) {
                     // Si hay un error en el formato de fecha, no aplicamos el filtro
-                    Log::error("[CampanasPage] Error al filtrar por fechas: " . $e->getMessage());
-                    Log::error("[CampanasPage] Stack trace: " . $e->getTraceAsString());
+                    Log::error('[CampanasPage] Error al filtrar por fechas: '.$e->getMessage());
+                    Log::error('[CampanasPage] Stack trace: '.$e->getTraceAsString());
 
                     // Mostrar notificación al usuario
                     \Filament\Notifications\Notification::make()
                         ->title('Error en filtro de fechas')
-                        ->body('Ha ocurrido un error al aplicar el filtro de fechas: ' . $e->getMessage())
+                        ->body('Ha ocurrido un error al aplicar el filtro de fechas: '.$e->getMessage())
                         ->danger()
                         ->send();
                 }
@@ -370,7 +375,7 @@ class Campanas extends Page
      */
     public function aplicarFiltroFechas(): void
     {
-        Log::info("[CampanasPage] Aplicando filtro de fechas con rangoFechas: " . $this->rangoFechas);
+        Log::info('[CampanasPage] Aplicando filtro de fechas con rangoFechas: '.$this->rangoFechas);
         $this->aplicarFiltroFechasDirecto($this->rangoFechas);
     }
 
@@ -379,24 +384,24 @@ class Campanas extends Page
      */
     public function aplicarFiltroFechasDirecto(string $rangoFechas): void
     {
-        Log::info("[CampanasPage] Aplicando filtro de fechas directo con rangoFechas: " . $rangoFechas);
+        Log::info('[CampanasPage] Aplicando filtro de fechas directo con rangoFechas: '.$rangoFechas);
 
         // Actualizar el valor del modelo
         $this->rangoFechas = $rangoFechas;
 
-        if (!empty($rangoFechas)) {
+        if (! empty($rangoFechas)) {
             try {
                 $fechas = explode(' - ', $rangoFechas);
-                Log::info("[CampanasPage] Fechas extraídas del rango: " . json_encode($fechas));
+                Log::info('[CampanasPage] Fechas extraídas del rango: '.json_encode($fechas));
 
                 if (count($fechas) === 2) {
                     $this->fechaInicio = trim($fechas[0]);
                     $this->fechaFin = trim($fechas[1]);
-                } elseif (count($fechas) === 1 && !empty(trim($fechas[0]))) {
+                } elseif (count($fechas) === 1 && ! empty(trim($fechas[0]))) {
                     $this->fechaInicio = trim($fechas[0]);
                     $this->fechaFin = trim($fechas[0]);
                 } else {
-                    throw new \Exception("Formato de rango de fechas inesperado");
+                    throw new \Exception('Formato de rango de fechas inesperado');
                 }
 
                 // Validar el formato de las fechas
@@ -431,7 +436,7 @@ class Campanas extends Page
                 $this->cargarCampanas();
 
             } catch (\Exception $e) {
-                Log::error("[CampanasPage] Error al procesar rango de fechas: " . $e->getMessage());
+                Log::error('[CampanasPage] Error al procesar rango de fechas: '.$e->getMessage());
 
                 // Notificar al usuario del error
                 \Filament\Notifications\Notification::make()
@@ -534,7 +539,7 @@ class Campanas extends Page
      */
     public function limpiarFiltroFechas(): void
     {
-        Log::info("[CampanasPage] Limpiando filtro de fechas");
+        Log::info('[CampanasPage] Limpiando filtro de fechas');
 
         // Limpiar los valores
         $this->rangoFechas = '';
@@ -565,13 +570,14 @@ class Campanas extends Page
             // Obtener la campaña con sus relaciones
             $campana = Campana::with(['imagen', 'modelos', 'anos', 'locales'])->where('codigo', $codigo)->first();
 
-            if (!$campana) {
+            if (! $campana) {
                 Log::warning("[CampanasPage] Campaña no encontrada con código: {$codigo}");
                 $this->dispatch('mostrarNotificacion', [
                     'tipo' => 'error',
                     'titulo' => 'Campaña no encontrada',
-                    'mensaje' => "No se encontró la campaña con código: {$codigo}"
+                    'mensaje' => "No se encontró la campaña con código: {$codigo}",
                 ]);
+
                 return;
             }
 
@@ -583,11 +589,11 @@ class Campanas extends Page
 
             Log::info("[CampanasPage] Modal mostrado correctamente para campaña: {$codigo}");
         } catch (\Exception $e) {
-            Log::error("[CampanasPage] Error al ver detalle de campaña con JavaScript: " . $e->getMessage());
+            Log::error('[CampanasPage] Error al ver detalle de campaña con JavaScript: '.$e->getMessage());
             $this->dispatch('mostrarNotificacion', [
                 'tipo' => 'error',
                 'titulo' => 'Error',
-                'mensaje' => 'Ha ocurrido un error al intentar ver el detalle de la campaña: ' . $e->getMessage()
+                'mensaje' => 'Ha ocurrido un error al intentar ver el detalle de la campaña: '.$e->getMessage(),
             ]);
         }
     }
@@ -603,26 +609,26 @@ class Campanas extends Page
             $localesNombres = [];
 
             // Obtener los locales directamente de la tabla pivote
-            $localesPivot = \DB::table('campana_locales')
-                ->where('campana_id', $campana->id)
+            $localesPivot = \DB::table('campaign_premises')
+                ->where('campaign_id', $campana->id)
                 ->get();
 
             foreach ($localesPivot as $pivotItem) {
-                $localCodigo = $pivotItem->local_codigo;
+                $localCodigo = $pivotItem->premise_code;
                 $local = Local::where('codigo', $localCodigo)->first();
                 if ($local) {
                     $localesNombres[] = $local->nombre;
                 } else {
-                    $localesNombres[] = $localCodigo . ' (No encontrado)';
+                    $localesNombres[] = $localCodigo.' (No encontrado)';
                 }
             }
 
             // Si no se encontraron locales en la tabla pivote, intentar con la relación
             if (empty($localesNombres) && $campana->locales && $campana->locales->count() > 0) {
                 foreach ($campana->locales as $local) {
-                    if (isset($local->pivot) && isset($local->pivot->local_codigo)) {
-                        $nombreLocal = Local::where('codigo', $local->pivot->local_codigo)->value('nombre');
-                        $localesNombres[] = $nombreLocal ?? $local->pivot->local_codigo;
+                    if (isset($local->pivot) && isset($local->pivot->premise_code)) {
+                        $nombreLocal = Local::where('codigo', $local->pivot->premise_code)->value('nombre');
+                        $localesNombres[] = $nombreLocal ?? $local->pivot->premise_code;
                     }
                 }
             }
@@ -633,14 +639,14 @@ class Campanas extends Page
                 try {
                     $imagenUrl = $this->getImageUrl($campana->imagen);
                 } catch (\Exception $e) {
-                    Log::error("[CampanasPage] Error al obtener URL de imagen para detalle: " . $e->getMessage());
+                    Log::error('[CampanasPage] Error al obtener URL de imagen para detalle: '.$e->getMessage());
                 }
             }
 
             // Obtener los años directamente de la tabla pivote
-            $anosPivot = \DB::table('campana_anos')
-                ->where('campana_id', $campana->id)
-                ->pluck('ano')
+            $anosPivot = \DB::table('campaign_years')
+                ->where('campaign_id', $campana->id)
+                ->pluck('year')
                 ->toArray();
 
             // Obtener los modelos
@@ -654,8 +660,8 @@ class Campanas extends Page
                 'id' => $campana->id,
                 'codigo' => $campana->codigo,
                 'nombre' => $campana->titulo,
-                'fecha_inicio' => $campana->fecha_inicio->format('d/m/Y'),
-                'fecha_fin' => $campana->fecha_fin->format('d/m/Y'),
+                'fecha_inicio' => $campana->start_date->format('d/m/Y'),
+                'fecha_fin' => $campana->end_date->format('d/m/Y'),
                 'estado' => $campana->estado,
                 'modelos' => $modelosNombres,
                 'anos' => $anosPivot,
@@ -665,7 +671,7 @@ class Campanas extends Page
 
             Log::info("[CampanasPage] Datos de campaña procesados correctamente: {$campana->codigo}");
         } catch (\Exception $e) {
-            Log::error("[CampanasPage] Error al procesar datos de campaña: " . $e->getMessage());
+            Log::error('[CampanasPage] Error al procesar datos de campaña: '.$e->getMessage());
             throw $e; // Re-lanzar la excepción para que sea capturada por el método que llamó a este
         }
     }
@@ -687,21 +693,21 @@ class Campanas extends Page
 
                     // Registrar información detallada para depuración
                     Log::info("[CampanasPage] Campaña ID: {$campana->id}, Código: {$campana->codigo}");
-                    Log::info("[CampanasPage] Relación locales cargada: " . ($campana->relationLoaded('locales') ? 'Sí' : 'No'));
+                    Log::info('[CampanasPage] Relación locales cargada: '.($campana->relationLoaded('locales') ? 'Sí' : 'No'));
 
                     if ($campana->relationLoaded('locales')) {
-                        Log::info("[CampanasPage] Cantidad de locales relacionados: " . $campana->locales->count());
+                        Log::info('[CampanasPage] Cantidad de locales relacionados: '.$campana->locales->count());
                     }
 
                     // Obtener los locales directamente de la tabla pivote para mayor seguridad
-                    $localesPivot = \DB::table('campana_locales')
-                        ->where('campana_id', $campana->id)
+                    $localesPivot = \DB::table('campaign_premises')
+                        ->where('campaign_id', $campana->id)
                         ->get();
 
-                    Log::info("[CampanasPage] Locales encontrados en tabla pivote: " . $localesPivot->count());
+                    Log::info('[CampanasPage] Locales encontrados en tabla pivote: '.$localesPivot->count());
 
                     foreach ($localesPivot as $pivotItem) {
-                        $localCodigo = $pivotItem->local_codigo;
+                        $localCodigo = $pivotItem->premise_code;
                         Log::info("[CampanasPage] Procesando local con código: {$localCodigo}");
 
                         $local = Local::where('codigo', $localCodigo)->first();
@@ -709,25 +715,25 @@ class Campanas extends Page
                             $localesNombres[] = $local->nombre;
                             Log::info("[CampanasPage] Local encontrado: {$local->nombre}");
                         } else {
-                            $localesNombres[] = $localCodigo . ' (No encontrado)';
+                            $localesNombres[] = $localCodigo.' (No encontrado)';
                             Log::warning("[CampanasPage] Local no encontrado con código: {$localCodigo}");
                         }
                     }
 
                     // Si no se encontraron locales en la tabla pivote, intentar con la relación
                     if (empty($localesNombres) && $campana->locales && $campana->locales->count() > 0) {
-                        Log::info("[CampanasPage] Intentando obtener locales desde la relación");
+                        Log::info('[CampanasPage] Intentando obtener locales desde la relación');
                         foreach ($campana->locales as $local) {
-                            if (isset($local->pivot) && isset($local->pivot->local_codigo)) {
-                                $nombreLocal = Local::where('codigo', $local->pivot->local_codigo)->value('nombre');
-                                $localesNombres[] = $nombreLocal ?? $local->pivot->local_codigo;
-                                Log::info("[CampanasPage] Local desde relación: " . ($nombreLocal ?? $local->pivot->local_codigo));
+                            if (isset($local->pivot) && isset($local->pivot->premise_code)) {
+                                $nombreLocal = Local::where('codigo', $local->pivot->premise_code)->value('nombre');
+                                $localesNombres[] = $nombreLocal ?? $local->pivot->premise_code;
+                                Log::info('[CampanasPage] Local desde relación: '.($nombreLocal ?? $local->pivot->premise_code));
                             }
                         }
                     }
 
-                    Log::info("[CampanasPage] Total de locales obtenidos: " . count($localesNombres));
-                    Log::info("[CampanasPage] Locales: " . implode(', ', $localesNombres));
+                    Log::info('[CampanasPage] Total de locales obtenidos: '.count($localesNombres));
+                    Log::info('[CampanasPage] Locales: '.implode(', ', $localesNombres));
 
                     // Obtener la URL de la imagen
                     $imagenUrl = null;
@@ -735,25 +741,25 @@ class Campanas extends Page
                         try {
                             $imagenUrl = $this->getImageUrl($campana->imagen);
                         } catch (\Exception $e) {
-                            Log::error("[CampanasPage] Error al obtener URL de imagen para detalle: " . $e->getMessage());
+                            Log::error('[CampanasPage] Error al obtener URL de imagen para detalle: '.$e->getMessage());
                         }
                     }
 
                     // Obtener los años directamente de la tabla pivote
-                    $anosPivot = \DB::table('campana_anos')
-                        ->where('campana_id', $campana->id)
-                        ->pluck('ano')
+                    $anosPivot = \DB::table('campaign_years')
+                        ->where('campaign_id', $campana->id)
+                        ->pluck('year')
                         ->toArray();
 
-                    Log::info("[CampanasPage] Años encontrados en tabla pivote: " . count($anosPivot));
-                    Log::info("[CampanasPage] Años: " . implode(', ', $anosPivot));
+                    Log::info('[CampanasPage] Años encontrados en tabla pivote: '.count($anosPivot));
+                    Log::info('[CampanasPage] Años: '.implode(', ', $anosPivot));
 
                     // Obtener los modelos
                     $modelosNombres = [];
                     if ($campana->modelos && $campana->modelos->count() > 0) {
                         $modelosNombres = $campana->modelos->pluck('nombre')->toArray();
-                        Log::info("[CampanasPage] Modelos encontrados: " . count($modelosNombres));
-                        Log::info("[CampanasPage] Modelos: " . implode(', ', $modelosNombres));
+                        Log::info('[CampanasPage] Modelos encontrados: '.count($modelosNombres));
+                        Log::info('[CampanasPage] Modelos: '.implode(', ', $modelosNombres));
                     }
 
                     // Preparar los datos para el modal
@@ -761,8 +767,8 @@ class Campanas extends Page
                         'id' => $campana->id,
                         'codigo' => $campana->codigo,
                         'nombre' => $campana->titulo,
-                        'fecha_inicio' => $campana->fecha_inicio->format('d/m/Y'),
-                        'fecha_fin' => $campana->fecha_fin->format('d/m/Y'),
+                        'fecha_inicio' => $campana->start_date->format('d/m/Y'),
+                        'fecha_fin' => $campana->end_date->format('d/m/Y'),
                         'estado' => $campana->estado,
                         'modelos' => $modelosNombres,
                         'anos' => $anosPivot,
@@ -775,7 +781,7 @@ class Campanas extends Page
 
                     Log::info("[CampanasPage] Mostrando detalle de campaña: {$campana->codigo}");
                 } catch (\Exception $e) {
-                    Log::error("[CampanasPage] Error al procesar detalle de campaña {$campana->id}: " . $e->getMessage());
+                    Log::error("[CampanasPage] Error al procesar detalle de campaña {$campana->id}: ".$e->getMessage());
                     throw $e; // Re-lanzar la excepción para que sea capturada por el bloque catch exterior
                 }
             } else {
@@ -787,10 +793,10 @@ class Campanas extends Page
                     ->send();
             }
         } catch (\Exception $e) {
-            Log::error("[CampanasPage] Error al ver detalle de campaña: " . $e->getMessage() . "\nTrace: " . $e->getTraceAsString());
+            Log::error('[CampanasPage] Error al ver detalle de campaña: '.$e->getMessage()."\nTrace: ".$e->getTraceAsString());
             \Filament\Notifications\Notification::make()
                 ->title('Error')
-                ->body('Ha ocurrido un error al intentar ver el detalle de la campaña: ' . $e->getMessage())
+                ->body('Ha ocurrido un error al intentar ver el detalle de la campaña: '.$e->getMessage())
                 ->danger()
                 ->send();
         }
@@ -806,7 +812,7 @@ class Campanas extends Page
         $this->modalDetalleVisible = false;
         $this->campanaDetalle = [];
 
-        Log::info("[CampanasPage] Cerrando modal desde método PHP");
+        Log::info('[CampanasPage] Cerrando modal desde método PHP');
     }
 
     public function editar($codigo)
@@ -816,18 +822,19 @@ class Campanas extends Page
 
             $campana = Campana::where('codigo', $codigo)->first();
 
-            if (!$campana) {
+            if (! $campana) {
                 Log::warning("[CampanasPage] Campaña no encontrada con código: {$codigo}");
                 \Filament\Notifications\Notification::make()
                     ->title('Campaña no encontrada')
                     ->body("No se encontró la campaña con código: {$codigo}")
                     ->danger()
                     ->send();
+
                 return;
             }
 
             // Construir la URL para la redirección
-            $url = '/admin/crear-campana?campana_id=' . $campana->id;
+            $url = '/admin/crear-campana?campana_id='.$campana->id;
 
             Log::info("[CampanasPage] Redirigiendo a edición de campaña: {$campana->codigo} con ID: {$campana->id} - URL: {$url}");
 
@@ -835,10 +842,10 @@ class Campanas extends Page
             return $this->redirect($url);
 
         } catch (\Exception $e) {
-            Log::error("[CampanasPage] Error al editar campaña: " . $e->getMessage() . "\nTrace: " . $e->getTraceAsString());
+            Log::error('[CampanasPage] Error al editar campaña: '.$e->getMessage()."\nTrace: ".$e->getTraceAsString());
             \Filament\Notifications\Notification::make()
                 ->title('Error')
-                ->body('Ha ocurrido un error al intentar editar la campaña: ' . $e->getMessage())
+                ->body('Ha ocurrido un error al intentar editar la campaña: '.$e->getMessage())
                 ->danger()
                 ->send();
         }
@@ -850,20 +857,20 @@ class Campanas extends Page
     private function getImageUrl($imagen): string
     {
         // Registrar la ruta original para depuración
-        Log::info("[CampanasPage] Ruta de imagen original: " . $imagen->ruta);
+        Log::info('[CampanasPage] Ruta de imagen original: '.$imagen->ruta);
 
         // Usar la ruta de imagen.campana para generar la URL, igual que en AgendarCita
-        $url = route('imagen.campana', ['id' => $imagen->campana_id]);
+        $url = route('imagen.campana', ['id' => $imagen->campaign_id]);
 
         // Registrar la URL generada para depuración
-        Log::info("[CampanasPage] URL generada para imagen: " . $url);
+        Log::info('[CampanasPage] URL generada para imagen: '.$url);
 
         // Verificar si el archivo existe en diferentes ubicaciones
         $rutasAVerificar = [
-            storage_path('app/' . $imagen->ruta),
-            storage_path('app/private/' . $imagen->ruta),
-            storage_path('app/private/public/images/campanas/' . basename($imagen->ruta)),
-            public_path($imagen->ruta)
+            storage_path('app/'.$imagen->ruta),
+            storage_path('app/private/'.$imagen->ruta),
+            storage_path('app/private/public/images/campanas/'.basename($imagen->ruta)),
+            public_path($imagen->ruta),
         ];
 
         $existe = false;
@@ -874,9 +881,9 @@ class Campanas extends Page
             }
         }
 
-        Log::info("[CampanasPage] Verificación de archivo: " . json_encode([
+        Log::info('[CampanasPage] Verificación de archivo: '.json_encode([
             'rutasVerificadas' => $rutasAVerificar,
-            'existe' => $existe ? 'Sí' : 'No'
+            'existe' => $existe ? 'Sí' : 'No',
         ]));
 
         // Devolver la URL
@@ -907,7 +914,7 @@ class Campanas extends Page
 
                 \Filament\Notifications\Notification::make()
                     ->title('Campaña eliminada')
-                    ->body("La campaña ha sido eliminada correctamente.")
+                    ->body('La campaña ha sido eliminada correctamente.')
                     ->success()
                     ->send();
 
@@ -921,7 +928,7 @@ class Campanas extends Page
                     ->send();
             }
         } catch (\Exception $e) {
-            Log::error("[CampanasPage] Error al eliminar campaña: " . $e->getMessage());
+            Log::error('[CampanasPage] Error al eliminar campaña: '.$e->getMessage());
             \Filament\Notifications\Notification::make()
                 ->title('Error')
                 ->body('Ha ocurrido un error al intentar eliminar la campaña.')

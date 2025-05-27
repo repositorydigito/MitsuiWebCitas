@@ -2,16 +2,15 @@
 
 namespace App\Services\C4C;
 
+use Illuminate\Support\Facades\Log;
 use SoapClient;
 use SoapFault;
-use Illuminate\Support\Facades\Log;
 
 class C4CClient
 {
     /**
      * Create a new SOAP client instance.
      *
-     * @param string $wsdl
      * @return SoapClient|null
      */
     public static function create(string $wsdl)
@@ -32,7 +31,7 @@ class C4CClient
                     ],
                     'http' => [
                         'header' => [
-                            'Authorization: Basic ' . base64_encode(config('c4c.auth.username') . ':' . config('c4c.auth.password')),
+                            'Authorization: Basic '.base64_encode(config('c4c.auth.username').':'.config('c4c.auth.password')),
                             'Content-Type: text/xml; charset=utf-8',
                         ],
                         'timeout' => config('c4c.timeout', 30),
@@ -41,7 +40,7 @@ class C4CClient
             ];
 
             // Intentar crear el cliente SOAP
-            Log::debug('Intentando crear cliente SOAP con WSDL: ' . $wsdl);
+            Log::debug('Intentando crear cliente SOAP con WSDL: '.$wsdl);
 
             // Verificar si podemos acceder al WSDL
             $wsdlContent = @file_get_contents($wsdl, false, stream_context_create([
@@ -51,20 +50,21 @@ class C4CClient
                 ],
                 'http' => [
                     'header' => [
-                        'Authorization: Basic ' . base64_encode(config('c4c.auth.username') . ':' . config('c4c.auth.password')),
+                        'Authorization: Basic '.base64_encode(config('c4c.auth.username').':'.config('c4c.auth.password')),
                     ],
                     'timeout' => config('c4c.timeout', 30),
                 ],
             ]));
 
             if ($wsdlContent === false) {
-                Log::error('No se pudo acceder al WSDL: ' . $wsdl);
-                Log::error('Error: ' . error_get_last()['message']);
+                Log::error('No se pudo acceder al WSDL: '.$wsdl);
+                Log::error('Error: '.error_get_last()['message']);
 
                 // Intentar usar un WSDL local si está disponible
                 $localWsdlPath = storage_path('wsdl/querycustomerin.wsdl');
                 if (file_exists($localWsdlPath)) {
-                    Log::info('Usando WSDL local: ' . $localWsdlPath);
+                    Log::info('Usando WSDL local: '.$localWsdlPath);
+
                     return new SoapClient($localWsdlPath, $options);
                 }
 
@@ -73,7 +73,7 @@ class C4CClient
 
             return new SoapClient($wsdl, $options);
         } catch (SoapFault $e) {
-            Log::error('C4C SOAP Client Error: ' . $e->getMessage(), [
+            Log::error('C4C SOAP Client Error: '.$e->getMessage(), [
                 'wsdl' => $wsdl,
                 'code' => $e->getCode(),
             ]);
@@ -82,16 +82,17 @@ class C4CClient
             try {
                 $localWsdlPath = storage_path('wsdl/querycustomerin.wsdl');
                 if (file_exists($localWsdlPath)) {
-                    Log::info('Usando WSDL local después de error: ' . $localWsdlPath);
+                    Log::info('Usando WSDL local después de error: '.$localWsdlPath);
+
                     return new SoapClient($localWsdlPath, $options);
                 }
             } catch (\Exception $ex) {
-                Log::error('Error al usar WSDL local: ' . $ex->getMessage());
+                Log::error('Error al usar WSDL local: '.$ex->getMessage());
             }
 
             return null;
         } catch (\Exception $e) {
-            Log::error('Error general al crear cliente SOAP: ' . $e->getMessage(), [
+            Log::error('Error general al crear cliente SOAP: '.$e->getMessage(), [
                 'wsdl' => $wsdl,
                 'code' => $e->getCode(),
             ]);
@@ -103,42 +104,39 @@ class C4CClient
     /**
      * Execute a SOAP call and handle errors.
      *
-     * @param string $wsdl
-     * @param string $method
-     * @param array $params
      * @return array
      */
     public static function call(string $wsdl, string $method, array $params)
     {
         $client = self::create($wsdl);
 
-        if (!$client) {
+        if (! $client) {
             return [
                 'success' => false,
                 'error' => 'Failed to create SOAP client',
-                'data' => null
+                'data' => null,
             ];
         }
 
         try {
             Log::debug('C4C SOAP Request', [
                 'method' => $method,
-                'params' => $params
+                'params' => $params,
             ]);
 
             $result = $client->__soapCall($method, [$params]);
 
             Log::debug('C4C SOAP Response', [
-                'result' => json_decode(json_encode($result), true)
+                'result' => json_decode(json_encode($result), true),
             ]);
 
             return [
                 'success' => true,
                 'error' => null,
-                'data' => $result
+                'data' => $result,
             ];
         } catch (SoapFault $e) {
-            Log::error('C4C SOAP Call Error: ' . $e->getMessage(), [
+            Log::error('C4C SOAP Call Error: '.$e->getMessage(), [
                 'method' => $method,
                 'code' => $e->getCode(),
                 'request' => $client->__getLastRequest(),
@@ -148,7 +146,7 @@ class C4CClient
             return [
                 'success' => false,
                 'error' => $e->getMessage(),
-                'data' => null
+                'data' => null,
             ];
         }
     }

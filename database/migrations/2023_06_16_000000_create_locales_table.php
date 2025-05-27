@@ -11,27 +11,27 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('locales', function (Blueprint $table) {
+        Schema::create('premises', function (Blueprint $table) {
             $table->id();
             $table->string('codigo')->unique();
             $table->string('nombre');
             $table->string('direccion')->nullable();
             $table->string('telefono')->nullable();
-            $table->time('horario_apertura')->default('08:00');
-            $table->time('horario_cierre')->default('18:00');
+            $table->time('opening_time')->default('08:00');
+            $table->time('closing_time')->default('18:00');
             $table->boolean('activo')->default(true);
             $table->timestamps();
         });
 
         // Insertar datos iniciales
-        DB::table('locales')->insert([
+        DB::table('premises')->insert([
             [
                 'codigo' => 'local1',
                 'nombre' => 'La Molina',
                 'direccion' => 'Av. La Molina 123',
                 'telefono' => '(01) 123-4567',
-                'horario_apertura' => '08:00',
-                'horario_cierre' => '18:00',
+                'opening_time' => '08:00',
+                'closing_time' => '18:00',
                 'activo' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -41,8 +41,8 @@ return new class extends Migration
                 'nombre' => 'San Miguel',
                 'direccion' => 'Av. La Marina 456',
                 'telefono' => '(01) 987-6543',
-                'horario_apertura' => '08:00',
-                'horario_cierre' => '18:00',
+                'opening_time' => '08:00',
+                'closing_time' => '18:00',
                 'activo' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -55,6 +55,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('locales');
+        Schema::dropIfExists('premises');
     }
 };

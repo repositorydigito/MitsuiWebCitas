@@ -9,15 +9,15 @@ class Local extends Model
 {
     use HasFactory;
 
-    protected $table = 'locales';
+    protected $table = 'premises';
 
     protected $fillable = [
         'codigo',
         'nombre',
         'direccion',
         'telefono',
-        'horario_apertura',
-        'horario_cierre',
+        'opening_time',
+        'closing_time',
         'activo',
     ];
 

@@ -2,9 +2,6 @@
 
 namespace Tests\Feature\C4C;
 
-use App\Services\C4C\CustomerService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
 class CustomerServiceTest extends TestCase
@@ -28,11 +25,11 @@ class CustomerServiceTest extends TestCase
             'success',
             'error',
             'data',
-            'count'
+            'count',
         ]);
 
         // Imprimir la respuesta para depuración
-        $this->info('Respuesta de consulta por DNI: ' . json_encode($response->json(), JSON_PRETTY_PRINT));
+        $this->info('Respuesta de consulta por DNI: '.json_encode($response->json(), JSON_PRETTY_PRINT));
     }
 
     /**
@@ -54,11 +51,11 @@ class CustomerServiceTest extends TestCase
             'success',
             'error',
             'data',
-            'count'
+            'count',
         ]);
 
         // Imprimir la respuesta para depuración
-        $this->info('Respuesta de consulta por RUC: ' . json_encode($response->json(), JSON_PRETTY_PRINT));
+        $this->info('Respuesta de consulta por RUC: '.json_encode($response->json(), JSON_PRETTY_PRINT));
     }
 
     /**
@@ -80,11 +77,11 @@ class CustomerServiceTest extends TestCase
             'success',
             'error',
             'data',
-            'count'
+            'count',
         ]);
 
         // Imprimir la respuesta para depuración
-        $this->info('Respuesta de consulta por CE: ' . json_encode($response->json(), JSON_PRETTY_PRINT));
+        $this->info('Respuesta de consulta por CE: '.json_encode($response->json(), JSON_PRETTY_PRINT));
     }
 
     /**
@@ -106,11 +103,11 @@ class CustomerServiceTest extends TestCase
             'success',
             'error',
             'data',
-            'count'
+            'count',
         ]);
 
         // Imprimir la respuesta para depuración
-        $this->info('Respuesta de consulta por Pasaporte: ' . json_encode($response->json(), JSON_PRETTY_PRINT));
+        $this->info('Respuesta de consulta por Pasaporte: '.json_encode($response->json(), JSON_PRETTY_PRINT));
     }
 
     /**

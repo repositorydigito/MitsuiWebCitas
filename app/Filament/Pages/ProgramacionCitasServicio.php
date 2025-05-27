@@ -2,39 +2,52 @@
 
 namespace App\Filament\Pages;
 
-use Filament\Pages\Page;
-use Filament\Forms\Form;
-use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Concerns\InteractsWithForms;
+use App\Models\Local;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Carbon\Carbon;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Form;
 use Filament\Notifications\Notification;
-use App\Models\Local;
+use Filament\Pages\Page;
 
 class ProgramacionCitasServicio extends Page implements HasForms
 {
     use InteractsWithForms;
 
     protected static string $view = 'filament.pages.programacion-citas-servicio';
+
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
+
     protected static ?string $navigationLabel = 'Programación Citas Servicio';
+
     protected static ?string $title = 'Programación citas de servicio';
+
     protected static ?string $slug = 'programacion-citas-servicio';
 
     public $selectedLocal = '';
+
     public $selectedWeek;
+
     public $timeSlots = [];
-    public $minReservationTime = "";
-    public $maxReservationTime = "";
+
+    public $minReservationTime = '';
+
+    public $maxReservationTime = '';
+
     public $minTimeUnit = 'days';
+
     public $maxTimeUnit = 'days';
+
     public $blockingPeriods = [];
+
     public $data = [];
 
     // Variables para rastrear la celda seleccionada
     public $selectedTime = null;
+
     public $selectedDate = null;
+
     public $selectedSlotStatus = null; // 'disponible', 'bloqueado', 'reservado'
 
     public function mount(): void
@@ -198,8 +211,9 @@ class ProgramacionCitasServicio extends Page implements HasForms
      */
     private function horaAMinutos($hora)
     {
-        list($horas, $minutos) = explode(':', $hora);
-        return ((int)$horas * 60) + (int)$minutos;
+        [$horas, $minutos] = explode(':', $hora);
+
+        return ((int) $horas * 60) + (int) $minutos;
     }
 
     public function saveSettings()
@@ -223,6 +237,7 @@ class ProgramacionCitasServicio extends Page implements HasForms
     {
         // Redirigir a la página de programación de bloqueo con el local seleccionado
         $localSeleccionado = $this->data['selectedLocal'] ?? $this->selectedLocal;
+
         return redirect()->route('filament.admin.pages.programar-bloqueo', ['local' => $localSeleccionado]);
     }
 
@@ -232,7 +247,7 @@ class ProgramacionCitasServicio extends Page implements HasForms
     public function toggleSlot($time, $date, $status = null)
     {
         // Si el slot no existe, inicializarlo
-        if (!isset($this->timeSlots[$time][$date])) {
+        if (! isset($this->timeSlots[$time][$date])) {
             $this->timeSlots[$time][$date] = [
                 'bloqueado' => false,
                 'reservado' => false,
@@ -244,9 +259,9 @@ class ProgramacionCitasServicio extends Page implements HasForms
         $slotStatus = 'disponible';
         if ($status !== null) {
             $slotStatus = $status;
-        } else if ($this->timeSlots[$time][$date]['bloqueado']) {
+        } elseif ($this->timeSlots[$time][$date]['bloqueado']) {
             $slotStatus = 'bloqueado';
-        } else if ($this->timeSlots[$time][$date]['reservado']) {
+        } elseif ($this->timeSlots[$time][$date]['reservado']) {
             $slotStatus = 'reservado';
         }
 
@@ -330,7 +345,7 @@ class ProgramacionCitasServicio extends Page implements HasForms
         return $form
             ->schema([
                 Select::make('selectedLocal')
-                    ->options(function() {
+                    ->options(function () {
                         return Local::getActivosParaSelector();
                     })
                     ->placeholder('Seleccione un local')

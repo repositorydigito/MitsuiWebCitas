@@ -1,82 +1,86 @@
 <style>
-    /* Estilos para la barra de navegación superior de Filament */
-    .fi-topbar {
+    /* Estilos generales para el header */
+    header.fi-sidebar-header {
+        background-color: #0075BF !important;
+        color: #ffffff !important;
         height: 80px !important;
-        gap: 1rem !important;
-        width: 100% !important;
-        max-width: 100% !important;
-    }
-
-    /* Contenedor para el logo y las pestañas */
-    .header-content {
+        /* Aumentamos la altura para un aspecto más moderno */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+        /* Sombra más pronunciada */
+        padding: 0 24px !important;
+        /* Más espacio interno */
+        z-index: 30 !important;
         display: flex;
         align-items: center;
-        gap: 10rem;
-        width: 100%;
-        margin-right: auto;
+        justify-content: space-between;
     }
 
     /* Estilos para el logo */
-    .header-logo {
-        display: flex;
-        align-items: center;
-    }
-
-    .header-logo img {
+    header.fi-sidebar-header img {
+        filter: brightness(0) invert(1) !important;
         height: 48px !important;
+        /* Logo más grande */
         width: auto !important;
         transition: transform 0.3s ease;
+        /* Efecto de transición suave */
     }
 
-    /* Estilos para las pestañas */
-    .header-tabs {
-        display: flex;
-        gap: 2rem;
-        flex: 1;
-        justify-content: center;
-        margin-right: 40rem;
+    header.fi-sidebar-header img:hover {
+        transform: scale(1.1);
+        /* Efecto de escala al pasar el cursor */
     }
 
-    .tab {
-        color: #0075BF !important;
-        text-decoration: none !important;
-        font-size: 16px !important;
-        font-weight: 500 !important;
-        padding: 0.5rem 1rem !important;
-        border-radius: 8px !important;
-        transition: all 0.3s ease !important;
-    }
-
-    .tab:hover {
-        background-color: rgba(0, 117, 191, 0.1) !important;
-    }
-
-    .tab.active {
+    /* Estilos para la barra de navegación */
+    nav.flex.h-16.items-center {
         background-color: #0075BF !important;
-        color: white !important;
-    }
-
-    /* Estilos generales para el header */
-    header.fi-sidebar-header {
-        background-color: rgb(255, 255, 255) !important;
-        color: #0075BF !important;
+        color: #ffffff !important;
         height: 80px !important;
+        /* Aumentamos la altura */
+        padding: 0 24px !important;
+        /* Más espacio interno */
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
-        z-index: 30 !important;
-    }
-
-    /* Contenedor principal */
-    .header-main {
+        border-bottom: 2px solid #005bb5 !important;
         display: flex;
         align-items: center;
-        height: 100%;
-        padding-left: 4rem;
-        padding-right: 1rem;
+        justify-content: space-between;
     }
 
-    /* Estilos para el menú de usuario */
-    .header-menu {
-        margin-left: auto;
+    /* Estilos para los enlaces de navegación */
+    nav.flex.h-16.items-center a {
+        color: #ffffff !important;
+        text-decoration: none !important;
+        font-size: 16px !important;
+        /* Tamaño de fuente más grande */
+        font-weight: 500 !important;
+        /* Fuente más gruesa */
+        margin: 0 16px !important;
+        /* Espaciado entre enlaces */
+        transition: color 0.3s ease;
+        /* Transición suave para el color */
+    }
+
+    nav.flex.h-16.items-center a:hover {
+        color: rgba(255, 255, 255, 0.8) !important;
+        /* Color más claro al pasar el cursor */
+        text-decoration: underline !important;
+    }
+
+    /* Estilos para los botones */
+    nav.flex.h-16.items-center button {
+        background-color: transparent !important;
+        color: #ffffff !important;
+        border: none !important;
+        height: 40px !important;
+        width: 40px !important;
+        border-radius: 8px !important;
+        /* Bordes más redondeados */
+        transition: background-color 0.3s ease, transform 0.3s ease;
+        /* Transiciones suaves */
+    }
+
+    nav.flex.h-16.items-center button:hover {
+        transform: scale(1.1);
+        /* Efecto de escala al pasar el cursor */
     }
 
     /* Estilos para el dropdown del usuario */
@@ -84,24 +88,30 @@
         background-color: white !important;
         border: 1px solid #e5e7eb !important;
         border-radius: 12px !important;
+        /* Bordes más redondeados */
         box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+        /* Sombra más pronunciada */
     }
 
+    /* Texto dentro del dropdown */
     .fi-dropdown-list-item-label {
         color: #000000 !important;
         font-weight: 500 !important;
         overflow: visible;
     }
 
+    /* Íconos dentro del dropdown */
     .fi-dropdown-list-item-icon {
         color: #000000 !important;
         overflow: visible;
     }
 
+    /* Efecto hover en los elementos del dropdown */
     .fi-dropdown-list-item:hover {
         background-color: rgba(0, 0, 0, 0.05) !important;
     }
 
+    /* Botón de salir (logout) */
     .fi-dropdown-list-item button {
         color: #000000 !important;
         font-weight: 500 !important;
@@ -112,9 +122,30 @@
         font-weight: 500 !important;
     }
 
-    /* Estilos para el botón de salir */
+    /* Búsqueda en Topbar */
+    .fi-topbar .fi-input-wrp {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        border-radius: 8px !important;
+        /* Bordes redondeados */
+    }
+
+    .fi-topbar .fi-input-wrp input {
+        color: white !important;
+    }
+
+    .fi-topbar .fi-input-wrp input::placeholder {
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+
+    /* Iconos en Topbar */
+    .fi-topbar .fi-input-wrp-icon {
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+
+    /* Estilos para el botón de salir (logout) */
     .fi-dropdown-list-item button.fi-dropdown-list-item-button {
-        color: #0075BF !important;
+        color: #000000 !important;
         font-weight: 500 !important;
         background-color: transparent !important;
         border: none !important;
@@ -123,56 +154,38 @@
         text-align: left !important;
     }
 
+    /* Efecto hover en el botón de salir */
     .fi-dropdown-list-item button.fi-dropdown-list-item-button:hover {
         background-color: rgba(0, 0, 0, 0.05) !important;
-        color: #0075BF !important;
+        color: #000000 !important;
     }
 
     .dark .fi-dropdown-list-item .fi-dropdown-list-item-label {
-        color: #0075BF !important;
+        color: #000000 !important;
+        /* Fuerza el color negro incluso en dark mode */
     }
 
     .fi-icon-btn {
         margin-left: 20px;
     }
 
+    /* Efecto hover para el botón */
     .fi-icon-btn:hover {
         background-color: rgba(255, 255, 255, 0.2) !important;
+        /* Fondo más claro al pasar el cursor */
         transform: scale(1.1) !important;
+        /* Efecto de escala al pasar el cursor */
     }
 
+    /* Estilos para el ícono dentro del botón */
     .fi-icon-btn-icon {
         width: 36px !important;
+        /* Tamaño del ícono */
         height: 36px !important;
-        color: #0075BF !important;
+        /* Tamaño del ícono */
+        color: #ffffff !important;
+        /* Color del ícono */
         transition: transform 0.3s ease !important;
+        /* Transición suave para el ícono */
     }
 </style>
-
-<div class="header-content">
-    <div class="header-logo">
-        <img src="{{ asset('images/logoMitsui.svg') }}" alt="Logo">
-    </div>
-    <div class="header-tabs">
-        <button wire:click="selectTab('Z01')" class="tab {{ request()->query('activeTab', 'Z01') === 'Z01' ? 'active' : '' }}">TOYOTA</button>
-        <button wire:click="selectTab('Z02')" class="tab {{ request()->query('activeTab') === 'Z02' ? 'active' : '' }}">LEXUS</button>
-        <button wire:click="selectTab('Z03')" class="tab {{ request()->query('activeTab') === 'Z03' ? 'active' : '' }}">HINO</button>
-    </div>
-</div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Inicializar los tabs
-        const tabs = document.querySelectorAll('.tab');
-
-        // Añadir efecto visual al hacer clic
-        tabs.forEach(tab => {
-            tab.addEventListener('click', function() {
-                // Remover la clase active de todos los tabs
-                tabs.forEach(t => t.classList.remove('active'));
-                // Añadir la clase active al tab actual
-                this.classList.add('active');
-            });
-        });
-    });
-</script>

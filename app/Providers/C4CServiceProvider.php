@@ -2,10 +2,10 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use App\Services\C4C\CustomerService;
-use App\Services\C4C\AppointmentService;
 use App\Services\C4C\AppointmentQueryService;
+use App\Services\C4C\AppointmentService;
+use App\Services\C4C\CustomerService;
+use Illuminate\Support\ServiceProvider;
 
 class C4CServiceProvider extends ServiceProvider
 {
@@ -17,15 +17,15 @@ class C4CServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->singleton(CustomerService::class, function ($app) {
-            return new CustomerService();
+            return new CustomerService;
         });
 
         $this->app->singleton(AppointmentService::class, function ($app) {
-            return new AppointmentService();
+            return new AppointmentService;
         });
 
         $this->app->singleton(AppointmentQueryService::class, function ($app) {
-            return new AppointmentQueryService();
+            return new AppointmentQueryService;
         });
     }
 

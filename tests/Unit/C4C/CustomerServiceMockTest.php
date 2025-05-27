@@ -16,7 +16,7 @@ class CustomerServiceMockTest extends TestCase
     {
         // Crear un mock de C4CClient
         $mock = Mockery::mock('alias:App\Services\C4C\C4CClient');
-        
+
         // Configurar el comportamiento esperado
         $mock->shouldReceive('call')
             ->once()
@@ -25,7 +25,7 @@ class CustomerServiceMockTest extends TestCase
                 config('c4c.services.customer.method'),
                 Mockery::on(function ($params) {
                     // Verificar que los parámetros incluyan el DNI correcto
-                    return isset($params['CustomerSelectionByElements']['y6s:zDNI_EA8AE8AUBVHCSXVYS0FJ1R3ON']['SelectionByText']['LowerBoundaryName']) 
+                    return isset($params['CustomerSelectionByElements']['y6s:zDNI_EA8AE8AUBVHCSXVYS0FJ1R3ON']['SelectionByText']['LowerBoundaryName'])
                         && $params['CustomerSelectionByElements']['y6s:zDNI_EA8AE8AUBVHCSXVYS0FJ1R3ON']['SelectionByText']['LowerBoundaryName'] === '40359482';
                 })
             )
@@ -38,7 +38,7 @@ class CustomerServiceMockTest extends TestCase
                         'InternalID' => '80019',
                         'ExternalID' => '0000080019',
                         'Organisation' => (object) [
-                            'FirstLineName' => 'JUAN PEREZ'
+                            'FirstLineName' => 'JUAN PEREZ',
                         ],
                         'CategoryCode' => '1',
                         'LifeCycleStatusCode' => '2',
@@ -47,19 +47,19 @@ class CustomerServiceMockTest extends TestCase
                                 'CountryCode' => 'PE',
                                 'CityName' => 'LIMA',
                                 'StreetName' => 'AV. JAVIER PRADO ESTE 123',
-                                'StreetPostalCode' => '15024'
-                            ]
-                        ]
-                    ]
-                ]
+                                'StreetPostalCode' => '15024',
+                            ],
+                        ],
+                    ],
+                ],
             ]);
-        
+
         // Crear una instancia del servicio
-        $customerService = new CustomerService();
-        
+        $customerService = new CustomerService;
+
         // Llamar al método que queremos probar
         $result = $customerService->findByDNI('40359482');
-        
+
         // Verificar el resultado
         $this->assertTrue($result['success']);
         $this->assertNull($result['error']);
@@ -75,7 +75,7 @@ class CustomerServiceMockTest extends TestCase
     {
         // Crear un mock de C4CClient
         $mock = Mockery::mock('alias:App\Services\C4C\C4CClient');
-        
+
         // Configurar el comportamiento esperado
         $mock->shouldReceive('call')
             ->once()
@@ -84,7 +84,7 @@ class CustomerServiceMockTest extends TestCase
                 config('c4c.services.customer.method'),
                 Mockery::on(function ($params) {
                     // Verificar que los parámetros incluyan el RUC correcto
-                    return isset($params['CustomerSelectionByElements']['y6s:zRuc_EA8AE8AUBVHCSXVYS0FJ1R3ON']['SelectionByText']['LowerBoundaryName']) 
+                    return isset($params['CustomerSelectionByElements']['y6s:zRuc_EA8AE8AUBVHCSXVYS0FJ1R3ON']['SelectionByText']['LowerBoundaryName'])
                         && $params['CustomerSelectionByElements']['y6s:zRuc_EA8AE8AUBVHCSXVYS0FJ1R3ON']['SelectionByText']['LowerBoundaryName'] === '20558638223';
                 })
             )
@@ -97,7 +97,7 @@ class CustomerServiceMockTest extends TestCase
                         'InternalID' => '80019',
                         'ExternalID' => '0000080019',
                         'Organisation' => (object) [
-                            'FirstLineName' => 'AQP MUSIC E.I.R.L.'
+                            'FirstLineName' => 'AQP MUSIC E.I.R.L.',
                         ],
                         'CategoryCode' => '2',
                         'LifeCycleStatusCode' => '2',
@@ -106,19 +106,19 @@ class CustomerServiceMockTest extends TestCase
                                 'CountryCode' => 'PE',
                                 'CityName' => 'LIMA',
                                 'StreetName' => 'AV. JAVIER PRADO ESTE 6042',
-                                'StreetPostalCode' => '15024'
-                            ]
-                        ]
-                    ]
-                ]
+                                'StreetPostalCode' => '15024',
+                            ],
+                        ],
+                    ],
+                ],
             ]);
-        
+
         // Crear una instancia del servicio
-        $customerService = new CustomerService();
-        
+        $customerService = new CustomerService;
+
         // Llamar al método que queremos probar
         $result = $customerService->findByRUC('20558638223');
-        
+
         // Verificar el resultado
         $this->assertTrue($result['success']);
         $this->assertNull($result['error']);
@@ -134,7 +134,7 @@ class CustomerServiceMockTest extends TestCase
     {
         // Crear un mock de C4CClient
         $mock = Mockery::mock('alias:App\Services\C4C\C4CClient');
-        
+
         // Configurar el comportamiento esperado
         $mock->shouldReceive('call')
             ->once()
@@ -147,20 +147,20 @@ class CustomerServiceMockTest extends TestCase
                         'InternalID' => '80020',
                         'ExternalID' => '0000080020',
                         'Organisation' => (object) [
-                            'FirstLineName' => 'MARIA RODRIGUEZ'
+                            'FirstLineName' => 'MARIA RODRIGUEZ',
                         ],
                         'CategoryCode' => '1',
                         'LifeCycleStatusCode' => '2',
-                    ]
-                ]
+                    ],
+                ],
             ]);
-        
+
         // Crear una instancia del servicio
-        $customerService = new CustomerService();
-        
+        $customerService = new CustomerService;
+
         // Llamar al método que queremos probar
         $result = $customerService->findByCE('73532531');
-        
+
         // Verificar el resultado
         $this->assertTrue($result['success']);
         $this->assertNull($result['error']);
@@ -176,7 +176,7 @@ class CustomerServiceMockTest extends TestCase
     {
         // Crear un mock de C4CClient
         $mock = Mockery::mock('alias:App\Services\C4C\C4CClient');
-        
+
         // Configurar el comportamiento esperado
         $mock->shouldReceive('call')
             ->once()
@@ -189,20 +189,20 @@ class CustomerServiceMockTest extends TestCase
                         'InternalID' => '80021',
                         'ExternalID' => '0000080021',
                         'Organisation' => (object) [
-                            'FirstLineName' => 'JOHN SMITH'
+                            'FirstLineName' => 'JOHN SMITH',
                         ],
                         'CategoryCode' => '1',
                         'LifeCycleStatusCode' => '2',
-                    ]
-                ]
+                    ],
+                ],
             ]);
-        
+
         // Crear una instancia del servicio
-        $customerService = new CustomerService();
-        
+        $customerService = new CustomerService;
+
         // Llamar al método que queremos probar
         $result = $customerService->findByPassport('37429823');
-        
+
         // Verificar el resultado
         $this->assertTrue($result['success']);
         $this->assertNull($result['error']);
@@ -218,7 +218,7 @@ class CustomerServiceMockTest extends TestCase
     {
         // Crear un mock de C4CClient
         $mock = Mockery::mock('alias:App\Services\C4C\C4CClient');
-        
+
         // Configurar el comportamiento esperado
         $mock->shouldReceive('call')
             ->once()
@@ -229,16 +229,16 @@ class CustomerServiceMockTest extends TestCase
                     'ProcessingConditions' => (object) [
                         'ReturnedQueryHitsNumberValue' => '0',
                         'MoreHitsAvailableIndicator' => 'false',
-                    ]
-                ]
+                    ],
+                ],
             ]);
-        
+
         // Crear una instancia del servicio
-        $customerService = new CustomerService();
-        
+        $customerService = new CustomerService;
+
         // Llamar al método que queremos probar
         $result = $customerService->findByDNI('99999999');
-        
+
         // Verificar el resultado
         $this->assertFalse($result['success']);
         $this->assertEquals('Customer not found', $result['error']);
@@ -252,22 +252,22 @@ class CustomerServiceMockTest extends TestCase
     {
         // Crear un mock de C4CClient
         $mock = Mockery::mock('alias:App\Services\C4C\C4CClient');
-        
+
         // Configurar el comportamiento esperado
         $mock->shouldReceive('call')
             ->once()
             ->andReturn([
                 'success' => false,
                 'error' => 'SOAP fault: Authentication failed',
-                'data' => null
+                'data' => null,
             ]);
-        
+
         // Crear una instancia del servicio
-        $customerService = new CustomerService();
-        
+        $customerService = new CustomerService;
+
         // Llamar al método que queremos probar
         $result = $customerService->findByDNI('40359482');
-        
+
         // Verificar el resultado
         $this->assertFalse($result['success']);
         $this->assertEquals('SOAP fault: Authentication failed', $result['error']);

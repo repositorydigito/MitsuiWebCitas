@@ -10,7 +10,6 @@ use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Livewire\WithPagination;
-use Illuminate\Database\Eloquent\Builder;
 
 class Vehiculos extends Page
 {
@@ -25,12 +24,20 @@ class Vehiculos extends Page
     protected static string $view = 'filament.pages.vehiculos-con-pestanas';
 
     public Collection $todosLosVehiculos;
+
     protected array $vehiculosAgrupados = [];
+
     public array $marcasInfo = [];
+
     public array $marcaCounts = [];
+
     public string $activeTab = 'Z01';
 
-    protected $queryString = ['activeTab'];
+    public string $search = '';
+
+    protected $queryString = ['activeTab', 'search'];
+
+    protected $listeners = ['updatedSearch' => 'filtrarVehiculos'];
 
     protected $mapaMarcas = [
         'Z01' => 'TOYOTA',
@@ -41,6 +48,25 @@ class Vehiculos extends Page
     public function mount(): void
     {
         $this->cargarVehiculos();
+    }
+
+    public function updatedSearch(): void
+    {
+        Log::info("[VehiculosPage] Búsqueda actualizada: '{$this->search}'");
+        $this->filtrarVehiculos();
+        $this->resetPage();
+    }
+
+    public function filtrarVehiculos(): void
+    {
+        $this->agruparYPaginarVehiculos();
+    }
+
+    public function limpiarBusqueda(): void
+    {
+        $this->search = '';
+        $this->filtrarVehiculos();
+        $this->resetPage();
     }
 
     protected function cargarVehiculos(): void
@@ -80,7 +106,7 @@ class Vehiculos extends Page
                 });
             } else {
                 // Si no hay vehículos en la base de datos, intentamos cargar desde el servicio SOAP
-                Log::info("[VehiculosPage] No hay vehículos en la base de datos, intentando cargar desde el servicio SOAP");
+                Log::info('[VehiculosPage] No hay vehículos en la base de datos, intentando cargar desde el servicio SOAP');
 
                 $documentoCliente = '20605414410';
                 $service = app(VehiculoSoapService::class);
@@ -93,7 +119,7 @@ class Vehiculos extends Page
             $this->agruparYPaginarVehiculos();
 
         } catch (\Exception $e) {
-            Log::error("[VehiculosPage] Error crítico al obtener vehículos: " . $e->getMessage());
+            Log::error('[VehiculosPage] Error crítico al obtener vehículos: '.$e->getMessage());
             $this->todosLosVehiculos = collect();
             $this->vehiculosAgrupados = [];
             \Filament\Notifications\Notification::make()
@@ -103,9 +129,9 @@ class Vehiculos extends Page
                 ->send();
         }
 
-        if (empty($this->vehiculosAgrupados) && !empty($this->marcasInfo)) {
+        if (empty($this->vehiculosAgrupados) && ! empty($this->marcasInfo)) {
             $this->activeTab = array_key_first($this->marcasInfo);
-        } elseif (!isset($this->vehiculosAgrupados[$this->activeTab]) && !empty($this->vehiculosAgrupados)) {
+        } elseif (! isset($this->vehiculosAgrupados[$this->activeTab]) && ! empty($this->vehiculosAgrupados)) {
             $this->activeTab = array_key_first($this->vehiculosAgrupados);
         }
     }
@@ -119,7 +145,25 @@ class Vehiculos extends Page
             foreach ($this->marcasInfo as $codigo => $nombre) {
                 $this->marcaCounts[$codigo] = 0;
             }
+
             return;
+        }
+
+        // Aplicar filtro de búsqueda por placa y modelo si existe
+        $vehiculosFiltrados = $this->todosLosVehiculos;
+        if (! empty($this->search)) {
+            $searchTerm = strtoupper(trim($this->search));
+            Log::info("[VehiculosPage] Aplicando filtro de búsqueda: '{$searchTerm}'");
+
+            $vehiculosFiltrados = $this->todosLosVehiculos->filter(function ($vehiculo) use ($searchTerm) {
+                $placa = strtoupper($vehiculo['numpla'] ?? '');
+                $modelo = strtoupper($vehiculo['modver'] ?? '');
+
+                // Buscar en placa y modelo usando str_contains para coincidencias parciales
+                return str_contains($placa, $searchTerm) || str_contains($modelo, $searchTerm);
+            });
+
+            Log::info('[VehiculosPage] Vehículos encontrados después del filtro: '.$vehiculosFiltrados->count());
         }
 
         // Inicializar colecciones vacías para cada marca
@@ -129,7 +173,7 @@ class Vehiculos extends Page
         }
 
         // Filtrar vehículos por marca según el campo marca_codigo
-        foreach ($this->todosLosVehiculos as $vehiculo) {
+        foreach ($vehiculosFiltrados as $vehiculo) {
             $marcaCodigo = $vehiculo['marca_codigo'] ?? null;
 
             // Solo asignar vehículos a marcas válidas y existentes
@@ -147,7 +191,7 @@ class Vehiculos extends Page
             $this->marcaCounts[$codigo] = $gruposPorMarca[$codigo]->count();
         }
 
-        Log::debug("[VehiculosPage] Conteo de vehículos por marca:", $this->marcaCounts);
+        Log::debug('[VehiculosPage] Conteo de vehículos por marca:', $this->marcaCounts);
 
         // Crear paginadores solo para marcas que tienen vehículos
         foreach ($gruposPorMarca as $marcaCodigo => $vehiculosDeMarca) {
@@ -181,7 +225,7 @@ class Vehiculos extends Page
             $this->vehiculosAgrupados[$marcaCodigo] = $paginator;
         }
 
-        Log::debug("[VehiculosPage] Paginadores creados para marcas:", array_keys($this->vehiculosAgrupados));
+        Log::debug('[VehiculosPage] Paginadores creados para marcas:', array_keys($this->vehiculosAgrupados));
     }
 
     public function selectTab(string $tab): void
@@ -198,8 +242,9 @@ class Vehiculos extends Page
         }
 
         // Si no hay vehículos para la marca seleccionada, devolver null
-        if (!isset($this->vehiculosAgrupados[$this->activeTab])) {
+        if (! isset($this->vehiculosAgrupados[$this->activeTab])) {
             Log::info("[VehiculosPage] No hay vehículos para la marca: {$this->activeTab}");
+
             return null;
         }
 
@@ -223,7 +268,7 @@ class Vehiculos extends Page
 
                 \Filament\Notifications\Notification::make()
                     ->title('Vehículo retirado')
-                    ->body("El vehículo ha sido retirado correctamente.")
+                    ->body('El vehículo ha sido retirado correctamente.')
                     ->success()
                     ->send();
 
@@ -239,7 +284,7 @@ class Vehiculos extends Page
         } catch (\Exception $e) {
             \Filament\Notifications\Notification::make()
                 ->title('Error')
-                ->body("Ha ocurrido un error al retirar el vehículo: " . $e->getMessage())
+                ->body('Ha ocurrido un error al retirar el vehículo: '.$e->getMessage())
                 ->danger()
                 ->send();
         }

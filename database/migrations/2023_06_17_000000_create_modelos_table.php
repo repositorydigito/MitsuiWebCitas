@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('modelos', function (Blueprint $table) {
+        Schema::create('models', function (Blueprint $table) {
             $table->id();
             $table->string('codigo')->unique();
             $table->string('nombre');
@@ -22,7 +22,7 @@ return new class extends Migration
         });
 
         // Insertar datos iniciales
-        DB::table('modelos')->insert([
+        DB::table('models')->insert([
             [
                 'codigo' => 'COROLLA_CROSS',
                 'nombre' => 'COROLLA CROSS',
@@ -85,6 +85,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('modelos');
+        Schema::dropIfExists('models');
     }
 };

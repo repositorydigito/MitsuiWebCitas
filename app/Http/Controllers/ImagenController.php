@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Storage;
 
 class ImagenController extends Controller
 {
@@ -17,10 +16,11 @@ class ImagenController extends Controller
     {
         try {
             // Buscar la imagen en la base de datos
-            $imagen = DB::table('campana_imagenes')->where('campana_id', $id)->first();
+            $imagen = DB::table('campaign_images')->where('campaign_id', $id)->first();
 
-            if (!$imagen || empty($imagen->ruta)) {
+            if (! $imagen || empty($imagen->ruta)) {
                 Log::warning("[ImagenController] No se encontró imagen para la campaña ID: {$id}");
+
                 return $this->imagenPorDefecto();
             }
 
@@ -38,17 +38,17 @@ class ImagenController extends Controller
             // Verificar en múltiples ubicaciones posibles
             $rutasAVerificar = [
                 // Ruta específica para las imágenes de campañas (con separadores correctos)
-                storage_path('app' . DIRECTORY_SEPARATOR . 'private' . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'campanas' . DIRECTORY_SEPARATOR . $nombreArchivo),
+                storage_path('app'.DIRECTORY_SEPARATOR.'private'.DIRECTORY_SEPARATOR.'public'.DIRECTORY_SEPARATOR.'images'.DIRECTORY_SEPARATOR.'campanas'.DIRECTORY_SEPARATOR.$nombreArchivo),
                 // Ruta completa en storage (con separadores correctos)
-                storage_path('app' . DIRECTORY_SEPARATOR . $rutaNormalizada),
+                storage_path('app'.DIRECTORY_SEPARATOR.$rutaNormalizada),
                 // Ruta en storage/private (con separadores correctos)
-                storage_path('app' . DIRECTORY_SEPARATOR . 'private' . DIRECTORY_SEPARATOR . $rutaNormalizada),
+                storage_path('app'.DIRECTORY_SEPARATOR.'private'.DIRECTORY_SEPARATOR.$rutaNormalizada),
                 // Ruta en storage/private/public/images/campanas (con nombre de archivo)
-                storage_path('app' . DIRECTORY_SEPARATOR . 'private' . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'campanas' . DIRECTORY_SEPARATOR . $nombreArchivo),
+                storage_path('app'.DIRECTORY_SEPARATOR.'private'.DIRECTORY_SEPARATOR.'public'.DIRECTORY_SEPARATOR.'images'.DIRECTORY_SEPARATOR.'campanas'.DIRECTORY_SEPARATOR.$nombreArchivo),
                 // Ruta en public
                 public_path($rutaNormalizada),
                 // Ruta directa
-                $rutaNormalizada
+                $rutaNormalizada,
             ];
 
             foreach ($rutasAVerificar as $ruta) {
@@ -56,19 +56,21 @@ class ImagenController extends Controller
 
                 if (file_exists($ruta)) {
                     Log::info("[ImagenController] Imagen encontrada en: {$ruta}");
+
                     return Response::file($ruta);
                 }
             }
 
             // Si llegamos aquí, la imagen no se encontró en ninguna ubicación
-            Log::warning("[ImagenController] No se pudo encontrar la imagen en ninguna ubicación");
-            Log::warning("[ImagenController] Rutas verificadas: " . json_encode($rutasAVerificar));
+            Log::warning('[ImagenController] No se pudo encontrar la imagen en ninguna ubicación');
+            Log::warning('[ImagenController] Rutas verificadas: '.json_encode($rutasAVerificar));
 
             return $this->imagenPorDefecto();
 
         } catch (\Exception $e) {
-            Log::error("[ImagenController] Error al mostrar imagen de campaña: " . $e->getMessage());
-            Log::error("[ImagenController] Stack trace: " . $e->getTraceAsString());
+            Log::error('[ImagenController] Error al mostrar imagen de campaña: '.$e->getMessage());
+            Log::error('[ImagenController] Stack trace: '.$e->getTraceAsString());
+
             return $this->imagenPorDefecto();
         }
     }

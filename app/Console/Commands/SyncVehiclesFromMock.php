@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Models\Vehicle;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
 
 class SyncVehiclesFromMock extends Command
 {
@@ -31,10 +30,11 @@ class SyncVehiclesFromMock extends Command
 
         // Verificar si ya existen vehículos en la base de datos
         $existingCount = Vehicle::count();
-        if ($existingCount > 0 && !$force) {
+        if ($existingCount > 0 && ! $force) {
             $this->warn("Ya existen {$existingCount} vehículos en la base de datos.");
-            if (!$this->confirm('¿Desea continuar con la sincronización?')) {
+            if (! $this->confirm('¿Desea continuar con la sincronización?')) {
                 $this->info('Sincronización cancelada.');
+
                 return 0;
             }
         }

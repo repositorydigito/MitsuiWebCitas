@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Vehicle extends Model
 {
@@ -67,12 +67,12 @@ class Vehicle extends Model
      */
     public function getBrandNameAttribute($value)
     {
-        if (!empty($value)) {
+        if (! empty($value)) {
             return $value;
         }
 
         // Si no hay valor, determinar por el código
-        return match($this->brand_code) {
+        return match ($this->brand_code) {
             'Z01' => 'TOYOTA',
             'Z02' => 'LEXUS',
             'Z03' => 'HINO',
@@ -83,18 +83,19 @@ class Vehicle extends Model
     /**
      * Set the brand name based on the brand code if not provided.
      *
-     * @param string|null $value
+     * @param  string|null  $value
      * @return void
      */
     public function setBrandNameAttribute($value)
     {
-        if (!empty($value)) {
+        if (! empty($value)) {
             $this->attributes['brand_name'] = $value;
+
             return;
         }
 
         // Si no hay valor, determinar por el código
-        $this->attributes['brand_name'] = match($this->attributes['brand_code'] ?? null) {
+        $this->attributes['brand_name'] = match ($this->attributes['brand_code'] ?? null) {
             'Z01' => 'TOYOTA',
             'Z02' => 'LEXUS',
             'Z03' => 'HINO',
@@ -131,7 +132,7 @@ class Vehicle extends Model
      */
     public function scopeSearchByPlate($query, $plate)
     {
-        if (!$plate) {
+        if (! $plate) {
             return $query;
         }
 
@@ -149,8 +150,8 @@ class Vehicle extends Model
 
         // Antes de guardar, asegurarse de que brand_name esté establecido
         static::saving(function ($vehicle) {
-            if (empty($vehicle->brand_name) && !empty($vehicle->brand_code)) {
-                $vehicle->brand_name = match($vehicle->brand_code) {
+            if (empty($vehicle->brand_name) && ! empty($vehicle->brand_code)) {
+                $vehicle->brand_name = match ($vehicle->brand_code) {
                     'Z01' => 'TOYOTA',
                     'Z02' => 'LEXUS',
                     'Z03' => 'HINO',

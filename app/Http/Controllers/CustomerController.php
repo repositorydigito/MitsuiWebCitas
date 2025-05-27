@@ -17,8 +17,6 @@ class CustomerController extends Controller
 
     /**
      * Create a new controller instance.
-     *
-     * @param CustomerService $customerService
      */
     public function __construct(CustomerService $customerService)
     {
@@ -28,7 +26,6 @@ class CustomerController extends Controller
     /**
      * Find a customer by document.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function findByDocument(Request $request)
@@ -42,7 +39,7 @@ class CustomerController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => $validator->errors()->first(),
-                'data' => null
+                'data' => null,
             ], 422);
         }
 
@@ -66,7 +63,7 @@ class CustomerController extends Controller
                 return response()->json([
                     'success' => false,
                     'error' => 'Invalid document type',
-                    'data' => null
+                    'data' => null,
                 ], 422);
         }
 

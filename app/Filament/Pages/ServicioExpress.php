@@ -18,6 +18,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 class ServicioExpress extends Page
 {
     use WithFileUploads;
+
     protected static ?string $navigationIcon = 'heroicon-o-truck';
 
     protected static ?string $navigationLabel = 'Servicio Express';
@@ -28,8 +29,11 @@ class ServicioExpress extends Page
 
     // Propiedades para la tabla
     public Collection $vehiculos;
+
     public int $perPage = 5;
+
     public int $currentPage = 1;
+
     public int $page = 1;
 
     // Estado de los vehículos
@@ -37,16 +41,19 @@ class ServicioExpress extends Page
 
     // Propiedades para el modal de carga
     public bool $isModalOpen = false;
+
     public $archivoExcel = null;
+
     public string $nombreArchivo = 'Sin selección';
 
     // Propiedades para el modal de edición
     public bool $isEditModalOpen = false;
+
     public array $vehiculoEnEdicion = [
         'id' => null,
         'modelo' => '',
         'marca' => '',
-        'ano' => '',
+        'year' => '',
         'mantenimiento' => '',
         'local' => '',
     ];
@@ -70,9 +77,9 @@ class ServicioExpress extends Page
             // Obtener los locales activos desde la base de datos
             $this->localesDisponibles = Local::getActivosParaSelector();
 
-            Log::info("[ServicioExpress] Se cargaron " . count($this->localesDisponibles) . " locales disponibles");
+            Log::info('[ServicioExpress] Se cargaron '.count($this->localesDisponibles).' locales disponibles');
         } catch (\Exception $e) {
-            Log::error("[ServicioExpress] Error al cargar locales disponibles: " . $e->getMessage());
+            Log::error('[ServicioExpress] Error al cargar locales disponibles: '.$e->getMessage());
 
             // Inicializar con un array vacío
             $this->localesDisponibles = [];
@@ -93,7 +100,7 @@ class ServicioExpress extends Page
                     'id' => $vehiculo->id,
                     'modelo' => $vehiculo->modelo,
                     'marca' => $vehiculo->marca,
-                    'ano' => $vehiculo->ano,
+                    'year' => $vehiculo->year,
                     'mantenimiento' => $vehiculo->mantenimiento,
                     'local' => $vehiculo->local,
                     'activo' => $vehiculo->activo,
@@ -105,14 +112,14 @@ class ServicioExpress extends Page
                 $this->estadoVehiculos[$vehiculo['id']] = $vehiculo['activo'];
             }
 
-            Log::info("[ServicioExpress] Se cargaron " . $this->vehiculos->count() . " vehículos desde la base de datos");
+            Log::info('[ServicioExpress] Se cargaron '.$this->vehiculos->count().' vehículos desde la base de datos');
         } catch (\Exception $e) {
-            Log::error("[ServicioExpress] Error al cargar vehículos: " . $e->getMessage());
+            Log::error('[ServicioExpress] Error al cargar vehículos: '.$e->getMessage());
 
             // Mostrar notificación de error
             \Filament\Notifications\Notification::make()
                 ->title('Error al cargar vehículos')
-                ->body('Ha ocurrido un error al cargar los vehículos: ' . $e->getMessage())
+                ->body('Ha ocurrido un error al cargar los vehículos: '.$e->getMessage())
                 ->danger()
                 ->send();
 
@@ -139,13 +146,14 @@ class ServicioExpress extends Page
     {
         try {
             // Invertir el estado actual
-            $this->estadoVehiculos[$id] = !$this->estadoVehiculos[$id];
+            $this->estadoVehiculos[$id] = ! $this->estadoVehiculos[$id];
 
             // Actualizar el estado en la colección de vehículos
             $this->vehiculos = $this->vehiculos->map(function ($vehiculo) use ($id) {
                 if ($vehiculo['id'] === $id) {
                     $vehiculo['activo'] = $this->estadoVehiculos[$id];
                 }
+
                 return $vehiculo;
             });
 
@@ -164,17 +172,17 @@ class ServicioExpress extends Page
 
             Log::info("[ServicioExpress] Se actualizó el estado del vehículo {$id} a {$estado}");
         } catch (\Exception $e) {
-            Log::error("[ServicioExpress] Error al actualizar estado del vehículo {$id}: " . $e->getMessage());
+            Log::error("[ServicioExpress] Error al actualizar estado del vehículo {$id}: ".$e->getMessage());
 
             // Mostrar notificación de error
             \Filament\Notifications\Notification::make()
                 ->title('Error al actualizar estado')
-                ->body('Ha ocurrido un error al actualizar el estado del vehículo: ' . $e->getMessage())
+                ->body('Ha ocurrido un error al actualizar el estado del vehículo: '.$e->getMessage())
                 ->danger()
                 ->send();
 
             // Revertir el cambio en la memoria
-            $this->estadoVehiculos[$id] = !$this->estadoVehiculos[$id];
+            $this->estadoVehiculos[$id] = ! $this->estadoVehiculos[$id];
 
             // Recargar los vehículos para asegurar consistencia
             $this->cargarVehiculos();
@@ -192,7 +200,7 @@ class ServicioExpress extends Page
                 'id' => $vehiculo->id,
                 'modelo' => $vehiculo->modelo,
                 'marca' => $vehiculo->marca,
-                'ano' => $vehiculo->ano,
+                'year' => $vehiculo->year,
                 'mantenimiento' => $vehiculo->mantenimiento,
                 'local' => $vehiculo->local,
             ];
@@ -202,12 +210,12 @@ class ServicioExpress extends Page
 
             Log::info("[ServicioExpress] Se inició la edición del vehículo {$id}");
         } catch (\Exception $e) {
-            Log::error("[ServicioExpress] Error al editar vehículo {$id}: " . $e->getMessage());
+            Log::error("[ServicioExpress] Error al editar vehículo {$id}: ".$e->getMessage());
 
             // Mostrar notificación de error
             \Filament\Notifications\Notification::make()
                 ->title('Error al editar vehículo')
-                ->body('Ha ocurrido un error al editar el vehículo: ' . $e->getMessage())
+                ->body('Ha ocurrido un error al editar el vehículo: '.$e->getMessage())
                 ->danger()
                 ->send();
         }
@@ -232,7 +240,7 @@ class ServicioExpress extends Page
             'id' => null,
             'modelo' => '',
             'marca' => '',
-            'ano' => '',
+            'year' => '',
             'mantenimiento' => '',
             'local' => '',
         ];
@@ -246,23 +254,23 @@ class ServicioExpress extends Page
         try {
             // Validar los datos
             if (empty($this->vehiculoEnEdicion['modelo'])) {
-                throw new \Exception("El modelo es obligatorio");
+                throw new \Exception('El modelo es obligatorio');
             }
 
             if (empty($this->vehiculoEnEdicion['marca'])) {
-                throw new \Exception("La marca es obligatoria");
+                throw new \Exception('La marca es obligatoria');
             }
 
-            if (empty($this->vehiculoEnEdicion['ano'])) {
-                throw new \Exception("El año es obligatorio");
+            if (empty($this->vehiculoEnEdicion['year'])) {
+                throw new \Exception('El año es obligatorio');
             }
 
-            if (empty($this->vehiculoEnEdicion['mantenimiento'])) {
-                throw new \Exception("El mantenimiento es obligatorio");
+            if (empty($this->vehiculoEnEdicion['mantenimiento']) || ! is_array($this->vehiculoEnEdicion['mantenimiento'])) {
+                throw new \Exception('Debe seleccionar al menos un tipo de mantenimiento');
             }
 
             if (empty($this->vehiculoEnEdicion['local'])) {
-                throw new \Exception("El local es obligatorio");
+                throw new \Exception('El local es obligatorio');
             }
 
             // Buscar el vehículo en la base de datos
@@ -271,7 +279,7 @@ class ServicioExpress extends Page
             // Actualizar los datos
             $vehiculo->modelo = $this->vehiculoEnEdicion['modelo'];
             $vehiculo->marca = $this->vehiculoEnEdicion['marca'];
-            $vehiculo->ano = $this->vehiculoEnEdicion['ano'];
+            $vehiculo->year = $this->vehiculoEnEdicion['year'];
             $vehiculo->mantenimiento = $this->vehiculoEnEdicion['mantenimiento'];
             $vehiculo->local = $this->vehiculoEnEdicion['local'];
 
@@ -284,7 +292,7 @@ class ServicioExpress extends Page
             // Mostrar notificación de éxito
             \Filament\Notifications\Notification::make()
                 ->title('Vehículo actualizado')
-                ->body("El vehículo ha sido actualizado correctamente")
+                ->body('El vehículo ha sido actualizado correctamente')
                 ->success()
                 ->send();
 
@@ -293,12 +301,12 @@ class ServicioExpress extends Page
             // Cerrar el modal
             $this->cerrarModalEdicion();
         } catch (\Exception $e) {
-            Log::error("[ServicioExpress] Error al guardar cambios del vehículo: " . $e->getMessage());
+            Log::error('[ServicioExpress] Error al guardar cambios del vehículo: '.$e->getMessage());
 
             // Mostrar notificación de error
             \Filament\Notifications\Notification::make()
                 ->title('Error al guardar cambios')
-                ->body('Ha ocurrido un error al guardar los cambios: ' . $e->getMessage())
+                ->body('Ha ocurrido un error al guardar los cambios: '.$e->getMessage())
                 ->danger()
                 ->send();
         }
@@ -334,12 +342,12 @@ class ServicioExpress extends Page
 
             Log::info("[ServicioExpress] Se eliminó el vehículo {$id} ({$modelo} {$marca})");
         } catch (\Exception $e) {
-            Log::error("[ServicioExpress] Error al eliminar vehículo {$id}: " . $e->getMessage());
+            Log::error("[ServicioExpress] Error al eliminar vehículo {$id}: ".$e->getMessage());
 
             // Mostrar notificación de error
             \Filament\Notifications\Notification::make()
                 ->title('Error al eliminar vehículo')
-                ->body('Ha ocurrido un error al eliminar el vehículo: ' . $e->getMessage())
+                ->body('Ha ocurrido un error al eliminar el vehículo: '.$e->getMessage())
                 ->danger()
                 ->send();
         }
@@ -375,15 +383,16 @@ class ServicioExpress extends Page
 
     public function cargarArchivo(): void
     {
-        Log::info("[ServicioExpress] Iniciando carga de archivo Excel");
+        Log::info('[ServicioExpress] Iniciando carga de archivo Excel');
 
-        if (!$this->archivoExcel) {
-            Log::warning("[ServicioExpress] No se ha seleccionado ningún archivo");
+        if (! $this->archivoExcel) {
+            Log::warning('[ServicioExpress] No se ha seleccionado ningún archivo');
             \Filament\Notifications\Notification::make()
                 ->title('Error')
-                ->body("Debes seleccionar un archivo Excel")
+                ->body('Debes seleccionar un archivo Excel')
                 ->danger()
                 ->send();
+
             return;
         }
 
@@ -392,8 +401,8 @@ class ServicioExpress extends Page
         try {
             // Verificar que el archivo existe y es accesible
             $realPath = $this->archivoExcel->getRealPath();
-            if (!$realPath || !file_exists($realPath)) {
-                throw new \Exception("No se puede acceder al archivo. Ruta: " . ($realPath ?: 'No disponible'));
+            if (! $realPath || ! file_exists($realPath)) {
+                throw new \Exception('No se puede acceder al archivo. Ruta: '.($realPath ?: 'No disponible'));
             }
 
             Log::info("[ServicioExpress] Ruta del archivo: {$realPath}");
@@ -407,17 +416,17 @@ class ServicioExpress extends Page
             $worksheet = $spreadsheet->getActiveSheet();
             $rows = $worksheet->toArray();
 
-            Log::info("[ServicioExpress] Archivo cargado correctamente. Filas encontradas: " . count($rows));
+            Log::info('[ServicioExpress] Archivo cargado correctamente. Filas encontradas: '.count($rows));
 
             // Depuración: Mostrar las primeras 5 filas del archivo (o menos si hay menos filas)
             $numFilasAMostrar = min(5, count($rows));
             for ($i = 0; $i < $numFilasAMostrar; $i++) {
-                Log::info("[ServicioExpress] Fila {$i}: " . json_encode($rows[$i]));
+                Log::info("[ServicioExpress] Fila {$i}: ".json_encode($rows[$i]));
             }
 
             // Verificar que el archivo tenga el formato correcto
             if (count($rows) < 2) {
-                throw new \Exception("El archivo no contiene datos");
+                throw new \Exception('El archivo no contiene datos');
             }
 
             // Verificar que las cabeceras sean correctas
@@ -425,27 +434,27 @@ class ServicioExpress extends Page
             $cabecerasEsperadas = ['Modelo', 'Marca', 'Año', 'Mantenimiento', 'Local'];
 
             // Normalizar las cabeceras (eliminar espacios, convertir a minúsculas)
-            $cabecerasNormalizadas = array_map(function($cabecera) {
+            $cabecerasNormalizadas = array_map(function ($cabecera) {
                 return trim(strtolower($cabecera));
             }, $cabeceras);
 
-            $cabecerasEsperadasNormalizadas = array_map(function($cabecera) {
+            $cabecerasEsperadasNormalizadas = array_map(function ($cabecera) {
                 return trim(strtolower($cabecera));
             }, $cabecerasEsperadas);
 
-            Log::info("[ServicioExpress] Cabeceras encontradas: " . implode(', ', $cabeceras));
-            Log::info("[ServicioExpress] Cabeceras normalizadas: " . implode(', ', $cabecerasNormalizadas));
+            Log::info('[ServicioExpress] Cabeceras encontradas: '.implode(', ', $cabeceras));
+            Log::info('[ServicioExpress] Cabeceras normalizadas: '.implode(', ', $cabecerasNormalizadas));
 
             // Verificar si hay cabeceras faltantes
             $cabecerasFaltantes = array_diff($cabecerasEsperadasNormalizadas, $cabecerasNormalizadas);
             if (count($cabecerasFaltantes) > 0) {
-                throw new \Exception("El formato del archivo no es correcto. Faltan las siguientes cabeceras: " . implode(', ', $cabecerasFaltantes));
+                throw new \Exception('El formato del archivo no es correcto. Faltan las siguientes cabeceras: '.implode(', ', $cabecerasFaltantes));
             }
 
             // Verificar si hay cabeceras adicionales (esto no es un error, solo informativo)
             $cabecerasAdicionales = array_diff($cabecerasNormalizadas, $cabecerasEsperadasNormalizadas);
             if (count($cabecerasAdicionales) > 0) {
-                Log::info("[ServicioExpress] Se encontraron cabeceras adicionales que serán ignoradas: " . implode(', ', $cabecerasAdicionales));
+                Log::info('[ServicioExpress] Se encontraron cabeceras adicionales que serán ignoradas: '.implode(', ', $cabecerasAdicionales));
             }
 
             // Procesar los datos
@@ -460,27 +469,32 @@ class ServicioExpress extends Page
                 // Verificar que la fila tenga datos
                 if (empty($row[0]) && empty($row[1]) && empty($row[2]) && empty($row[3]) && empty($row[4])) {
                     $filasVacias++;
+
                     continue;
                 }
 
                 // Registrar la fila que se está procesando
-                Log::info("[ServicioExpress] Procesando fila {$i}: " . implode(', ', array_slice($row, 0, 5)));
+                Log::info("[ServicioExpress] Procesando fila {$i}: ".implode(', ', array_slice($row, 0, 5)));
 
                 try {
+                    // Procesar el campo de mantenimiento
+                    $mantenimientoRaw = $row[3] ?? 'Sin mantenimiento';
+                    $mantenimiento = $this->procesarMantenimiento($mantenimientoRaw);
+
                     // Crear el vehículo
-                    $vehiculo = new VehiculoExpress();
+                    $vehiculo = new VehiculoExpress;
                     $vehiculo->modelo = $row[0] ?? 'Sin modelo';
                     $vehiculo->marca = $row[1] ?? 'Sin marca';
-                    $vehiculo->ano = $row[2] ?? 'Sin año';
-                    $vehiculo->mantenimiento = $row[3] ?? 'Sin mantenimiento';
+                    $vehiculo->year = $row[2] ?? 'Sin año';
+                    $vehiculo->mantenimiento = $mantenimiento;
                     $vehiculo->local = $row[4] ?? 'Sin local';
                     $vehiculo->activo = true;
                     $vehiculo->save();
 
-                    Log::info("[ServicioExpress] Vehículo guardado: ID {$vehiculo->id}");
+                    Log::info("[ServicioExpress] Vehículo guardado: ID {$vehiculo->id}, Mantenimientos: ".json_encode($mantenimiento));
                     $vehiculosAgregados++;
                 } catch (\Exception $innerEx) {
-                    Log::error("[ServicioExpress] Error al guardar vehículo en fila {$i}: " . $innerEx->getMessage());
+                    Log::error("[ServicioExpress] Error al guardar vehículo en fila {$i}: ".$innerEx->getMessage());
                     // Continuamos con la siguiente fila
                 }
             }
@@ -499,18 +513,54 @@ class ServicioExpress extends Page
 
             Log::info("[ServicioExpress] Se cargaron {$vehiculosAgregados} vehículos desde el archivo {$this->nombreArchivo}");
         } catch (\Exception $e) {
-            Log::error("[ServicioExpress] Error al cargar archivo: " . $e->getMessage());
-            Log::error("[ServicioExpress] Traza de la excepción: " . $e->getTraceAsString());
+            Log::error('[ServicioExpress] Error al cargar archivo: '.$e->getMessage());
+            Log::error('[ServicioExpress] Traza de la excepción: '.$e->getTraceAsString());
 
             // Mostrar notificación de error
             \Filament\Notifications\Notification::make()
                 ->title('Error al cargar archivo')
-                ->body('Ha ocurrido un error al cargar el archivo: ' . $e->getMessage())
+                ->body('Ha ocurrido un error al cargar el archivo: '.$e->getMessage())
                 ->danger()
                 ->send();
         }
 
         $this->cerrarModal();
+    }
+
+    /**
+     * Procesar el campo de mantenimiento desde Excel
+     * Puede ser un string simple o un JSON array
+     */
+    private function procesarMantenimiento($mantenimientoRaw): array
+    {
+        try {
+            // Si está vacío, devolver array vacío
+            if (empty($mantenimientoRaw) || $mantenimientoRaw === 'Sin mantenimiento') {
+                return [];
+            }
+
+            // Intentar decodificar como JSON primero
+            if (is_string($mantenimientoRaw) && (str_starts_with($mantenimientoRaw, '[') || str_starts_with($mantenimientoRaw, '{"'))) {
+                $decoded = json_decode($mantenimientoRaw, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    Log::info('[ServicioExpress] Mantenimiento procesado como JSON: '.json_encode($decoded));
+
+                    return $decoded;
+                }
+            }
+
+            // Si no es JSON válido, tratarlo como string simple
+            $mantenimientoLimpio = trim($mantenimientoRaw);
+            Log::info("[ServicioExpress] Mantenimiento procesado como string: [{$mantenimientoLimpio}]");
+
+            return [$mantenimientoLimpio];
+
+        } catch (\Exception $e) {
+            Log::error("[ServicioExpress] Error al procesar mantenimiento '{$mantenimientoRaw}': ".$e->getMessage());
+
+            // En caso de error, devolver como array con el valor original
+            return [trim($mantenimientoRaw)];
+        }
     }
 
     /**
@@ -520,7 +570,7 @@ class ServicioExpress extends Page
     {
         try {
             // Crear un nuevo archivo Excel
-            $spreadsheet = new Spreadsheet();
+            $spreadsheet = new Spreadsheet;
             $sheet = $spreadsheet->getActiveSheet();
 
             // Establecer las cabeceras
@@ -540,24 +590,43 @@ class ServicioExpress extends Page
             $sheet->getColumnDimension('A')->setWidth(20);
             $sheet->getColumnDimension('B')->setWidth(15);
             $sheet->getColumnDimension('C')->setWidth(10);
-            $sheet->getColumnDimension('D')->setWidth(20);
+            $sheet->getColumnDimension('D')->setWidth(35); // Más ancho para múltiples mantenimientos
             $sheet->getColumnDimension('E')->setWidth(20);
 
-            // Agregar algunos ejemplos
-            $sheet->setCellValue('A2', 'Yaris');
+            // Agregar ejemplos con múltiples mantenimientos
+            $sheet->setCellValue('A2', 'YARIS CROSS');
             $sheet->setCellValue('B2', 'Toyota');
-            $sheet->setCellValue('C2', '2022');
-            $sheet->setCellValue('D2', '20,000 Km');
-            $sheet->setCellValue('E2', 'La Molina');
+            $sheet->setCellValue('C2', '2024');
+            $sheet->setCellValue('D2', '["10,000 Km","20,000 Km","30,000 Km"]');
+            $sheet->setCellValue('E2', 'Mitsui La Molina');
 
             $sheet->setCellValue('A3', 'Corolla');
             $sheet->setCellValue('B3', 'Toyota');
             $sheet->setCellValue('C3', '2023');
-            $sheet->setCellValue('D3', '10,000 Km');
-            $sheet->setCellValue('E3', 'Miraflores');
+            $sheet->setCellValue('D3', '["10,000 Km","20,000 Km"]');
+            $sheet->setCellValue('E3', 'Mitsui Miraflores');
+
+            $sheet->setCellValue('A4', 'RAV4');
+            $sheet->setCellValue('B4', 'Toyota');
+            $sheet->setCellValue('C4', '2024');
+            $sheet->setCellValue('D4', '["40,000 Km","50,000 Km","60,000 Km"]');
+            $sheet->setCellValue('E4', 'Mitsui Canadá');
+
+            // Agregar comentarios explicativos
+            $sheet->setCellValue('A6', 'INSTRUCCIONES:');
+            $sheet->setCellValue('A7', '• Para UN mantenimiento: 10,000 Km');
+            $sheet->setCellValue('A8', '• Para MÚLTIPLES mantenimientos: ["10,000 Km","20,000 Km","30,000 Km"]');
+            $sheet->setCellValue('A9', '• Use comillas dobles y corchetes para múltiples valores');
+            $sheet->setCellValue('A10', '• Separe cada mantenimiento con coma');
+
+            // Dar formato a las instrucciones
+            $sheet->getStyle('A6')->getFont()->setBold(true);
+            $sheet->getStyle('A6')->getFont()->setSize(12);
+            $sheet->getStyle('A7:A10')->getFont()->setItalic(true);
+            $sheet->getStyle('A7:A10')->getFont()->setSize(10);
 
             // Crear el directorio si no existe
-            if (!Storage::disk('public')->exists('plantillas')) {
+            if (! Storage::disk('public')->exists('plantillas')) {
                 Storage::disk('public')->makeDirectory('plantillas');
             }
 
@@ -572,14 +641,14 @@ class ServicioExpress extends Page
             // Redirigir al usuario a la URL de descarga
             redirect()->away($url);
 
-            Log::info("[ServicioExpress] Se generó la plantilla Excel para descargar");
+            Log::info('[ServicioExpress] Se generó la plantilla Excel para descargar');
         } catch (\Exception $e) {
-            Log::error("[ServicioExpress] Error al generar plantilla Excel: " . $e->getMessage());
+            Log::error('[ServicioExpress] Error al generar plantilla Excel: '.$e->getMessage());
 
             // Mostrar notificación de error
             \Filament\Notifications\Notification::make()
                 ->title('Error al generar plantilla')
-                ->body('Ha ocurrido un error al generar la plantilla Excel: ' . $e->getMessage())
+                ->body('Ha ocurrido un error al generar la plantilla Excel: '.$e->getMessage())
                 ->danger()
                 ->send();
         }

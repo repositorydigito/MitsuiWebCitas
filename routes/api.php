@@ -1,9 +1,9 @@
 <?php
 
+use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\CustomerController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\CustomerController;
-use App\Http\Controllers\AppointmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,7 +24,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::prefix('c4c')->group(function () {
     // Customer routes
     Route::post('/customers/find', [CustomerController::class, 'findByDocument']);
-    
+
     // Appointment routes
     Route::post('/appointments', [AppointmentController::class, 'create']);
     Route::put('/appointments/{uuid}', [AppointmentController::class, 'update']);

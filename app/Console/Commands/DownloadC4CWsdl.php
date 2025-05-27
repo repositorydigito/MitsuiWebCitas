@@ -45,7 +45,7 @@ class DownloadC4CWsdl extends Command
         ];
 
         // Asegurarse de que el directorio exista
-        if (!File::exists(storage_path('wsdl'))) {
+        if (! File::exists(storage_path('wsdl'))) {
             File::makeDirectory(storage_path('wsdl'), 0755, true);
         }
 
@@ -54,7 +54,7 @@ class DownloadC4CWsdl extends Command
 
         foreach ($wsdls as $name => $wsdl) {
             $this->info("Descargando WSDL de {$name}...");
-            
+
             try {
                 $response = Http::withBasicAuth($username, $password)
                     ->withOptions([
@@ -62,15 +62,15 @@ class DownloadC4CWsdl extends Command
                         'timeout' => 30,
                     ])
                     ->get($wsdl['url']);
-                
+
                 if ($response->successful()) {
                     File::put($wsdl['path'], $response->body());
                     $this->info("WSDL de {$name} descargado correctamente en {$wsdl['path']}");
                 } else {
-                    $this->error("Error al descargar WSDL de {$name}: " . $response->status());
+                    $this->error("Error al descargar WSDL de {$name}: ".$response->status());
                 }
             } catch (\Exception $e) {
-                $this->error("Error al descargar WSDL de {$name}: " . $e->getMessage());
+                $this->error("Error al descargar WSDL de {$name}: ".$e->getMessage());
             }
         }
 

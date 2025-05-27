@@ -2,27 +2,26 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Pages\Dashboard;
-use App\Filament\Pages\Vehiculos;
-use App\Filament\Pages\AgendarCita;
-use App\Filament\Pages\DetalleVehiculo;
-use App\Filament\Pages\AgregarVehiculo;
-use App\Filament\Pages\Campanas;
-use App\Filament\Pages\ProgramacionCitasServicio;
-use App\Filament\Pages\ProgramarBloqueo;
 use App\Filament\Pages\AdministrarLocales;
 use App\Filament\Pages\AdministrarModelos;
-use App\Filament\Pages\Kpis;
+use App\Filament\Pages\AgendarCita;
+use App\Filament\Pages\AgregarVehiculo;
+use App\Filament\Pages\Campanas;
+use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\DashboardKpi;
+use App\Filament\Pages\DetalleVehiculo;
+use App\Filament\Pages\Kpis;
+use App\Filament\Pages\ProgramacionCitasServicio;
+use App\Filament\Pages\ProgramarBloqueo;
+use App\Filament\Pages\Vehiculos;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Support\Colors\Color;
-use Filament\Support\Assets\Theme;
-use Filament\Widgets;
 use Filament\View\PanelsRenderHook;
+use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -30,6 +29,8 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Joaopaulolndev\FilamentEditProfile\FilamentEditProfilePlugin;
+use Solutionforest\FilamentLoginScreen\Filament\Pages\Auth\Themes\Theme1\LoginScreenPage;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -39,7 +40,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
+            ->login(LoginScreenPage::class)
             ->darkMode(false)
             ->sidebarFullyCollapsibleOnDesktop()
             ->colors([
@@ -81,13 +82,21 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
+            ->plugins([
+                FilamentShieldPlugin::make(),
+                FilamentEditProfilePlugin::make()
+                    ->setTitle('Editar Perfil')
+                    ->setNavigationLabel('Perfil')
+                    ->setIcon('heroicon-o-user-circle')
+                    ->shouldRegisterNavigation(),
+            ])
             ->renderHook(
                 PanelsRenderHook::BODY_END,
-                fn() => auth()->check() ? view('customFooter') : '',
+                fn () => auth()->check() ? view('customFooter') : '',
             )
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
-                fn() => auth()->check() ? view('customHeader') : '',
+                fn () => auth()->check() ? view('customHeader') : '',
             );
     }
 }

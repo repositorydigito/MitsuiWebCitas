@@ -6,37 +6,32 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use SoapClient;
 use SoapFault;
-use SimpleXMLElement;
 
 class CitasSoapService
 {
     /**
      * URL del servicio SOAP para gestión de citas
-     * 
+     *
      * @var string
      */
     protected $wsdlUrl;
 
     /**
      * Usuario para autenticación
-     * 
+     *
      * @var string
      */
     protected $usuario;
 
     /**
      * Contraseña para autenticación
-     * 
+     *
      * @var string
      */
     protected $password;
 
     /**
      * Constructor del servicio
-     * 
-     * @param string|null $wsdlUrl
-     * @param string|null $usuario
-     * @param string|null $password
      */
     public function __construct(
         ?string $wsdlUrl = null,
@@ -50,8 +45,7 @@ class CitasSoapService
 
     /**
      * Crear cliente SOAP con autenticación
-     * 
-     * @return SoapClient
+     *
      * @throws SoapFault
      */
     protected function crearClienteSoap(): SoapClient
@@ -67,97 +61,92 @@ class CitasSoapService
                 'ssl' => [
                     'verify_peer' => false,
                     'verify_peer_name' => false,
-                ]
-            ])
+                ],
+            ]),
         ];
 
         try {
             $cliente = new SoapClient($this->wsdlUrl, $opciones);
+
             return $cliente;
         } catch (SoapFault $e) {
-            Log::error('Error al crear cliente SOAP: ' . $e->getMessage());
+            Log::error('Error al crear cliente SOAP: '.$e->getMessage());
             throw $e;
         }
     }
 
     /**
      * Obtener lista de citas disponibles
-     * 
-     * @param string $fecha
-     * @param string $sucursal
-     * @return Collection
      */
     public function getCitasDisponibles(string $fecha, string $sucursal): Collection
     {
         try {
             $cliente = $this->crearClienteSoap();
-            
+
             // Parámetros para la solicitud
             $parametros = [
                 'IT_FECHA' => $fecha,
                 'IT_SUCUR' => $sucursal,
             ];
-            
+
             // Ejecutar la llamada al método del servicio web
             $respuesta = $cliente->Z_GET_CITAS_DISPONIBLES($parametros);
-            
+
             // Procesar y devolver los resultados
             return $this->procesarRespuestaCitas($respuesta);
         } catch (SoapFault $e) {
-            Log::error('Error al obtener citas disponibles: ' . $e->getMessage());
+            Log::error('Error al obtener citas disponibles: '.$e->getMessage());
+
             return collect();
         }
     }
 
     /**
      * Agendar una cita
-     * 
-     * @param array $datosCita
-     * @return array
      */
     public function agendarCita(array $datosCita): array
     {
         try {
             $cliente = $this->crearClienteSoap();
-            
+
             // Ejecutar la llamada al método del servicio web
             $respuesta = $cliente->Z_AGENDAR_CITA($datosCita);
-            
+
             // Procesar y devolver la respuesta
             return [
                 'exito' => true,
                 'mensaje' => 'Cita agendada correctamente',
-                'datos' => $respuesta
+                'datos' => $respuesta,
             ];
         } catch (SoapFault $e) {
-            Log::error('Error al agendar cita: ' . $e->getMessage());
+            Log::error('Error al agendar cita: '.$e->getMessage());
+
             return [
                 'exito' => false,
-                'mensaje' => 'Error al agendar cita: ' . $e->getMessage(),
-                'datos' => null
+                'mensaje' => 'Error al agendar cita: '.$e->getMessage(),
+                'datos' => null,
             ];
         }
     }
 
     /**
      * Procesar la respuesta del servicio de citas
-     * 
-     * @param mixed $respuesta
-     * @return Collection
+     *
+     * @param  mixed  $respuesta
      */
     protected function procesarRespuestaCitas($respuesta): Collection
     {
-       
+
         $items = collect();
-        
+
         if (isset($respuesta->ET_CITAS) && isset($respuesta->ET_CITAS->item)) {
             $citas = $respuesta->ET_CITAS->item;
-            
+
             // Si solo hay un item, convertirlo a array
-            if (!is_array($citas)) {
+            if (! is_array($citas)) {
                 $citas = [$citas];
             }
-            
+
             foreach ($citas as $cita) {
                 $items->push([
                     'id' => (string) ($cita->ID_CITA ?? ''),
@@ -168,7 +157,7 @@ class CitasSoapService
                 ]);
             }
         }
-        
+
         return $items;
     }
-} 
+}

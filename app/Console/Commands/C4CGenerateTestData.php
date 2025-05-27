@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
+use Faker\Factory as Faker;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
-use Faker\Factory as Faker;
 
 class C4CGenerateTestData extends Command
 {
@@ -34,7 +34,7 @@ class C4CGenerateTestData extends Command
 
         // Crear el directorio si no existe
         $directory = dirname($outputPath);
-        if (!File::exists($directory)) {
+        if (! File::exists($directory)) {
             File::makeDirectory($directory, 0755, true);
         }
 
@@ -61,7 +61,7 @@ class C4CGenerateTestData extends Command
                 $name = $faker->company;
                 $categoryCode = '2';
                 $documentType = 'RUC';
-                $documentNumber = '20' . $faker->numerify('#########');
+                $documentNumber = '20'.$faker->numerify('#########');
             } else {
                 // Persona
                 $name = $faker->name;
@@ -89,7 +89,7 @@ class C4CGenerateTestData extends Command
                 'uuid' => $uuid,
                 'internal_id' => (string) $internalId,
                 'external_id' => $externalId,
-                'change_state_id' => date('Ymd') . $faker->numerify('.######'),
+                'change_state_id' => date('Ymd').$faker->numerify('.######'),
                 'system_administrative_data' => [
                     'creation_date_time' => $faker->dateTimeThisYear->format('Y-m-d\TH:i:s.u\Z'),
                     'creation_identity_uuid' => $faker->uuid,
@@ -127,17 +127,17 @@ class C4CGenerateTestData extends Command
                         ],
                         'telephone' => [
                             [
-                                'formatted_number_description' => '+51 ' . $faker->numerify('#######'),
+                                'formatted_number_description' => '+51 '.$faker->numerify('#######'),
                                 'mobile_phone_number_indicator' => true,
                             ],
                             [
-                                'formatted_number_description' => '+51 1 ' . $faker->numerify('###-####'),
+                                'formatted_number_description' => '+51 1 '.$faker->numerify('###-####'),
                                 'mobile_phone_number_indicator' => false,
                             ],
                         ],
                         'formatted_address' => [
-                            'formatted_address_description' => $name . ' / ' . $faker->streetAddress . ' / ' . $faker->city . ' / PE',
-                            'formatted_postal_address_description' => $faker->streetAddress . ' / ' . $faker->city . ' / PE',
+                            'formatted_address_description' => $name.' / '.$faker->streetAddress.' / '.$faker->city.' / PE',
+                            'formatted_postal_address_description' => $faker->streetAddress.' / '.$faker->city.' / PE',
                             'formatted_address' => [
                                 'first_line_description' => $name,
                                 'second_line_description' => $faker->streetAddress,

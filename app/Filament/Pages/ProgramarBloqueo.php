@@ -2,43 +2,54 @@
 
 namespace App\Filament\Pages;
 
-use Filament\Pages\Page;
-use Filament\Forms\Form;
-use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\TimePicker;
-use Filament\Forms\Components\Checkbox;
-use Filament\Forms\Components\Textarea;
-use Carbon\Carbon;
-use Filament\Notifications\Notification;
 use App\Models\Local;
+use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TimePicker;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Form;
+use Filament\Notifications\Notification;
+use Filament\Pages\Page;
 
 class ProgramarBloqueo extends Page implements HasForms
 {
     use InteractsWithForms;
 
     protected static string $view = 'filament.pages.programar-bloqueo';
+
     protected static ?string $navigationIcon = 'heroicon-o-lock-closed';
+
     protected static ?string $navigationLabel = 'Programar Bloqueo';
+
     protected static ?string $title = 'Programar bloqueo';
+
     protected static ?string $slug = 'programar-bloqueo';
 
     // Ocultar de la navegación principal ya que se accederá desde la página de programación de citas
     protected static bool $shouldRegisterNavigation = false;
 
     public $currentStep = 1;
+
     public $totalSteps = 3;
 
     // Datos del formulario
     public $local;
+
     public $fechaInicio;
+
     public $fechaFin;
+
     public $horaInicio;
+
     public $horaFin;
+
     public $todoDia = false;
+
     public $comentarios;
+
     public $data = [];
 
     // Errores de validación
@@ -90,7 +101,7 @@ class ProgramarBloqueo extends Page implements HasForms
         }
 
         // Solo validar horas si no está marcado "Todo el día"
-        if (empty($this->data['todoDia']) || !$this->data['todoDia']) {
+        if (empty($this->data['todoDia']) || ! $this->data['todoDia']) {
             if (empty($this->data['horaInicio'])) {
                 $this->errors['horaInicio'] = true;
                 $hasErrors = true;
@@ -108,7 +119,7 @@ class ProgramarBloqueo extends Page implements HasForms
         }
 
         // Si está marcado "Todo el día", asegurarse de que los horarios sean los correctos
-        if (!empty($this->data['todoDia']) && $this->data['todoDia']) {
+        if (! empty($this->data['todoDia']) && $this->data['todoDia']) {
             $this->data['horaInicio'] = '08:00'; // 8:00 AM
             $this->data['horaFin'] = '18:00';    // 6:00 PM
         }
@@ -119,8 +130,8 @@ class ProgramarBloqueo extends Page implements HasForms
         $this->fechaFin = $this->data['fechaFin'];
         $this->horaInicio = $this->data['horaInicio'];
         $this->horaFin = $this->data['horaFin'];
-        $this->todoDia = !empty($this->data['todoDia']) ? $this->data['todoDia'] : false;
-        $this->comentarios = !empty($this->data['comentarios']) ? $this->data['comentarios'] : '';
+        $this->todoDia = ! empty($this->data['todoDia']) ? $this->data['todoDia'] : false;
+        $this->comentarios = ! empty($this->data['comentarios']) ? $this->data['comentarios'] : '';
 
         // Avanzar al siguiente paso
         if ($this->currentStep < $this->totalSteps) {
@@ -141,11 +152,11 @@ class ProgramarBloqueo extends Page implements HasForms
         // Guardar el bloqueo en la base de datos
         \App\Models\Bloqueo::create([
             'local' => $this->local,
-            'fecha_inicio' => $this->fechaInicio,
-            'fecha_fin' => $this->fechaFin,
-            'hora_inicio' => $this->todoDia ? '00:00' : $this->horaInicio,
-            'hora_fin' => $this->todoDia ? '12:00' : $this->horaFin,
-            'todo_dia' => $this->todoDia,
+            'start_date' => $this->fechaInicio,
+            'end_date' => $this->fechaFin,
+            'start_time' => $this->todoDia ? '00:00' : $this->horaInicio,
+            'end_time' => $this->todoDia ? '12:00' : $this->horaFin,
+            'all_day' => $this->todoDia,
             'comentarios' => $this->comentarios,
         ]);
 
@@ -200,7 +211,7 @@ class ProgramarBloqueo extends Page implements HasForms
         return $form
             ->schema([
                 Select::make('local')
-                    ->options(function() {
+                    ->options(function () {
                         return Local::getActivosParaSelector();
                     })
                     ->placeholder('Elegir local')

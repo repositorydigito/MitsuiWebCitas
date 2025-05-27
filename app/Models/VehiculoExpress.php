@@ -14,7 +14,7 @@ class VehiculoExpress extends Model
      *
      * @var string
      */
-    protected $table = 'vehiculos_express';
+    protected $table = 'vehicles_express';
 
     /**
      * Los atributos que son asignables en masa.
@@ -24,7 +24,7 @@ class VehiculoExpress extends Model
     protected $fillable = [
         'modelo',
         'marca',
-        'ano',
+        'year',
         'mantenimiento',
         'local',
         'activo',
@@ -37,5 +37,6 @@ class VehiculoExpress extends Model
      */
     protected $casts = [
         'activo' => 'boolean',
+        'mantenimiento' => 'array', // Para manejar múltiples mantenimientos
     ];
 }

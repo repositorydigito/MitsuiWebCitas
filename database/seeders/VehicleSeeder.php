@@ -3,9 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Vehicle;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class VehicleSeeder extends Seeder
 {
@@ -19,6 +17,7 @@ class VehicleSeeder extends Seeder
 
         if (empty($mockData)) {
             $this->command->error('No se encontraron datos mock en la configuración.');
+
             return;
         }
 
@@ -27,7 +26,7 @@ class VehicleSeeder extends Seeder
         // Procesar cada marca
         foreach ($mockData as $brandCode => $vehicles) {
             // Determinar el nombre de la marca
-            $brandName = match($brandCode) {
+            $brandName = match ($brandCode) {
                 'Z01' => 'TOYOTA',
                 'Z02' => 'LEXUS',
                 'Z03' => 'HINO',
@@ -58,7 +57,7 @@ class VehicleSeeder extends Seeder
                         'last_service_mileage' => rand(1000, 30000),
                         'next_service_date' => now()->addMonths(rand(1, 6)),
                         'next_service_mileage' => rand(5000, 60000),
-                        'has_prepaid_maintenance' => (bool)rand(0, 1),
+                        'has_prepaid_maintenance' => (bool) rand(0, 1),
                         'prepaid_maintenance_expiry' => now()->addYears(rand(1, 3)),
                         'status' => 'active',
                     ]);
@@ -80,7 +79,7 @@ class VehicleSeeder extends Seeder
                         'last_service_mileage' => rand(1000, 30000),
                         'next_service_date' => now()->addMonths(rand(1, 6)),
                         'next_service_mileage' => rand(5000, 60000),
-                        'has_prepaid_maintenance' => (bool)rand(0, 1),
+                        'has_prepaid_maintenance' => (bool) rand(0, 1),
                         'prepaid_maintenance_expiry' => now()->addYears(rand(1, 3)),
                         'status' => 'active',
                     ]);
@@ -95,14 +94,12 @@ class VehicleSeeder extends Seeder
 
     /**
      * Obtener un color aleatorio.
-     *
-     * @return string
      */
     private function getRandomColor(): string
     {
         $colors = [
             'Blanco', 'Negro', 'Gris', 'Plata', 'Rojo', 'Azul', 'Verde',
-            'Amarillo', 'Naranja', 'Marrón', 'Beige', 'Dorado', 'Bronce'
+            'Amarillo', 'Naranja', 'Marrón', 'Beige', 'Dorado', 'Bronce',
         ];
 
         return $colors[array_rand($colors)];

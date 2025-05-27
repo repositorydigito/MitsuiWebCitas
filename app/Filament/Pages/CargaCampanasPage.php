@@ -9,7 +9,6 @@ use Filament\Pages\Page;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Livewire\WithFileUploads;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -38,19 +37,24 @@ class CargaCampanasPage extends Page
 
     // Propiedades para los pasos
     public int $pasoActual = 1;
+
     public int $totalPasos = 3;
 
     // Propiedades para el paso 1
     public $archivoExcel = null;
+
     public $imagenes = [];
+
     public string $nombreArchivo = 'Sin selección';
 
     // Propiedades para el paso 2 (resumen)
     public array $campanasProcesadas = [];
+
     public array $errores = [];
 
     // Propiedades para el paso 3 (confirmación)
     public bool $procesoCompletado = false;
+
     public int $campanasAgregadas = 0;
 
     // Lista de locales disponibles
@@ -71,9 +75,9 @@ class CargaCampanasPage extends Page
             // Obtener los locales activos desde la base de datos
             $this->localesDisponibles = Local::getActivosParaSelector();
 
-            Log::info("[CargaCampanas] Se cargaron " . count($this->localesDisponibles) . " locales disponibles");
+            Log::info('[CargaCampanas] Se cargaron '.count($this->localesDisponibles).' locales disponibles');
         } catch (\Exception $e) {
-            Log::error("[CargaCampanas] Error al cargar locales disponibles: " . $e->getMessage());
+            Log::error('[CargaCampanas] Error al cargar locales disponibles: '.$e->getMessage());
 
             // Inicializar con un array vacío
             $this->localesDisponibles = [];
@@ -100,7 +104,7 @@ class CargaCampanasPage extends Page
     {
         try {
             // Crear un nuevo archivo Excel
-            $spreadsheet = new Spreadsheet();
+            $spreadsheet = new Spreadsheet;
             $sheet = $spreadsheet->getActiveSheet();
 
             // Establecer las cabeceras con los nombres requeridos
@@ -141,7 +145,7 @@ class CargaCampanasPage extends Page
             $sheet->setCellValue('F3', 'Activo');
 
             // Crear el directorio si no existe
-            if (!Storage::disk('public')->exists('plantillas')) {
+            if (! Storage::disk('public')->exists('plantillas')) {
                 Storage::disk('public')->makeDirectory('plantillas');
             }
 
@@ -156,14 +160,14 @@ class CargaCampanasPage extends Page
             // Redirigir al usuario a la URL de descarga
             redirect()->away($url);
 
-            Log::info("[CargaCampanas] Se generó la plantilla Excel para descargar");
+            Log::info('[CargaCampanas] Se generó la plantilla Excel para descargar');
         } catch (\Exception $e) {
-            Log::error("[CargaCampanas] Error al generar plantilla Excel: " . $e->getMessage());
+            Log::error('[CargaCampanas] Error al generar plantilla Excel: '.$e->getMessage());
 
             // Mostrar notificación de error
             \Filament\Notifications\Notification::make()
                 ->title('Error al generar plantilla')
-                ->body('Ha ocurrido un error al generar la plantilla Excel: ' . $e->getMessage())
+                ->body('Ha ocurrido un error al generar la plantilla Excel: '.$e->getMessage())
                 ->danger()
                 ->send();
         }
@@ -174,15 +178,16 @@ class CargaCampanasPage extends Page
      */
     public function procesarArchivo(): void
     {
-        Log::info("[CargaCampanas] Iniciando procesamiento de archivo Excel y imágenes");
+        Log::info('[CargaCampanas] Iniciando procesamiento de archivo Excel y imágenes');
 
         // Validar que se haya seleccionado un archivo Excel
-        if (!$this->archivoExcel) {
+        if (! $this->archivoExcel) {
             \Filament\Notifications\Notification::make()
                 ->title('Error')
                 ->body('Debes seleccionar un archivo Excel')
                 ->danger()
                 ->send();
+
             return;
         }
 
@@ -193,14 +198,15 @@ class CargaCampanasPage extends Page
                 ->body('Debes seleccionar al menos una imagen')
                 ->danger()
                 ->send();
+
             return;
         }
 
         try {
             // Verificar que el archivo existe y es accesible
             $realPath = $this->archivoExcel->getRealPath();
-            if (!$realPath || !file_exists($realPath)) {
-                throw new \Exception("No se puede acceder al archivo. Ruta: " . ($realPath ?: 'No disponible'));
+            if (! $realPath || ! file_exists($realPath)) {
+                throw new \Exception('No se puede acceder al archivo. Ruta: '.($realPath ?: 'No disponible'));
             }
 
             Log::info("[CargaCampanas] Ruta del archivo: {$realPath}");
@@ -214,17 +220,17 @@ class CargaCampanasPage extends Page
             $worksheet = $spreadsheet->getActiveSheet();
             $rows = $worksheet->toArray();
 
-            Log::info("[CargaCampanas] Archivo cargado correctamente. Filas encontradas: " . count($rows));
+            Log::info('[CargaCampanas] Archivo cargado correctamente. Filas encontradas: '.count($rows));
 
             // Depuración: Mostrar las primeras 5 filas del archivo (o menos si hay menos filas)
             $numFilasAMostrar = min(5, count($rows));
             for ($i = 0; $i < $numFilasAMostrar; $i++) {
-                Log::info("[CargaCampanas] Fila {$i}: " . json_encode($rows[$i]));
+                Log::info("[CargaCampanas] Fila {$i}: ".json_encode($rows[$i]));
             }
 
             // Verificar que el archivo tenga el formato correcto
             if (count($rows) < 2) {
-                throw new \Exception("El archivo no contiene datos");
+                throw new \Exception('El archivo no contiene datos');
             }
 
             // Verificar que las cabeceras sean correctas
@@ -232,21 +238,21 @@ class CargaCampanasPage extends Page
             $cabecerasEsperadas = ['Codigo Campaña', 'Campaña', 'Local', 'Fecha de Inicio', 'Fecha de Fin', 'Estado'];
 
             // Normalizar las cabeceras (eliminar espacios, convertir a minúsculas)
-            $cabecerasNormalizadas = array_map(function($cabecera) {
+            $cabecerasNormalizadas = array_map(function ($cabecera) {
                 return trim(strtolower($cabecera));
             }, $cabeceras);
 
-            $cabecerasEsperadasNormalizadas = array_map(function($cabecera) {
+            $cabecerasEsperadasNormalizadas = array_map(function ($cabecera) {
                 return trim(strtolower($cabecera));
             }, $cabecerasEsperadas);
 
-            Log::info("[CargaCampanas] Cabeceras encontradas: " . implode(', ', $cabeceras));
-            Log::info("[CargaCampanas] Cabeceras normalizadas: " . implode(', ', $cabecerasNormalizadas));
+            Log::info('[CargaCampanas] Cabeceras encontradas: '.implode(', ', $cabeceras));
+            Log::info('[CargaCampanas] Cabeceras normalizadas: '.implode(', ', $cabecerasNormalizadas));
 
             // Verificar si hay cabeceras faltantes
             $cabecerasFaltantes = array_diff($cabecerasEsperadasNormalizadas, $cabecerasNormalizadas);
             if (count($cabecerasFaltantes) > 0) {
-                throw new \Exception("El formato del archivo no es correcto. Faltan las siguientes cabeceras: " . implode(', ', $cabecerasFaltantes));
+                throw new \Exception('El formato del archivo no es correcto. Faltan las siguientes cabeceras: '.implode(', ', $cabecerasFaltantes));
             }
 
             // Procesar los datos
@@ -285,38 +291,38 @@ class CargaCampanasPage extends Page
                 $erroresFila = [];
 
                 if (empty($campana['codigo'])) {
-                    $erroresFila[] = "El código de campaña es obligatorio";
+                    $erroresFila[] = 'El código de campaña es obligatorio';
                 }
 
                 if (empty($campana['nombre'])) {
-                    $erroresFila[] = "El nombre de la campaña es obligatorio";
+                    $erroresFila[] = 'El nombre de la campaña es obligatorio';
                 }
 
                 if (empty($campana['fecha_inicio'])) {
-                    $erroresFila[] = "La fecha de inicio es obligatoria";
-                } elseif (!strtotime($campana['fecha_inicio'])) {
-                    $erroresFila[] = "La fecha de inicio no tiene un formato válido";
+                    $erroresFila[] = 'La fecha de inicio es obligatoria';
+                } elseif (! strtotime($campana['fecha_inicio'])) {
+                    $erroresFila[] = 'La fecha de inicio no tiene un formato válido';
                 }
 
                 if (empty($campana['fecha_fin'])) {
-                    $erroresFila[] = "La fecha de fin es obligatoria";
-                } elseif (!strtotime($campana['fecha_fin'])) {
-                    $erroresFila[] = "La fecha de fin no tiene un formato válido";
+                    $erroresFila[] = 'La fecha de fin es obligatoria';
+                } elseif (! strtotime($campana['fecha_fin'])) {
+                    $erroresFila[] = 'La fecha de fin no tiene un formato válido';
                 }
 
-                if (!empty($campana['fecha_inicio']) && !empty($campana['fecha_fin']) &&
+                if (! empty($campana['fecha_inicio']) && ! empty($campana['fecha_fin']) &&
                     strtotime($campana['fecha_inicio']) > strtotime($campana['fecha_fin'])) {
-                    $erroresFila[] = "La fecha de inicio no puede ser posterior a la fecha de fin";
+                    $erroresFila[] = 'La fecha de inicio no puede ser posterior a la fecha de fin';
                 }
 
                 if (empty($campana['local'])) {
-                    $erroresFila[] = "El local es obligatorio";
-                } elseif (!in_array($campana['local'], array_values($this->localesDisponibles))) {
-                    $erroresFila[] = "El local no es válido";
+                    $erroresFila[] = 'El local es obligatorio';
+                } elseif (! in_array($campana['local'], array_values($this->localesDisponibles))) {
+                    $erroresFila[] = 'El local no es válido';
                 }
 
                 if ($campana['imagen'] === null) {
-                    $erroresFila[] = "No hay una imagen asociada a esta campaña";
+                    $erroresFila[] = 'No hay una imagen asociada a esta campaña';
                 }
 
                 // Agregar la campaña y sus errores a los arrays correspondientes
@@ -350,15 +356,15 @@ class CargaCampanasPage extends Page
             // Avanzar al siguiente paso
             $this->pasoActual = 2;
 
-            Log::info("[CargaCampanas] Se procesaron " . count($this->campanasProcesadas) . " campañas");
+            Log::info('[CargaCampanas] Se procesaron '.count($this->campanasProcesadas).' campañas');
         } catch (\Exception $e) {
-            Log::error("[CargaCampanas] Error al procesar archivo: " . $e->getMessage());
-            Log::error("[CargaCampanas] Traza de la excepción: " . $e->getTraceAsString());
+            Log::error('[CargaCampanas] Error al procesar archivo: '.$e->getMessage());
+            Log::error('[CargaCampanas] Traza de la excepción: '.$e->getTraceAsString());
 
             // Mostrar notificación de error
             \Filament\Notifications\Notification::make()
                 ->title('Error')
-                ->body('Ha ocurrido un error al procesar el archivo: ' . $e->getMessage())
+                ->body('Ha ocurrido un error al procesar el archivo: '.$e->getMessage())
                 ->danger()
                 ->send();
         }
@@ -369,7 +375,7 @@ class CargaCampanasPage extends Page
      */
     public function guardarCampanas(): void
     {
-        Log::info("[CargaCampanas] Iniciando guardado de campañas en la base de datos");
+        Log::info('[CargaCampanas] Iniciando guardado de campañas en la base de datos');
 
         try {
             // Iniciar una transacción para asegurar que todas las operaciones se completen o ninguna
@@ -381,25 +387,26 @@ class CargaCampanasPage extends Page
             foreach ($this->campanasProcesadas as $index => $campana) {
                 // Verificar si hay errores para esta campaña
                 if (isset($this->errores[$index + 1]) && count($this->errores[$index + 1]) > 0) {
-                    Log::warning("[CargaCampanas] Omitiendo campaña con errores: " . $campana['nombre']);
+                    Log::warning('[CargaCampanas] Omitiendo campaña con errores: '.$campana['nombre']);
+
                     continue;
                 }
 
                 // Crear la campaña en la base de datos
-                $nuevaCampana = new Campana();
+                $nuevaCampana = new Campana;
                 $nuevaCampana->codigo = $campana['codigo']; // Usar el código proporcionado en el Excel
                 $nuevaCampana->titulo = $campana['nombre'];
-                $nuevaCampana->fecha_inicio = date('Y-m-d', strtotime($campana['fecha_inicio']));
-                $nuevaCampana->fecha_fin = date('Y-m-d', strtotime($campana['fecha_fin']));
+                $nuevaCampana->start_date = date('Y-m-d', strtotime($campana['fecha_inicio']));
+                $nuevaCampana->end_date = date('Y-m-d', strtotime($campana['fecha_fin']));
                 $nuevaCampana->estado = $campana['estado'] ? 'Activo' : 'Inactivo';
                 $nuevaCampana->save();
 
                 // Guardar la relación con el local
                 $localCodigo = array_search($campana['local'], $this->localesDisponibles);
                 if ($localCodigo) {
-                    DB::table('campana_locales')->insert([
-                        'campana_id' => $nuevaCampana->id,
-                        'local_codigo' => $localCodigo,
+                    DB::table('campaign_premises')->insert([
+                        'campaign_id' => $nuevaCampana->id,
+                        'premise_code' => $localCodigo,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
@@ -410,13 +417,13 @@ class CargaCampanasPage extends Page
                     $imagen = $this->imagenes[$campana['imagen']];
 
                     // Generar un nombre único para la imagen
-                    $nombreImagen = 'campana_' . $nuevaCampana->id . '_' . time() . '.' . $imagen->getClientOriginalExtension();
+                    $nombreImagen = 'campana_'.$nuevaCampana->id.'_'.time().'.'.$imagen->getClientOriginalExtension();
 
                     // Guardar la imagen en el almacenamiento
                     $rutaImagen = $imagen->storeAs('private/public/images/campanas', $nombreImagen);
 
                     // Crear el registro de la imagen en la base de datos
-                    $campanaImagen = new CampanaImagen();
+                    $campanaImagen = new CampanaImagen;
                     $campanaImagen->campana_id = $nuevaCampana->id;
                     $campanaImagen->ruta = $rutaImagen;
                     $campanaImagen->nombre_original = $imagen->getClientOriginalName();
@@ -450,13 +457,13 @@ class CargaCampanasPage extends Page
             // Revertir la transacción en caso de error
             DB::rollBack();
 
-            Log::error("[CargaCampanas] Error al guardar campañas: " . $e->getMessage());
-            Log::error("[CargaCampanas] Traza de la excepción: " . $e->getTraceAsString());
+            Log::error('[CargaCampanas] Error al guardar campañas: '.$e->getMessage());
+            Log::error('[CargaCampanas] Traza de la excepción: '.$e->getTraceAsString());
 
             // Mostrar notificación de error
             \Filament\Notifications\Notification::make()
                 ->title('Error')
-                ->body('Ha ocurrido un error al guardar las campañas: ' . $e->getMessage())
+                ->body('Ha ocurrido un error al guardar las campañas: '.$e->getMessage())
                 ->danger()
                 ->send();
         }

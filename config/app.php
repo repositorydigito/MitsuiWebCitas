@@ -141,6 +141,4 @@ return [
         \App\Providers\LivewireServiceProvider::class,
     ])->toArray(),
 
-
-
 ];

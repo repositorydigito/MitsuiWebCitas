@@ -9,23 +9,23 @@ class Campana extends Model
 {
     use HasFactory;
 
-    protected $table = 'campanas';
+    protected $table = 'campaigns';
 
     protected $fillable = [
         'codigo',
         'titulo',
-        'fecha_inicio',
-        'fecha_fin',
-        'hora_inicio',
-        'hora_fin',
-        'todo_dia',
+        'start_date',
+        'end_date',
+        'start_time',
+        'end_time',
+        'all_day',
         'estado',
     ];
 
     protected $casts = [
-        'fecha_inicio' => 'date',
-        'fecha_fin' => 'date',
-        'todo_dia' => 'boolean',
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'all_day' => 'boolean',
     ];
 
     /**
@@ -33,7 +33,7 @@ class Campana extends Model
      */
     public function imagen()
     {
-        return $this->hasOne(CampanaImagen::class);
+        return $this->hasOne(CampanaImagen::class, 'campaign_id');
     }
 
     /**
@@ -41,7 +41,7 @@ class Campana extends Model
      */
     public function modelos()
     {
-        return $this->belongsToMany(Modelo::class, 'campana_modelos');
+        return $this->belongsToMany(Modelo::class, 'campaign_models', 'campaign_id', 'model_id');
     }
 
     /**
@@ -49,7 +49,7 @@ class Campana extends Model
      */
     public function anos()
     {
-        return $this->belongsToMany(ModeloAno::class, 'campana_anos', 'campana_id', 'ano');
+        return $this->belongsToMany(ModeloAno::class, 'campaign_years', 'campaign_id', 'year');
     }
 
     /**
@@ -57,7 +57,7 @@ class Campana extends Model
      */
     public function locales()
     {
-        return $this->belongsToMany(Local::class, 'campana_locales', 'campana_id', 'local_codigo', 'id', 'codigo')
-            ->withPivot('local_codigo');
+        return $this->belongsToMany(Local::class, 'campaign_premises', 'campaign_id', 'premise_code', 'id', 'codigo')
+            ->withPivot('premise_code');
     }
 }
