@@ -32,19 +32,21 @@ class AdministrarLocales extends Page implements HasForms
     public $currentLocalId = null;
 
     public $formData = [
-        'codigo' => '',
-        'nombre' => '',
-        'direccion' => '',
-        'telefono' => '',
+        'code' => '',
+        'name' => '',
+        'address' => '',
+        'phone' => '',
         'opening_time' => '08:00',
         'closing_time' => '18:00',
-        'activo' => true,
+        'is_active' => true,
+        'waze_url' => '',
+        'maps_url' => '',
     ];
 
     // Errores de validación
     public $errors = [
-        'codigo' => false,
-        'nombre' => false,
+        'code' => false,
+        'name' => false,
     ];
 
     public function mount(): void
@@ -54,7 +56,7 @@ class AdministrarLocales extends Page implements HasForms
 
     public function cargarLocales()
     {
-        $this->locales = Local::orderBy('nombre')->get();
+        $this->locales = Local::orderBy('name')->get();
     }
 
     public function abrirModal($id = null)
@@ -64,13 +66,15 @@ class AdministrarLocales extends Page implements HasForms
         if ($id) {
             $local = Local::findOrFail($id);
             $this->formData = [
-                'codigo' => $local->codigo,
-                'nombre' => $local->nombre,
-                'direccion' => $local->direccion,
-                'telefono' => $local->telefono,
+                'code' => $local->code,
+                'name' => $local->name,
+                'address' => $local->address,
+                'phone' => $local->phone,
                 'opening_time' => $local->opening_time,
                 'closing_time' => $local->closing_time,
-                'activo' => $local->activo,
+                'is_active' => $local->is_active,
+                'waze_url' => $local->waze_url ?? '',
+                'maps_url' => $local->maps_url ?? '',
             ];
             $this->editMode = true;
             $this->currentLocalId = $id;
@@ -90,18 +94,20 @@ class AdministrarLocales extends Page implements HasForms
     public function resetearFormulario()
     {
         $this->formData = [
-            'codigo' => '',
-            'nombre' => '',
-            'direccion' => '',
-            'telefono' => '',
+            'code' => '',
+            'name' => '',
+            'address' => '',
+            'phone' => '',
             'opening_time' => '08:00',
             'closing_time' => '18:00',
-            'activo' => true,
+            'is_active' => true,
+            'waze_url' => '',
+            'maps_url' => '',
         ];
 
         $this->errors = [
-            'codigo' => false,
-            'nombre' => false,
+            'code' => false,
+            'name' => false,
         ];
     }
 
@@ -109,20 +115,20 @@ class AdministrarLocales extends Page implements HasForms
     {
         // Resetear errores
         $this->errors = [
-            'codigo' => false,
-            'nombre' => false,
+            'code' => false,
+            'name' => false,
         ];
 
         // Validar campos requeridos
         $hasErrors = false;
 
-        if (empty($this->formData['codigo'])) {
-            $this->errors['codigo'] = true;
+        if (empty($this->formData['code'])) {
+            $this->errors['code'] = true;
             $hasErrors = true;
         }
 
-        if (empty($this->formData['nombre'])) {
-            $this->errors['nombre'] = true;
+        if (empty($this->formData['name'])) {
+            $this->errors['name'] = true;
             $hasErrors = true;
         }
 
@@ -133,9 +139,9 @@ class AdministrarLocales extends Page implements HasForms
 
         // Validar que el código sea único
         if (! $this->editMode) {
-            $existeCodigo = Local::where('codigo', $this->formData['codigo'])->exists();
+            $existeCodigo = Local::where('code', $this->formData['code'])->exists();
             if ($existeCodigo) {
-                $this->errors['codigo'] = true;
+                $this->errors['code'] = true;
                 Notification::make()
                     ->danger()
                     ->title('El código ya existe')
@@ -151,12 +157,14 @@ class AdministrarLocales extends Page implements HasForms
                 // Actualizar local existente
                 $local = Local::findOrFail($this->currentLocalId);
                 $local->update([
-                    'nombre' => $this->formData['nombre'],
-                    'direccion' => $this->formData['direccion'],
-                    'telefono' => $this->formData['telefono'],
+                    'name' => $this->formData['name'],
+                    'address' => $this->formData['address'],
+                    'phone' => $this->formData['phone'],
                     'opening_time' => $this->formData['opening_time'],
                     'closing_time' => $this->formData['closing_time'],
-                    'activo' => $this->formData['activo'],
+                    'is_active' => $this->formData['is_active'],
+                    'waze_url' => $this->formData['waze_url'],
+                    'maps_url' => $this->formData['maps_url'],
                 ]);
 
                 Notification::make()
@@ -167,13 +175,15 @@ class AdministrarLocales extends Page implements HasForms
             } else {
                 // Crear nuevo local
                 Local::create([
-                    'codigo' => $this->formData['codigo'],
-                    'nombre' => $this->formData['nombre'],
-                    'direccion' => $this->formData['direccion'],
-                    'telefono' => $this->formData['telefono'],
+                    'code' => $this->formData['code'],
+                    'name' => $this->formData['name'],
+                    'address' => $this->formData['address'],
+                    'phone' => $this->formData['phone'],
                     'opening_time' => $this->formData['opening_time'],
                     'closing_time' => $this->formData['closing_time'],
-                    'activo' => $this->formData['activo'],
+                    'is_active' => $this->formData['is_active'],
+                    'waze_url' => $this->formData['waze_url'],
+                    'maps_url' => $this->formData['maps_url'],
                 ]);
 
                 Notification::make()
@@ -222,7 +232,7 @@ class AdministrarLocales extends Page implements HasForms
         try {
             $local = Local::findOrFail($id);
             $local->update([
-                'activo' => ! $local->activo,
+                'is_active' => ! $local->is_active,
             ]);
 
             Notification::make()

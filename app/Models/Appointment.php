@@ -75,31 +75,8 @@ class Appointment extends Model
         return $this->belongsTo(Vehicle::class);
     }
 
-    /**
-     * Get the service center that owns the appointment.
-     */
-    public function serviceCenter(): BelongsTo
-    {
-        return $this->belongsTo(ServiceCenter::class);
-    }
-
-    /**
-     * Get the service type that owns the appointment.
-     */
-    public function serviceType(): BelongsTo
-    {
-        return $this->belongsTo(ServiceType::class);
-    }
-
-    /**
-     * The additional services that belong to the appointment.
-     */
-    public function additionalServices(): BelongsToMany
-    {
-        return $this->belongsToMany(AdditionalService::class, 'appointment_additional_service')
-            ->withPivot('price', 'notes')
-            ->withTimestamps();
-    }
+    // Relaciones eliminadas: serviceCenter, serviceType, additionalServices
+    // Estas tablas fueron removidas del sistema
 
     /**
      * Get the customer's full name.
@@ -141,13 +118,8 @@ class Appointment extends Model
         return $query->whereBetween('appointment_date', [$startDate, $endDate]);
     }
 
-    /**
-     * Scope a query to filter by service center.
-     */
-    public function scopeByServiceCenter($query, $serviceCenterId)
-    {
-        return $query->where('service_center_id', $serviceCenterId);
-    }
+    // Scope eliminado: scopeByServiceCenter
+    // La tabla service_centers fue removida del sistema
 
     /**
      * Scope a query to filter by pending status.

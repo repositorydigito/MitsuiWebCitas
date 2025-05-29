@@ -7,8 +7,8 @@
         <!-- Selector de local -->
         <div class="w-1/3">
             <select wire:model.live="data.selectedLocal" class="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-primary-500 focus:ring-primary-500">
-                @foreach(\App\Models\Local::where('activo', true)->orderBy('nombre')->get() as $local)
-                    <option value="{{ $local->codigo }}">{{ $local->nombre }}</option>
+                @foreach(\App\Models\Local::where('is_active', true)->orderBy('name')->get() as $local)
+                    <option value="{{ $local->code }}">{{ $local->name }}</option>
                 @endforeach
             </select>
         </div>

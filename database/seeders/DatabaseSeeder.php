@@ -20,11 +20,8 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]);
 
-        // Ejecutar los seeders para las tablas de citas
+        // Ejecutar los seeders
         $this->call([
-            ServiceCenterSeeder::class,
-            ServiceTypeSeeder::class,
-            AdditionalServiceSeeder::class,
             VehicleSeeder::class,
             PopUpSeeder::class,
         ]);

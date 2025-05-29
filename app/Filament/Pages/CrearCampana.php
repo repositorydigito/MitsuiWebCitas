@@ -239,12 +239,12 @@ class CrearCampana extends Page
     {
         try {
             // Obtener los locales activos
-            $localesActivos = Local::where('activo', true)
-                ->orderBy('nombre')
+            $localesActivos = Local::where('is_active', true)
+                ->orderBy('name')
                 ->get();
 
             // Convertir a array de códigos
-            $this->locales = $localesActivos->pluck('codigo')->toArray();
+            $this->locales = $localesActivos->pluck('code')->toArray();
         } catch (\Exception $e) {
             Log::error('[CrearCampana] Error al cargar locales: '.$e->getMessage());
             $this->locales = [];

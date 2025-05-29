@@ -12,17 +12,19 @@ class Local extends Model
     protected $table = 'premises';
 
     protected $fillable = [
-        'codigo',
-        'nombre',
-        'direccion',
-        'telefono',
+        'code',
+        'name',
+        'address',
+        'phone',
         'opening_time',
         'closing_time',
-        'activo',
+        'is_active',
+        'waze_url',
+        'maps_url',
     ];
 
     protected $casts = [
-        'activo' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     /**
@@ -30,9 +32,9 @@ class Local extends Model
      */
     public static function getActivosParaSelector()
     {
-        return self::where('activo', true)
-            ->orderBy('nombre')
-            ->pluck('nombre', 'codigo')
+        return self::where('is_active', true)
+            ->orderBy('name')
+            ->pluck('name', 'code')
             ->toArray();
     }
 }

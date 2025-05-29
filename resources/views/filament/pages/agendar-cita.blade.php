@@ -92,14 +92,18 @@
                             <p class="text-gray-500 text-xs">{{ $local['telefono'] }}</p>
                         </div>
                         <div class="ml-auto flex space-x-2 gap-4">
-                            <!-- Botón 1: Maps -->
-                            <a href="https://www.google.com/maps/search/?api=1&query={{ urlencode($local['direccion']) }}" target="_blank" class="text-primary-600 hover:text-primary-800">
-                                <img src="/images/maps.svg" alt="Maps" class="w-9 h-9 rounded-md">
-                            </a>
-                            <!-- Botón 2: Waze -->
-                            <a href="https://waze.com/ul?q={{ urlencode($local['direccion']) }}" target="_blank" class="text-primary-600 hover:text-primary-800">
-                                <img src="/images/waze.svg" alt="Waze" class="w-9 h-9 rounded-md">
-                            </a>
+                            @if(!empty($local['maps_url']))
+                                <!-- Botón Maps -->
+                                <a href="{{ $local['maps_url'] }}" target="_blank" class="text-primary-600 hover:text-primary-800">
+                                    <img src="/images/maps.svg" alt="Maps" class="w-9 h-9 rounded-md">
+                                </a>
+                            @endif
+                            @if(!empty($local['waze_url']))
+                                <!-- Botón Waze -->
+                                <a href="{{ $local['waze_url'] }}" target="_blank" class="text-primary-600 hover:text-primary-800">
+                                    <img src="/images/waze.svg" alt="Waze" class="w-9 h-9 rounded-md">
+                                </a>
+                            @endif
                         </div>
                     </div>
                 @endforeach

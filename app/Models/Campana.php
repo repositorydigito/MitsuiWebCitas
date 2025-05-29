@@ -57,7 +57,7 @@ class Campana extends Model
      */
     public function locales()
     {
-        return $this->belongsToMany(Local::class, 'campaign_premises', 'campaign_id', 'premise_code', 'id', 'codigo')
+        return $this->belongsToMany(Local::class, 'campaign_premises', 'campaign_id', 'premise_code', 'id', 'code')
             ->withPivot('premise_code');
     }
 }

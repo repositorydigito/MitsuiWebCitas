@@ -22,7 +22,7 @@
                         <th class="py-3 px-4 text-left text-sm font-medium text-white">Código</th>
                         <th class="py-3 px-4 text-left text-sm font-medium text-white">Nombre</th>
                         <th class="py-3 px-4 text-left text-sm font-medium text-white">Dirección</th>
-                        <th class="py-3 px-4 text-left text-sm font-medium text-white">Teléfono</th>
+                        <th class="py-3 px-4 text-left text-sm font-medium text-white">Ubicación</th>
                         <!-- <th class="py-3 px-4 text-left text-sm font-medium text-white">Horario</th> -->
                         <th class="py-3 px-4 text-left text-sm font-medium text-white">Estado</th>
                         <th class="py-3 px-4 text-center text-sm font-medium text-white">Acciones</th>
@@ -31,14 +31,14 @@
                 <tbody class="divide-y divide-gray-200">
                     @forelse ($locales as $local)
                         <tr class="hover:bg-gray-50">
-                            <td class="py-3 px-4 text-sm text-gray-700">{{ $local->codigo }}</td>
-                            <td class="py-3 px-4 text-sm text-gray-700">{{ $local->nombre }}</td>
-                            <td class="py-3 px-4 text-sm text-gray-700">{{ $local->direccion ?: '-' }}</td>
-                            <td class="py-3 px-4 text-sm text-gray-700">{{ $local->telefono ?: '-' }}</td>
-                            <!-- <td class="py-3 px-4 text-sm text-gray-700">{{ substr($local->horario_apertura, 0, 5) }} - {{ substr($local->horario_cierre, 0, 5) }}</td> -->
+                            <td class="py-3 px-4 text-sm text-gray-700">{{ $local->code }}</td>
+                            <td class="py-3 px-4 text-sm text-gray-700">{{ $local->name }}</td>
+                            <td class="py-3 px-4 text-sm text-gray-700">{{ $local->address ?: '-' }}</td>
+                            <td class="py-3 px-4 text-sm text-gray-700">{{ $local->phone ?: '-' }}</td>
+                            <!-- <td class="py-3 px-4 text-sm text-gray-700">{{ substr($local->opening_time, 0, 5) }} - {{ substr($local->closing_time, 0, 5) }}</td> -->
                             <td class="py-3 px-4 text-sm">
-                                <span class="px-2 py-1 rounded-full text-xs {{ $local->activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                    {{ $local->activo ? 'Activo' : 'Inactivo' }}
+                                <span class="px-2 py-1 rounded-full text-xs {{ $local->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                    {{ $local->is_active ? 'Activo' : 'Inactivo' }}
                                 </span>
                             </td>
                             <td class="py-3 px-4 text-sm text-gray-700">
@@ -54,10 +54,10 @@
                                     </button>
                                     <button
                                         wire:click="toggleEstado({{ $local->id }})"
-                                        class="{{ $local->activo ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800' }}"
-                                        title="{{ $local->activo ? 'Desactivar' : 'Activar' }}"
+                                        class="{{ $local->is_active ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800' }}"
+                                        title="{{ $local->is_active ? 'Desactivar' : 'Activar' }}"
                                     >
-                                        @if($local->activo)
+                                        @if($local->is_active)
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                                 <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd" />
                                             </svg>
@@ -114,29 +114,29 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
-                            <label for="codigo" class="block text-sm font-medium text-gray-700 mb-1">Código *</label>
+                            <label for="code" class="block text-sm font-medium text-gray-700 mb-1">Código *</label>
                             <input
                                 type="text"
-                                wire:model="formData.codigo"
-                                id="codigo"
-                                class="w-full rounded-lg border {{ $errors['codigo'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3"
+                                wire:model="formData.code"
+                                id="code"
+                                class="w-full rounded-lg border {{ $errors['code'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3"
                                 placeholder="Ej: local1"
                                 {{ $editMode ? 'disabled' : '' }}
                             >
-                            @if($errors['codigo'])
+                            @if($errors['code'])
                                 <p class="text-primary-500 text-sm mt-1">Elige una opción disponible.</p>
                             @endif
                         </div>
                         <div>
-                            <label for="nombre" class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+                            <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
                             <input
                                 type="text"
-                                wire:model="formData.nombre"
-                                id="nombre"
-                                class="w-full rounded-lg border {{ $errors['nombre'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3"
+                                wire:model="formData.name"
+                                id="name"
+                                class="w-full rounded-lg border {{ $errors['name'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3"
                                 placeholder="Ej: La Molina"
                             >
-                            @if($errors['nombre'])
+                            @if($errors['name'])
                                 <p class="text-primary-500 text-sm mt-1">Elige una opción disponible.</p>
                             @endif
                         </div>
@@ -144,21 +144,21 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
-                            <label for="direccion" class="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+                            <label for="address" class="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
                             <input
                                 type="text"
-                                wire:model="formData.direccion"
-                                id="direccion"
+                                wire:model="formData.address"
+                                id="address"
                                 class="w-full rounded-lg border border-primary-500 text-gray-700 py-2 px-3"
                                 placeholder="Ej: Av. La Molina 123"
                             >
                         </div>
                         <div>
-                            <label for="telefono" class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                            <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
                             <input
                                 type="text"
-                                wire:model="formData.telefono"
-                                id="telefono"
+                                wire:model="formData.phone"
+                                id="phone"
                                 class="w-full rounded-lg border border-primary-500 text-gray-700 py-2 px-3"
                                 placeholder="Ej: (01) 123-4567"
                             >
@@ -186,11 +186,34 @@
                         </div>
                     </div>
 
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label for="maps_url" class="block text-sm font-medium text-gray-700 mb-1">URL de Google Maps</label>
+                            <input
+                                type="url"
+                                wire:model="formData.maps_url"
+                                id="maps_url"
+                                class="w-full rounded-lg border border-primary-500 text-gray-700 py-2 px-3"
+                                placeholder="https://maps.google.com/..."
+                            >
+                        </div>
+                        <div>
+                            <label for="waze_url" class="block text-sm font-medium text-gray-700 mb-1">URL de Waze</label>
+                            <input
+                                type="url"
+                                wire:model="formData.waze_url"
+                                id="waze_url"
+                                class="w-full rounded-lg border border-primary-500 text-gray-700 py-2 px-3"
+                                placeholder="https://waze.com/..."
+                            >
+                        </div>
+                    </div>
+
                     <div class="mb-4">
                         <label class="flex items-center gap-2">
                             <input
                                 type="checkbox"
-                                wire:model="formData.activo"
+                                wire:model="formData.is_active"
                                 class="rounded border-primary-500 text-primary-600 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50"
                             >
                             <span class="ml-2 text-sm text-gray-700">Activo</span>

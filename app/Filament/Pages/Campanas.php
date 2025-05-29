@@ -118,9 +118,9 @@ class Campanas extends Page
             // Filtrar por ciudad (local)
             if (! empty($this->ciudadSeleccionada)) {
                 $query->whereHas('locales', function ($q) {
-                    $local = Local::where('nombre', $this->ciudadSeleccionada)->first();
+                    $local = Local::where('name', $this->ciudadSeleccionada)->first();
                     if ($local) {
-                        $q->where('premise_code', $local->codigo);
+                        $q->where('premise_code', $local->code);
                     }
                 });
 
@@ -220,9 +220,9 @@ class Campanas extends Page
 
                     foreach ($localesPivot as $pivotItem) {
                         $localCodigo = $pivotItem->premise_code;
-                        $local = Local::where('codigo', $localCodigo)->first();
+                        $local = Local::where('code', $localCodigo)->first();
                         if ($local) {
-                            $localesNombres[] = $local->nombre;
+                            $localesNombres[] = $local->name;
                         } else {
                             $localesNombres[] = $localCodigo.' (No encontrado)';
                         }
@@ -232,7 +232,7 @@ class Campanas extends Page
                     if (empty($localesNombres) && $campana->locales && $campana->locales->count() > 0) {
                         foreach ($campana->locales as $local) {
                             if (isset($local->pivot) && isset($local->pivot->premise_code)) {
-                                $nombreLocal = Local::where('codigo', $local->pivot->premise_code)->value('nombre');
+                                $nombreLocal = Local::where('code', $local->pivot->premise_code)->value('name');
                                 $localesNombres[] = $nombreLocal ?? $local->pivot->premise_code;
                             }
                         }
@@ -615,9 +615,9 @@ class Campanas extends Page
 
             foreach ($localesPivot as $pivotItem) {
                 $localCodigo = $pivotItem->premise_code;
-                $local = Local::where('codigo', $localCodigo)->first();
+                $local = Local::where('code', $localCodigo)->first();
                 if ($local) {
-                    $localesNombres[] = $local->nombre;
+                    $localesNombres[] = $local->name;
                 } else {
                     $localesNombres[] = $localCodigo.' (No encontrado)';
                 }
@@ -627,7 +627,7 @@ class Campanas extends Page
             if (empty($localesNombres) && $campana->locales && $campana->locales->count() > 0) {
                 foreach ($campana->locales as $local) {
                     if (isset($local->pivot) && isset($local->pivot->premise_code)) {
-                        $nombreLocal = Local::where('codigo', $local->pivot->premise_code)->value('nombre');
+                        $nombreLocal = Local::where('code', $local->pivot->premise_code)->value('name');
                         $localesNombres[] = $nombreLocal ?? $local->pivot->premise_code;
                     }
                 }
@@ -710,10 +710,10 @@ class Campanas extends Page
                         $localCodigo = $pivotItem->premise_code;
                         Log::info("[CampanasPage] Procesando local con código: {$localCodigo}");
 
-                        $local = Local::where('codigo', $localCodigo)->first();
+                        $local = Local::where('code', $localCodigo)->first();
                         if ($local) {
-                            $localesNombres[] = $local->nombre;
-                            Log::info("[CampanasPage] Local encontrado: {$local->nombre}");
+                            $localesNombres[] = $local->name;
+                            Log::info("[CampanasPage] Local encontrado: {$local->name}");
                         } else {
                             $localesNombres[] = $localCodigo.' (No encontrado)';
                             Log::warning("[CampanasPage] Local no encontrado con código: {$localCodigo}");
@@ -725,7 +725,7 @@ class Campanas extends Page
                         Log::info('[CampanasPage] Intentando obtener locales desde la relación');
                         foreach ($campana->locales as $local) {
                             if (isset($local->pivot) && isset($local->pivot->premise_code)) {
-                                $nombreLocal = Local::where('codigo', $local->pivot->premise_code)->value('nombre');
+                                $nombreLocal = Local::where('code', $local->pivot->premise_code)->value('name');
                                 $localesNombres[] = $nombreLocal ?? $local->pivot->premise_code;
                                 Log::info('[CampanasPage] Local desde relación: '.($nombreLocal ?? $local->pivot->premise_code));
                             }

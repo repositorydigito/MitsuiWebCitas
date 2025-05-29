@@ -202,7 +202,7 @@
                                                     x-model="selectedOptions"
                                                     class="rounded border-gray-300 text-primary-600 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50"
                                                 >
-                                                <span class="px-2">{{ \App\Models\Local::where('codigo', $local)->value('nombre') ?? $local }}</span>
+                                                <span class="px-2">{{ \App\Models\Local::where('code', $local)->value('name') ?? $local }}</span>
                                             </label>
                                         </div>
                                     @endforeach
@@ -395,7 +395,7 @@
                                 <td class="px-6 py-3 text-sm font-medium text-primary-600 bg-gray-50">Locales</td>
                                 <td class="px-6 py-3 text-sm text-gray-900">
                                     @foreach($localesSeleccionados as $localCodigo)
-                                        {{ \App\Models\Local::where('codigo', $localCodigo)->value('nombre') ?? $localCodigo }}{{ !$loop->last ? ', ' : '' }}
+                                        {{ \App\Models\Local::where('code', $localCodigo)->value('name') ?? $localCodigo }}{{ !$loop->last ? ', ' : '' }}
                                     @endforeach
                                 </td>
                             </tr>
@@ -483,7 +483,7 @@
                                 <td class="px-6 py-3 text-sm font-medium text-primary-600 bg-gray-50">Locales</td>
                                 <td class="px-6 py-3 text-sm text-gray-900">
                                     @foreach($localesSeleccionados as $localCodigo)
-                                        {{ \App\Models\Local::where('codigo', $localCodigo)->value('nombre') ?? $localCodigo }}{{ !$loop->last ? ', ' : '' }}
+                                        {{ \App\Models\Local::where('code', $localCodigo)->value('name') ?? $localCodigo }}{{ !$loop->last ? ', ' : '' }}
                                     @endforeach
                                 </td>
                             </tr>

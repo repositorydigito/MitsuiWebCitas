@@ -254,7 +254,7 @@ class AgendarCita extends Page
     protected function cargarLocales(): void
     {
         // Obtener los locales activos de la tabla locales
-        $localesActivos = \App\Models\Local::where('activo', true)->get();
+        $localesActivos = \App\Models\Local::where('is_active', true)->get();
 
         Log::info('[AgendarCita] Consultando locales activos. Total encontrados: '.$localesActivos->count());
 
@@ -263,24 +263,26 @@ class AgendarCita extends Page
         Log::info('[AgendarCita] Total de locales en la base de datos: '.$todosLosLocales->count());
 
         foreach ($todosLosLocales as $index => $local) {
-            Log::info("[AgendarCita] Local #{$index} en DB: ID: {$local->id}, Código: {$local->codigo}, Nombre: {$local->nombre}, Activo: ".($local->activo ? 'Sí' : 'No'));
+            Log::info("[AgendarCita] Local #{$index} en DB: ID: {$local->id}, Código: {$local->code}, Nombre: {$local->name}, Activo: ".($local->is_active ? 'Sí' : 'No'));
         }
 
         if ($localesActivos->isNotEmpty()) {
             $this->locales = [];
 
             foreach ($localesActivos as $local) {
-                $key = $local->codigo;
+                $key = $local->code;
                 $this->locales[$key] = [
-                    'nombre' => $local->nombre,
-                    'direccion' => $local->direccion,
-                    'telefono' => $local->telefono,
+                    'nombre' => $local->name,
+                    'direccion' => $local->address,
+                    'telefono' => $local->phone,
                     'opening_time' => $local->opening_time ?: '08:00:00',
                     'closing_time' => $local->closing_time ?: '17:00:00',
+                    'waze_url' => $local->waze_url,
+                    'maps_url' => $local->maps_url,
                     'id' => $local->id,
                 ];
 
-                Log::info("[AgendarCita] Local cargado: Código: {$key}, ID: {$local->id}, Nombre: {$local->nombre}, Horario: {$local->opening_time} - {$local->closing_time}");
+                Log::info("[AgendarCita] Local cargado: Código: {$key}, ID: {$local->id}, Nombre: {$local->name}, Horario: {$local->opening_time} - {$local->closing_time}");
             }
 
             Log::info('[AgendarCita] Locales cargados: '.count($this->locales));
@@ -399,8 +401,8 @@ class AgendarCita extends Page
             // Obtener el nombre del local seleccionado
             $nombreLocal = '';
             try {
-                $localObj = \App\Models\Local::where('codigo', $this->localSeleccionado)->first();
-                $nombreLocal = $localObj ? $localObj->nombre : '';
+                $localObj = \App\Models\Local::where('code', $this->localSeleccionado)->first();
+                $nombreLocal = $localObj ? $localObj->name : '';
                 Log::info("[AgendarCita] Local seleccionado - Código: '{$this->localSeleccionado}', Nombre: '{$nombreLocal}'");
             } catch (\Exception $e) {
                 Log::error('[AgendarCita] Error al obtener nombre del local: '.$e->getMessage());
@@ -601,9 +603,9 @@ class AgendarCita extends Page
                 // Verificar locales asociados
                 try {
                     $locales = DB::table('campaign_premises')
-                        ->join('premises', 'campaign_premises.premise_code', '=', 'premises.codigo')
+                        ->join('premises', 'campaign_premises.premise_code', '=', 'premises.code')
                         ->where('campaign_premises.campaign_id', $campana->id)
-                        ->pluck('premises.nombre')
+                        ->pluck('premises.name')
                         ->toArray();
                     Log::info("[AgendarCita] Campaña #{$index} locales: ".(empty($locales) ? 'Ninguno' : implode(', ', $locales)));
                 } catch (\Exception $e) {
@@ -734,14 +736,14 @@ class AgendarCita extends Page
 
             // Verificar locales asociados
             $localesAsociados = DB::table('campaign_premises')
-                ->join('premises', 'campaign_premises.premise_code', '=', 'premises.codigo')
+                ->join('premises', 'campaign_premises.premise_code', '=', 'premises.code')
                 ->where('campaign_premises.campaign_id', $campana->id)
-                ->select('premises.nombre', 'premises.codigo')
+                ->select('premises.name', 'premises.code')
                 ->get();
 
             Log::info("[AgendarCita] Locales asociados a campaña {$codigoCampana}:");
             foreach ($localesAsociados as $local) {
-                Log::info("[AgendarCita]   - {$local->nombre} (código: {$local->codigo})");
+                Log::info("[AgendarCita]   - {$local->name} (código: {$local->code})");
             }
 
             // Verificar coincidencias con el vehículo actual
@@ -780,9 +782,9 @@ class AgendarCita extends Page
             // Verificar coincidencia de local
             $localCoincide = false;
             foreach ($localesAsociados as $local) {
-                if ($local->codigo === $localSeleccionado) {
+                if ($local->code === $localSeleccionado) {
                     $localCoincide = true;
-                    Log::info("[AgendarCita]   ✓ Local coincide: '{$local->codigo}'");
+                    Log::info("[AgendarCita]   ✓ Local coincide: '{$local->code}'");
                     break;
                 }
             }
@@ -949,7 +951,7 @@ class AgendarCita extends Page
             // Obtener el local seleccionado
             $localSeleccionado = null;
             if (! empty($this->localSeleccionado)) {
-                $localSeleccionado = Local::where('codigo', $this->localSeleccionado)->first();
+                $localSeleccionado = Local::where('code', $this->localSeleccionado)->first();
             }
 
             if (! $localSeleccionado) {
@@ -962,7 +964,7 @@ class AgendarCita extends Page
                 return;
             }
 
-            Log::info("[AgendarCita] Local seleccionado para la cita: {$localSeleccionado->nombre} (ID: {$localSeleccionado->id})");
+            Log::info("[AgendarCita] Local seleccionado para la cita: {$localSeleccionado->name} (ID: {$localSeleccionado->id})");
 
             // Obtener el tipo de servicio
             $serviceType = ServiceType::where('name', 'like', "%{$this->servicioSeleccionado}%")->first();
@@ -1054,28 +1056,9 @@ class AgendarCita extends Page
                         // Generar un código único para el servicio adicional
                         $codigoServicio = 'SERV-'.strtoupper(substr(str_replace('_', '-', $servicioAdicionalKey), 0, 10));
 
-                        // Buscar el servicio adicional en la base de datos por código
-                        $additionalService = AdditionalService::where('code', $codigoServicio)->first();
-
-                        if (! $additionalService) {
-                            // Si no existe, crear uno nuevo
-                            $additionalService = AdditionalService::create([
-                                'code' => $codigoServicio,
-                                'name' => $this->opcionesServiciosAdicionales[$servicioAdicionalKey] ?? $servicioAdicionalKey,
-                                'description' => 'Servicio adicional seleccionado por el cliente',
-                                'is_active' => true,
-                                'price' => 0, // Precio por defecto
-                            ]);
-
-                            Log::info("[AgendarCita] Creado nuevo servicio adicional: {$additionalService->name} con código {$codigoServicio}");
-                        }
-
-                        // Adjuntar el servicio a la cita
-                        $appointment->additionalServices()->attach($additionalService->id, [
-                            'notes' => 'Servicio adicional seleccionado por el cliente',
-                        ]);
-
-                        Log::info("[AgendarCita] Servicio adicional adjuntado a la cita: {$additionalService->name}");
+                        // NOTA: Funcionalidad de servicios adicionales removida
+                        // Las tablas AdditionalService y appointment_additional_service fueron eliminadas
+                        Log::info("[AgendarCita] Servicio adicional registrado (sin BD): {$servicioAdicionalKey}");
                     }
                 }
             }
