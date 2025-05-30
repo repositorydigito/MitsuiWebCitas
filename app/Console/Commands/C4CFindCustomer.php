@@ -230,24 +230,77 @@ class C4CFindCustomer extends Command
                 $this->info('UUID: '.($customer['uuid'] ?? 'N/A'));
                 $this->info('ID Interno: '.($customer['internal_id'] ?? 'N/A'));
                 $this->info('ID Externo: '.($customer['external_id'] ?? 'N/A'));
-                $this->info('Nombre: '.($customer['name'] ?? 'N/A'));
+
+                // Obtener el nombre de la organización
+                $customerName = 'N/A';
+                if (isset($customer['organisation']['first_line_name'])) {
+                    $customerName = $customer['organisation']['first_line_name'];
+                }
+                $this->info('Nombre: '.$customerName);
+
                 $this->info('Categoría: '.($customer['category_code'] ?? 'N/A'));
-                $this->info('Estado: '.($customer['life_cycle_status'] ?? 'N/A'));
+                $this->info('Estado: '.($customer['life_cycle_status_code'] ?? 'N/A'));
 
                 // Información de identificación
+                $hasIdentification = false;
+                $this->info("\n<fg=green;options=bold>Documentos de Identidad:</>");
+
+                // Buscar documentos específicos
+                if (isset($customer['zDNI'])) {
+                    $this->info('DNI: '.$customer['zDNI']);
+                    $hasIdentification = true;
+                }
+                if (isset($customer['zRuc'])) {
+                    $this->info('RUC: '.$customer['zRuc']);
+                    $hasIdentification = true;
+                }
+                if (isset($customer['zCE'])) {
+                    $this->info('CE: '.$customer['zCE']);
+                    $hasIdentification = true;
+                }
+                if (isset($customer['zPasaporte'])) {
+                    $this->info('Pasaporte: '.$customer['zPasaporte']);
+                    $hasIdentification = true;
+                }
+
+                // Buscar en el array de identification si existe
                 if (isset($customer['identification']) && ! empty($customer['identification'])) {
-                    $this->info("\n<fg=green;options=bold>Documentos de Identidad:</>");
                     foreach ($customer['identification'] as $docType => $docValue) {
                         $this->info(strtoupper($docType).': '.$docValue);
+                        $hasIdentification = true;
                     }
                 }
 
-                // Información de contacto
-                if (isset($customer['contact']) && ! empty($customer['contact'])) {
-                    $this->info("\n<fg=green;options=bold>Información de Contacto:</>");
+                if (!$hasIdentification) {
+                    $this->info('No se encontraron documentos de identidad');
+                }
 
+                // Información de contacto
+                $hasContact = false;
+                $this->info("\n<fg=green;options=bold>Información de Contacto:</>");
+
+                // Email desde address_information
+                if (isset($customer['address_information']['address']['email']['uri'])) {
+                    $this->info('Email: '.$customer['address_information']['address']['email']['uri']);
+                    $hasContact = true;
+                }
+
+                // Teléfonos desde address_information
+                if (isset($customer['address_information']['address']['telephone']) && !empty($customer['address_information']['address']['telephone'])) {
+                    $this->info('Teléfonos:');
+                    foreach ($customer['address_information']['address']['telephone'] as $phone) {
+                        $number = $phone['formatted_number_description'] ?? 'N/A';
+                        $type = isset($phone['mobile_phone_number_indicator']) && $phone['mobile_phone_number_indicator'] ? 'Móvil' : 'Fijo';
+                        $this->info('  - '.$number.' ('.$type.')');
+                        $hasContact = true;
+                    }
+                }
+
+                // Fallback: buscar en estructura legacy
+                if (!$hasContact && isset($customer['contact']) && ! empty($customer['contact'])) {
                     if (isset($customer['contact']['email'])) {
                         $this->info('Email: '.$customer['contact']['email']);
+                        $hasContact = true;
                     }
 
                     if (isset($customer['contact']['phones']) && ! empty($customer['contact']['phones'])) {
@@ -255,37 +308,115 @@ class C4CFindCustomer extends Command
                         foreach ($customer['contact']['phones'] as $phone) {
                             $type = isset($phone['is_mobile']) && $phone['is_mobile'] ? 'Móvil' : 'Fijo';
                             $this->info('  - '.$phone['number'].' ('.$type.')');
+                            $hasContact = true;
                         }
                     }
                 }
 
-                // Información de dirección
-                if (isset($customer['address']) && ! empty($customer['address'])) {
-                    $this->info("\n<fg=green;options=bold>Dirección:</>");
+                if (!$hasContact) {
+                    $this->info('No se encontró información de contacto');
+                }
 
+                // Información de dirección
+                $hasAddress = false;
+                $this->info("\n<fg=green;options=bold>Dirección:</>");
+
+                // Dirección desde address_information
+                if (isset($customer['address_information']['address']['formatted_address']['formatted_address_description'])) {
+                    $this->info('Dirección completa: '.$customer['address_information']['address']['formatted_address']['formatted_address_description']);
+                    $hasAddress = true;
+                }
+
+                // Dirección postal detallada
+                if (isset($customer['address_information']['address']['postal_address'])) {
+                    $postal = $customer['address_information']['address']['postal_address'];
+
+                    if (isset($postal['street_name'])) {
+                        $this->info('Calle: '.$postal['street_name']);
+                        $hasAddress = true;
+                    }
+                    if (isset($postal['city_name'])) {
+                        $this->info('Ciudad: '.$postal['city_name']);
+                        $hasAddress = true;
+                    }
+                    if (isset($postal['region_description'])) {
+                        $this->info('Región: '.$postal['region_description']);
+                        $hasAddress = true;
+                    }
+                    if (isset($postal['country_code'])) {
+                        $this->info('País: '.$postal['country_code']);
+                        $hasAddress = true;
+                    }
+                }
+
+                // Fallback: estructura legacy
+                if (!$hasAddress && isset($customer['address']) && ! empty($customer['address'])) {
                     if (isset($customer['address']['formatted'])) {
                         $this->info('Dirección completa: '.$customer['address']['formatted']);
+                        $hasAddress = true;
                     } else {
                         $street = $customer['address']['street'] ?? '';
                         $city = $customer['address']['city'] ?? '';
                         $region = $customer['address']['region_description'] ?? '';
                         $country = $customer['address']['country'] ?? '';
 
-                        $this->info('Calle: '.$street);
-                        $this->info('Ciudad: '.$city);
-                        $this->info('Región: '.$region);
-                        $this->info('País: '.$country);
+                        if ($street) { $this->info('Calle: '.$street); $hasAddress = true; }
+                        if ($city) { $this->info('Ciudad: '.$city); $hasAddress = true; }
+                        if ($region) { $this->info('Región: '.$region); $hasAddress = true; }
+                        if ($country) { $this->info('País: '.$country); $hasAddress = true; }
                     }
                 }
 
+                if (!$hasAddress) {
+                    $this->info('No se encontró información de dirección');
+                }
+
                 // Información de ventas
-                if (isset($customer['sales']) && ! empty($customer['sales'])) {
-                    $this->info("\n<fg=green;options=bold>Información de Ventas:</>");
+                $hasSales = false;
+                $this->info("\n<fg=green;options=bold>Información de Ventas:</>");
+
+                // Información de ventas desde sales_arrangement
+                if (isset($customer['sales_arrangement'])) {
+                    $sales = $customer['sales_arrangement'];
+
+                    if (isset($sales['sales_organisation_id'])) {
+                        $this->info('Organización: '.$sales['sales_organisation_id']);
+                        $hasSales = true;
+                    }
+                    if (isset($sales['distribution_channel_code'])) {
+                        $this->info('Canal de distribución: '.$sales['distribution_channel_code']);
+                        $hasSales = true;
+                    }
+                    if (isset($sales['sales_group_id'])) {
+                        $this->info('Grupo de ventas: '.$sales['sales_group_id']);
+                        $hasSales = true;
+                    }
+                    if (isset($sales['currency_code'])) {
+                        $this->info('Moneda: '.$sales['currency_code']);
+                        $hasSales = true;
+                    }
+                    if (isset($sales['customer_group_code'])) {
+                        $this->info('Grupo de cliente: '.$sales['customer_group_code']);
+                        $hasSales = true;
+                    }
+                    if (isset($sales['division_code'])) {
+                        $this->info('División: '.$sales['division_code']);
+                        $hasSales = true;
+                    }
+                }
+
+                // Fallback: estructura legacy
+                if (!$hasSales && isset($customer['sales']) && ! empty($customer['sales'])) {
                     $this->info('Organización: '.($customer['sales']['organisation_id'] ?? 'N/A'));
                     $this->info('Canal de distribución: '.($customer['sales']['distribution_channel'] ?? 'N/A'));
                     $this->info('Grupo de ventas: '.($customer['sales']['group_id'] ?? 'N/A'));
                     $this->info('Moneda: '.($customer['sales']['currency'] ?? 'N/A'));
                     $this->info('Grupo de cliente: '.($customer['sales']['customer_group'] ?? 'N/A'));
+                    $hasSales = true;
+                }
+
+                if (!$hasSales) {
+                    $this->info('No se encontró información de ventas');
                 }
             }
 

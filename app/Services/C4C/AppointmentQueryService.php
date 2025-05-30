@@ -735,4 +735,83 @@ class AppointmentQueryService
             ],
         ];
     }
+
+    /**
+     * Check pending appointments for multiple clients (bulk operation).
+     *
+     * @return array
+     */
+    public function bulkCheckPendingAppointments(array $clientIds)
+    {
+        Log::info("Verificación masiva de citas para " . count($clientIds) . " clientes");
+
+        $results = [];
+        $totalAppointments = 0;
+        $successfulChecks = 0;
+        $clientsWithAppointments = 0;
+
+        foreach ($clientIds as $clientId) {
+            Log::info("Verificando cliente: {$clientId}");
+
+            try {
+                $result = $this->getPendingAppointments($clientId);
+
+                if ($result['success']) {
+                    $appointmentCount = $result['count'] ?? 0;
+                    $hasAppointments = $appointmentCount > 0;
+
+                    $results[] = [
+                        'client_id' => $clientId,
+                        'success' => true,
+                        'pending_appointments' => $appointmentCount,
+                        'has_appointments' => $hasAppointments,
+                        'appointments_data' => $result['data'] ?? []
+                    ];
+
+                    $totalAppointments += $appointmentCount;
+                    $successfulChecks++;
+
+                    if ($hasAppointments) {
+                        $clientsWithAppointments++;
+                    }
+
+                    Log::info("Cliente {$clientId}: {$appointmentCount} cita(s)");
+                } else {
+                    $results[] = [
+                        'client_id' => $clientId,
+                        'success' => false,
+                        'error' => $result['error'] ?? 'Unknown error',
+                        'pending_appointments' => 0,
+                        'has_appointments' => false
+                    ];
+
+                    Log::error("Error consultando cliente {$clientId}: " . ($result['error'] ?? 'Unknown error'));
+                }
+            } catch (\Exception $e) {
+                $results[] = [
+                    'client_id' => $clientId,
+                    'success' => false,
+                    'error' => $e->getMessage(),
+                    'pending_appointments' => 0,
+                    'has_appointments' => false
+                ];
+
+                Log::error("Excepción consultando cliente {$clientId}: " . $e->getMessage());
+            }
+        }
+
+        $summary = [
+            'total_clients_checked' => count($clientIds),
+            'successful_checks' => $successfulChecks,
+            'failed_checks' => count($clientIds) - $successfulChecks,
+            'total_pending_appointments' => $totalAppointments,
+            'clients_with_appointments' => $clientsWithAppointments,
+            'clients_without_appointments' => $successfulChecks - $clientsWithAppointments,
+            'detailed_results' => $results
+        ];
+
+        Log::info("Resumen verificación masiva: {$successfulChecks}/" . count($clientIds) . " exitosos, {$totalAppointments} citas total");
+
+        return $summary;
+    }
 }

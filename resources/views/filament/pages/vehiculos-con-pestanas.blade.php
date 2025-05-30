@@ -5,6 +5,72 @@
 <x-filament-panels::page>
     <h3>Selecciona el vehículo para agendar una cita</h3>
 
+    {{-- Loader y estado de carga --}}
+    @if($isLoading)
+        <div class="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-blue-800">
+                        {{ $loadingMessage }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    @else
+        {{-- Indicador de fuente de datos cuando no está cargando --}}
+        @if($dataSource)
+            <div class="mb-4 rounded-lg p-3 text-sm
+                @if($dataSource === 'webservice') bg-green-50 border border-green-200 text-green-800
+                @elseif($dataSource === 'database') bg-blue-50 border border-blue-200 text-blue-800
+                @elseif($dataSource === 'mock') bg-yellow-50 border border-yellow-200 text-yellow-800
+                @else bg-red-50 border border-red-200 text-red-800
+                @endif
+            ">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        @if($dataSource === 'webservice')
+                            <svg class="h-4 w-4 text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+                            </svg>
+                        @elseif($dataSource === 'database')
+                            <svg class="h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+                            </svg>
+                        @elseif($dataSource === 'mock')
+                            <svg class="h-4 w-4 text-yellow-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                            </svg>
+                        @else
+                            <svg class="h-4 w-4 text-red-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                            </svg>
+                        @endif
+                    </div>
+                    <div class="ml-2">
+                        <span class="font-medium">
+                            @if($dataSource === 'webservice')
+                                🌐 Webservice SAP
+                            @elseif($dataSource === 'database')
+                                💾 Base de datos
+                            @elseif($dataSource === 'mock')
+                                🧪 Datos de prueba
+                            @else
+                                ❌ Error
+                            @endif
+                        </span>
+                        <span class="ml-2">{{ $loadingMessage }}</span>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endif
+
     {{-- Barra de búsqueda y botones (responsive) --}}
     <div class="mb-4">
         {{-- Vista para móvil --}}

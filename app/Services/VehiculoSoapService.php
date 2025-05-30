@@ -29,22 +29,34 @@ class VehiculoSoapService
     /**
      * Constructor del servicio
      *
-     * @param  string|null  $wsdlUrl  - Este parámetro ya no se usa directamente
+     * @param  string|null  $wsdlUrl  - URL del WSDL (opcional, se usa configuración si no se proporciona)
      */
     public function __construct(
         ?string $wsdlUrl = null,
         ?VehiculoWebServiceHealthCheck $healthCheck = null,
         ?MockVehiculoService $mockService = null
     ) {
-        // Usar la ruta al archivo WSDL local
-        $this->wsdlUrl = storage_path('wsdl/vehiculos.wsdl');
-        Log::debug('[VehiculoSoapService] Usando WSDL local:', ['path' => $this->wsdlUrl]);
+        // Estrategia de fallback para WSDL basada en configuración:
+        $localWsdl = storage_path('wsdl/vehiculos.wsdl');
+        $remoteWsdl = $wsdlUrl ?? config('services.sap_3p.wsdl_url');
+        $preferLocal = config('vehiculos_webservice.prefer_local_wsdl', true);
 
-        // Verificar si el archivo existe
-        if (! file_exists($this->wsdlUrl)) {
-            Log::error('[VehiculoSoapService] El archivo WSDL local no existe en la ruta especificada:', ['path' => $this->wsdlUrl]);
-            // Podrías asignar null a $this->wsdlUrl o lanzar una excepción para prevenir la creación del cliente
-            $this->wsdlUrl = null;
+        if ($preferLocal && file_exists($localWsdl)) {
+            // Preferir WSDL local si está habilitado y existe
+            $this->wsdlUrl = $localWsdl;
+            Log::info('[VehiculoSoapService] Usando WSDL local (preferencia configurada):', ['path' => $localWsdl]);
+        } elseif (!$preferLocal) {
+            // Usar directamente el remoto si no se prefiere el local
+            $this->wsdlUrl = $remoteWsdl;
+            Log::info('[VehiculoSoapService] Usando WSDL remoto (configuración prefer_local_wsdl=false):', ['url' => $remoteWsdl]);
+        } elseif (file_exists($localWsdl)) {
+            // Fallback al local si existe
+            $this->wsdlUrl = $localWsdl;
+            Log::info('[VehiculoSoapService] Usando WSDL local como fallback:', ['path' => $localWsdl]);
+        } else {
+            // Último recurso: remoto
+            $this->wsdlUrl = $remoteWsdl;
+            Log::info('[VehiculoSoapService] WSDL local no encontrado, usando URL remota:', ['url' => $remoteWsdl]);
         }
 
         // Inicializar servicios de soporte
@@ -53,59 +65,116 @@ class VehiculoSoapService
     }
 
     /**
-     * Crear cliente SOAP
+     * Crear cliente SOAP con estrategia de fallback
      */
     protected function crearClienteSoap(): ?SoapClient
     {
-        if (empty($this->wsdlUrl)) { // Verificar si la ruta es válida
-            Log::error('[VehiculoSoapService] No se puede crear cliente SOAP: Ruta WSDL local inválida o archivo no encontrado.');
-
+        if (empty($this->wsdlUrl)) {
+            Log::error('[VehiculoSoapService] No se puede crear cliente SOAP: URL/ruta WSDL no válida.');
             return null;
         }
 
-        // Las opciones se mantienen, incluyendo la autenticación
+        // Configurar opciones del cliente SOAP usando las nuevas variables
         $opciones = [
             'trace' => true,
             'exceptions' => true,
             'cache_wsdl' => WSDL_CACHE_NONE,
+            'connection_timeout' => config('vehiculos_webservice.timeout', 30),
             'stream_context' => stream_context_create([
                 'ssl' => [
                     'verify_peer' => false,
                     'verify_peer_name' => false,
                 ],
+                'http' => [
+                    'timeout' => config('vehiculos_webservice.timeout', 30),
+                ],
             ]),
-            'login' => config('services.vehiculos.usuario'),
-            'password' => config('services.vehiculos.password'),
+            'login' => config('services.sap_3p.usuario'),
+            'password' => config('services.sap_3p.password'),
         ];
 
-        Log::debug('[VehiculoSoapService] Creando cliente SOAP con WSDL local y opciones:', [
-            'wsdl_path' => $this->wsdlUrl,
-            'options' => $opciones,
+        $isLocalWsdl = file_exists($this->wsdlUrl);
+        $wsdlType = $isLocalWsdl ? 'local' : 'remoto';
+
+        Log::debug("[VehiculoSoapService] Creando cliente SOAP con WSDL {$wsdlType}:", [
+            'wsdl' => $this->wsdlUrl,
+            'usuario' => config('services.sap_3p.usuario'),
+            'timeout' => config('vehiculos_webservice.timeout', 30),
         ]);
 
         try {
-            // Crear el cliente usando la RUTA al archivo WSDL local
+            // Crear el cliente SOAP
             $cliente = new SoapClient($this->wsdlUrl, $opciones);
-            Log::info('[VehiculoSoapService] Cliente SOAP creado exitosamente usando WSDL local.');
+            Log::info("[VehiculoSoapService] Cliente SOAP creado exitosamente usando WSDL {$wsdlType}.");
 
             return $cliente;
         } catch (SoapFault $e) {
-            Log::error('[VehiculoSoapService] SoapFault al crear cliente SOAP con WSDL local:', [
-                'wsdl_path' => $this->wsdlUrl,
+            Log::error("[VehiculoSoapService] SoapFault al crear cliente SOAP con WSDL {$wsdlType}:", [
+                'wsdl' => $this->wsdlUrl,
                 'message' => $e->getMessage(),
                 'code' => $e->getCode(),
             ]);
-            // Marcar el servicio como no disponible forzando verificación
-            $this->healthCheck->isAvailable(true);
 
+            // Si falló el WSDL local y está habilitado el fallback, intentar con el remoto
+            if ($isLocalWsdl && config('vehiculos_webservice.prefer_local_wsdl', true)) {
+                return $this->intentarWsdlRemoto($opciones);
+            }
+
+            // Marcar el servicio como no disponible
+            $this->healthCheck->isAvailable(true);
             return null;
         } catch (\Exception $e) {
-            Log::error('[VehiculoSoapService] Exception general al crear cliente SOAP con WSDL local:', [
-                'wsdl_path' => $this->wsdlUrl,
+            Log::error("[VehiculoSoapService] Exception general al crear cliente SOAP con WSDL {$wsdlType}:", [
+                'wsdl' => $this->wsdlUrl,
                 'message' => $e->getMessage(),
             ]);
-            // Marcar el servicio como no disponible forzando verificación
+
+            // Si falló el WSDL local y está habilitado el fallback, intentar con el remoto
+            if ($isLocalWsdl && config('vehiculos_webservice.prefer_local_wsdl', true)) {
+                return $this->intentarWsdlRemoto($opciones);
+            }
+
+            return null;
+        }
+    }
+
+    /**
+     * Intentar crear cliente SOAP con WSDL remoto como fallback
+     */
+    protected function intentarWsdlRemoto(array $opciones): ?SoapClient
+    {
+        $remoteWsdl = config('services.sap_3p.wsdl_url');
+
+        if (empty($remoteWsdl)) {
+            Log::error('[VehiculoSoapService] No hay URL remota configurada para fallback.');
+            return null;
+        }
+
+        Log::warning('[VehiculoSoapService] Intentando fallback con WSDL remoto:', ['url' => $remoteWsdl]);
+
+        try {
+            $cliente = new SoapClient($remoteWsdl, $opciones);
+            Log::info('[VehiculoSoapService] Cliente SOAP creado exitosamente usando WSDL remoto como fallback.');
+
+            // Actualizar la URL para futuras llamadas en esta sesión
+            $this->wsdlUrl = $remoteWsdl;
+
+            return $cliente;
+        } catch (SoapFault $e) {
+            Log::error('[VehiculoSoapService] SoapFault también en WSDL remoto:', [
+                'url' => $remoteWsdl,
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+            ]);
+
+            // Marcar el servicio como no disponible
             $this->healthCheck->isAvailable(true);
+            return null;
+        } catch (\Exception $e) {
+            Log::error('[VehiculoSoapService] Exception también en WSDL remoto:', [
+                'url' => $remoteWsdl,
+                'message' => $e->getMessage(),
+            ]);
 
             return null;
         }

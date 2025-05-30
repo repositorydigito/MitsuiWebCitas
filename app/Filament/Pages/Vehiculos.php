@@ -35,6 +35,11 @@ class Vehiculos extends Page
 
     public string $search = '';
 
+    // Estados de carga
+    public bool $isLoading = false;
+    public string $loadingMessage = '';
+    public string $dataSource = ''; // 'webservice', 'database', 'mock'
+
     protected $queryString = ['activeTab', 'search'];
 
     protected $listeners = ['updatedSearch' => 'filtrarVehiculos'];
@@ -75,53 +80,94 @@ class Vehiculos extends Page
         $this->marcasInfo = $this->mapaMarcas;
 
         try {
-            // Primero intentamos cargar desde la base de datos
-            $vehiculosDB = Vehicle::where('status', 'active')->get();
+            // Verificar si el webservice está habilitado en la configuración
+            $webserviceEnabled = config('vehiculos_webservice.enabled', true);
 
-            // Si hay vehículos en la base de datos, los usamos
-            if ($vehiculosDB->count() > 0) {
-                Log::info("[VehiculosPage] Cargando vehículos desde la base de datos: {$vehiculosDB->count()}");
+            if ($webserviceEnabled) {
+                // Activar estado de carga para webservice
+                $this->isLoading = true;
+                $this->loadingMessage = 'Consultando vehículos en el webservice SAP...';
+                $this->dataSource = 'webservice';
 
-                // Convertir los modelos a un formato compatible con el que usa la vista
-                $this->todosLosVehiculos = $vehiculosDB->map(function ($vehicle) {
-                    return [
-                        'vhclie' => $vehicle->vehicle_id,
-                        'numpla' => $vehicle->license_plate,
-                        'modver' => $vehicle->model,
-                        'aniomod' => $vehicle->year,
-                        'marca_codigo' => $vehicle->brand_code,
-                        'marca_nombre' => $vehicle->brand_name,
-                        'kilometraje' => $vehicle->mileage,
-                        'color' => $vehicle->color,
-                        'vin' => $vehicle->vin,
-                        'motor' => $vehicle->engine_number,
-                        'ultimo_servicio_fecha' => $vehicle->last_service_date,
-                        'ultimo_servicio_km' => $vehicle->last_service_mileage,
-                        'proximo_servicio_fecha' => $vehicle->next_service_date,
-                        'proximo_servicio_km' => $vehicle->next_service_mileage,
-                        'mantenimiento_prepagado' => $vehicle->has_prepaid_maintenance,
-                        'mantenimiento_prepagado_vencimiento' => $vehicle->prepaid_maintenance_expiry,
-                        'imagen_url' => $vehicle->image_url,
-                    ];
-                });
-            } else {
-                // Si no hay vehículos en la base de datos, intentamos cargar desde el servicio SOAP
-                Log::info('[VehiculosPage] No hay vehículos en la base de datos, intentando cargar desde el servicio SOAP');
+                Log::info('[VehiculosPage] Webservice habilitado, cargando vehículos desde el servicio SOAP');
 
                 $documentoCliente = '20605414410';
                 $service = app(VehiculoSoapService::class);
                 $this->todosLosVehiculos = $service->getVehiculosCliente($documentoCliente, $codigosMarca);
 
-                // Opcionalmente, podríamos guardar estos vehículos en la base de datos
-                // para futuras consultas, pero eso depende de los requisitos del negocio
+                // Verificar si realmente obtuvo datos del webservice o usó mock
+                if ($this->todosLosVehiculos->isNotEmpty()) {
+                    // Verificar si los datos parecen ser mock (tienen ciertos patrones)
+                    $primerVehiculo = $this->todosLosVehiculos->first();
+                    if (isset($primerVehiculo['numpla']) && str_contains($primerVehiculo['numpla'], 'ABC-')) {
+                        $this->dataSource = 'mock';
+                        $this->loadingMessage = 'Datos obtenidos desde servicio mock (webservice no disponible)';
+                    } else {
+                        $this->dataSource = 'webservice';
+                        $this->loadingMessage = 'Datos obtenidos desde webservice SAP exitosamente';
+                    }
+                } else {
+                    $this->dataSource = 'mock';
+                    $this->loadingMessage = 'No se encontraron vehículos en el webservice';
+                }
+
+            } else {
+                // Activar estado de carga para base de datos
+                $this->isLoading = true;
+                $this->loadingMessage = 'Cargando vehículos desde la base de datos...';
+                $this->dataSource = 'database';
+
+                Log::info('[VehiculosPage] Webservice deshabilitado, cargando vehículos desde la base de datos');
+
+                $vehiculosDB = Vehicle::where('status', 'active')->get();
+
+                if ($vehiculosDB->count() > 0) {
+                    Log::info("[VehiculosPage] Encontrados {$vehiculosDB->count()} vehículos en la base de datos");
+
+                    // Convertir los modelos a un formato compatible con el que usa la vista
+                    $this->todosLosVehiculos = $vehiculosDB->map(function ($vehicle) {
+                        return [
+                            'vhclie' => $vehicle->vehicle_id,
+                            'numpla' => $vehicle->license_plate,
+                            'modver' => $vehicle->model,
+                            'aniomod' => $vehicle->year,
+                            'marca_codigo' => $vehicle->brand_code,
+                            'marca_nombre' => $vehicle->brand_name,
+                            'kilometraje' => $vehicle->mileage,
+                            'color' => $vehicle->color,
+                            'vin' => $vehicle->vin,
+                            'motor' => $vehicle->engine_number,
+                            'ultimo_servicio_fecha' => $vehicle->last_service_date,
+                            'ultimo_servicio_km' => $vehicle->last_service_mileage,
+                            'proximo_servicio_fecha' => $vehicle->next_service_date,
+                            'proximo_servicio_km' => $vehicle->next_service_mileage,
+                            'mantenimiento_prepagado' => $vehicle->has_prepaid_maintenance,
+                            'mantenimiento_prepagado_vencimiento' => $vehicle->prepaid_maintenance_expiry,
+                            'imagen_url' => $vehicle->image_url,
+                        ];
+                    });
+
+                    $this->loadingMessage = "Cargados {$vehiculosDB->count()} vehículos desde la base de datos";
+                } else {
+                    Log::warning('[VehiculosPage] No hay vehículos en la base de datos y el webservice está deshabilitado');
+                    $this->todosLosVehiculos = collect();
+                    $this->loadingMessage = 'No se encontraron vehículos en la base de datos';
+                }
             }
 
             $this->agruparYPaginarVehiculos();
+
+            // Finalizar estado de carga
+            $this->isLoading = false;
 
         } catch (\Exception $e) {
             Log::error('[VehiculosPage] Error crítico al obtener vehículos: '.$e->getMessage());
             $this->todosLosVehiculos = collect();
             $this->vehiculosAgrupados = [];
+            $this->isLoading = false;
+            $this->loadingMessage = 'Error al cargar vehículos: ' . $e->getMessage();
+            $this->dataSource = 'error';
+
             \Filament\Notifications\Notification::make()
                 ->title('Error al Cargar Vehículos')
                 ->body('No se pudo obtener la lista de vehículos. Intente más tarde.')

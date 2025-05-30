@@ -11,11 +11,14 @@ return [
     |
     */
 
-    // Habilitar/deshabilitar WebService
+    // Habilitar/deshabilitar WebService completamente
     'enabled' => env('VEHICULOS_WEBSERVICE_ENABLED', true),
 
+    // Preferir WSDL local sobre remoto
+    'prefer_local_wsdl' => env('VEHICULOS_PREFER_LOCAL_WSDL', true),
+
     // Timeout en segundos para las peticiones SOAP
-    'timeout' => env('VEHICULOS_WEBSERVICE_TIMEOUT', 5),
+    'timeout' => env('VEHICULOS_WEBSERVICE_TIMEOUT', 30),
 
     // Número de intentos fallidos antes de activar modo fallback
     'retry_attempts' => env('VEHICULOS_WEBSERVICE_RETRY_ATTEMPTS', 2),

@@ -4,24 +4,48 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Servicios SOAP
+    | Servicios SAP (3P Soluciones)
     |--------------------------------------------------------------------------
     |
-    | Configuraciones para los servicios SOAP de vehículos y citas.
-    | Incluye URLs de los WSDL y credenciales de autenticación.
+    | Configuraciones para los servicios SOAP de SAP que incluyen todos los
+    | métodos Z3PF_* para gestión de clientes, vehículos, servicios, etc.
+    | Todos los métodos usan el mismo WSDL y credenciales.
+    |
+    */
+
+    'sap_3p' => [
+        'wsdl_url' => env('SAP_3P_WSDL_URL', 'http://mitdesqafo.mitsuiautomotriz.com:8002/sap/bc/srt/wsdl/flv_10002A111AD1/bndg_url/sap/bc/srt/rfc/sap/zws_ges_cit/400/zws_gescit/zws_gescit?sap-client=400'),
+        'usuario' => env('SAP_3P_USUARIO', 'USR_TRK'),
+        'password' => env('SAP_3P_PASSWORD', 'Srv0103$MrvTk%'),
+        'metodos' => [
+            'datos_cliente' => 'Z3PF_GETDATOSCLIENTE',
+            'lista_vehiculos' => 'Z3PF_GETLISTAVEHICULOS',
+            'lista_servicios' => 'Z3PF_GETLISTASERVICIOS',
+            'datos_asesor_proceso' => 'Z3PF_GETDATOSASESORPROCESO',
+            'lista_prepago_pendiente' => 'Z3PF_GETLISTAPREPAGOPEN',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Compatibilidad con configuración anterior
+    |--------------------------------------------------------------------------
+    |
+    | Mantenemos las configuraciones anteriores para evitar romper el código
+    | existente. Estas apuntan a la misma configuración SAP 3P.
     |
     */
 
     'vehiculos' => [
-        'wsdl_url' => env('VEHICULOS_WSDL_URL', ''),
-        'usuario' => env('VEHICULOS_USUARIO'),
-        'password' => env('VEHICULOS_PASSWORD'),
+        'wsdl_url' => env('SAP_3P_WSDL_URL', 'http://mitdesqafo.mitsuiautomotriz.com:8002/sap/bc/srt/wsdl/flv_10002A111AD1/bndg_url/sap/bc/srt/rfc/sap/zws_ges_cit/400/zws_gescit/zws_gescit?sap-client=400'),
+        'usuario' => env('SAP_3P_USUARIO', 'USR_TRK'),
+        'password' => env('SAP_3P_PASSWORD', 'Srv0103$MrvTk%'),
     ],
 
     'citas' => [
-        'wsdl_url' => env('CITAS_WSDL_URL', 'http://mitdesqafo.mitsuiautomotriz.com:8002/sap/bc/srt/wsdl/flv_10002A111AD1/bndg_url/sap/bc/srt/rfc/sap/zws_ges_cit/400/zws_gescit/zws_gescit?sap-client=400'),
-        'usuario' => env('CITAS_USUARIO', 'USR_TRK'),
-        'password' => env('CITAS_PASSWORD', 'Srv0103$MrvTk%'),
+        'wsdl_url' => env('SAP_3P_WSDL_URL', 'http://mitdesqafo.mitsuiautomotriz.com:8002/sap/bc/srt/wsdl/flv_10002A111AD1/bndg_url/sap/bc/srt/rfc/sap/zws_ges_cit/400/zws_gescit/zws_gescit?sap-client=400'),
+        'usuario' => env('SAP_3P_USUARIO', 'USR_TRK'),
+        'password' => env('SAP_3P_PASSWORD', 'Srv0103$MrvTk%'),
     ],
 
 ];
