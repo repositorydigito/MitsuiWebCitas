@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
 
         // Ejecutar los seeders
         $this->call([
+            ShieldSeeder::class,
             VehicleSeeder::class,
             PopUpSeeder::class,
         ]);
