@@ -56,7 +56,7 @@ class ProgramacionCitasServicio extends Page implements HasForms
 
         // Seleccionar el primer local activo por defecto
         if (empty($this->selectedLocal)) {
-            $primerLocal = \App\Models\Local::where('activo', true)->orderBy('nombre')->first();
+            $primerLocal = \App\Models\Local::where('is_active', true)->orderBy('name')->first();
             if ($primerLocal) {
                 $this->selectedLocal = $primerLocal->codigo;
             }
@@ -71,6 +71,12 @@ class ProgramacionCitasServicio extends Page implements HasForms
         ]);
 
         $this->generateTimeSlots();
+
+        // Si hay parámetro refresh, forzar recarga de datos
+        if (request()->has('refresh')) {
+            $this->resetSelection();
+            $this->generateTimeSlots();
+        }
     }
 
     public function updatedData($value, $name)

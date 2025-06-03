@@ -22,12 +22,12 @@ class VehiculoExpress extends Model
      * @var array
      */
     protected $fillable = [
-        'modelo',
-        'marca',
+        'model',
+        'brand',
         'year',
-        'mantenimiento',
-        'local',
-        'activo',
+        'maintenance',
+        'premises',
+        'is_active',
     ];
 
     /**
@@ -36,7 +36,7 @@ class VehiculoExpress extends Model
      * @var array
      */
     protected $casts = [
-        'activo' => 'boolean',
-        'mantenimiento' => 'array', // Para manejar múltiples mantenimientos
+        'is_active' => 'boolean',
+        'maintenance' => 'array', // Para manejar múltiples mantenimientos
     ];
 }

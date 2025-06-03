@@ -13,17 +13,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
+        // Crear usuario administrador por defecto
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'name' => 'Administrador Mitsui',
+            'email' => 'admin@mitsui.com',
         ]);
 
-        // Ejecutar los seeders
+        // Ejecutar seeder de datos iniciales de Mitsui
         $this->call([
-            VehicleSeeder::class,
-            PopUpSeeder::class,
+            MitsuiInitialDataSeeder::class,
         ]);
     }
 }

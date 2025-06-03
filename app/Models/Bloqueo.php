@@ -13,13 +13,13 @@ class Bloqueo extends Model
     protected $table = 'blockades';
 
     protected $fillable = [
-        'local',
+        'premises',
         'start_date',
         'end_date',
         'start_time',
         'end_time',
         'all_day',
-        'comentarios',
+        'comments',
     ];
 
     protected $casts = [
@@ -31,10 +31,10 @@ class Bloqueo extends Model
     /**
      * Verifica si un bloqueo afecta a una fecha y hora específicas
      *
-     * @param  string  $local
+     * @param  string  $premises
      * @return bool
      */
-    public static function estaBloquedo($local, Carbon $fecha, string $hora)
+    public static function estaBloquedo($premises, Carbon $fecha, string $hora)
     {
         $fechaStr = $fecha->format('Y-m-d');
 
@@ -43,7 +43,7 @@ class Bloqueo extends Model
         $horaMinutos = ((int) $horaH * 60) + (int) $horaM;
 
         // Buscar bloqueos que afecten a esta fecha y local
-        $bloqueos = self::where('local', $local)
+        $bloqueos = self::where('premises', $premises)
             ->where(function ($query) use ($fechaStr) {
                 $query->where('start_date', '<=', $fechaStr)
                     ->where('end_date', '>=', $fechaStr);

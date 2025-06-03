@@ -7,7 +7,7 @@ use App\Models\Appointment;
 use App\Models\Bloqueo;
 use App\Models\Campana;
 use App\Models\Local;
-use App\Models\ServiceType;
+use App\Models\MaintenanceType;
 use App\Models\Vehicle;
 use App\Services\VehiculoSoapService;
 use Carbon\Carbon;
@@ -54,11 +54,11 @@ class AgendarCita extends Page
 
     public string $localSeleccionado = '';
 
-    public string $servicioSeleccionado = 'Mantenimiento periódico';
+    public array $serviciosSeleccionados = [];
 
-    public string $tipoMantenimiento = '20,000 Km';
+    public string $tipoMantenimiento = '';
 
-    public string $modalidadServicio = 'Regular';
+    public string $modalidadServicio = '';
 
     // Datos del calendario
     public int $mesActual;
@@ -106,20 +106,31 @@ class AgendarCita extends Page
     // Modalidades disponibles
     public array $modalidadesDisponibles = [];
 
+    // Nuevas propiedades para los maestros
+    public array $tiposMantenimientoDisponibles = [];
+
+    public array $serviciosAdicionalesDisponibles = [];
+
+    public string $servicioAdicionalSeleccionado = '';
+
     /**
      * Carga los pop-ups disponibles desde la base de datos
      */
     protected function cargarPopups(): void
     {
         try {
+            Log::info('[AgendarCita] Iniciando carga de pop-ups');
+
             // Obtener los pop-ups activos
-            $popups = \App\Models\PopUp::where('activo', true)->get();
+            $popups = \App\Models\PopUp::where('is_active', true)->get();
+
+            Log::info('[AgendarCita] Pop-ups activos encontrados: ' . $popups->count());
 
             if ($popups->isNotEmpty()) {
                 $this->popupsDisponibles = [];
 
                 foreach ($popups as $popup) {
-                    $imagenUrl = $popup->imagen_path;
+                    $imagenUrl = $popup->image_path;
 
                     // Si la imagen es una ruta relativa, convertirla a URL completa
                     if (! filter_var($imagenUrl, FILTER_VALIDATE_URL)) {
@@ -128,17 +139,23 @@ class AgendarCita extends Page
 
                     $this->popupsDisponibles[] = [
                         'id' => $popup->id,
-                        'nombre' => $popup->nombre,
+                        'nombre' => $popup->name,
                         'imagen' => $imagenUrl,
                         'url_wp' => $popup->url_wp,
                     ];
+
+                    Log::info("[AgendarCita] Pop-up cargado: ID {$popup->id}, Nombre: {$popup->name}");
                 }
+
+                Log::info('[AgendarCita] Total pop-ups disponibles: ' . count($this->popupsDisponibles));
             } else {
                 // Si no hay pop-ups en la base de datos, crear algunos pop-ups de ejemplo
                 $this->popupsDisponibles = [];
+                Log::info('[AgendarCita] No hay pop-ups activos en la base de datos');
             }
         } catch (\Exception $e) {
             Log::error('[AgendarCita] Error al cargar pop-ups: '.$e->getMessage());
+            $this->popupsDisponibles = [];
         }
     }
 
@@ -233,6 +250,12 @@ class AgendarCita extends Page
         // Cargar las modalidades disponibles
         $this->cargarModalidadesDisponibles();
 
+        // Cargar los tipos de mantenimiento disponibles
+        $this->cargarTiposMantenimiento();
+
+        // Cargar los servicios adicionales disponibles
+        $this->cargarServiciosAdicionalesDisponibles();
+
         // Cargar los pop-ups disponibles
         $this->cargarPopups();
 
@@ -246,6 +269,46 @@ class AgendarCita extends Page
 
         // Verificar el estado final de la variable vehiculo
         Log::info('[AgendarCita] Estado final de la variable vehiculo:', $this->vehiculo ?? ['vehiculo' => 'null']);
+    }
+
+    /**
+     * Fuerza la recarga del calendario
+     */
+    public function recargarCalendario(): void
+    {
+        $this->generarCalendario();
+    }
+
+    /**
+     * Alterna la selección de un servicio
+     */
+    public function toggleServicio(string $servicio): void
+    {
+        if (in_array($servicio, $this->serviciosSeleccionados)) {
+            // Remover el servicio
+            $this->serviciosSeleccionados = array_filter($this->serviciosSeleccionados, function($s) use ($servicio) {
+                return $s !== $servicio;
+            });
+
+            // Limpiar campos relacionados si se deselecciona
+            if ($servicio === 'Mantenimiento periódico') {
+                $this->tipoMantenimiento = '';
+                $this->modalidadServicio = '';
+            }
+        } else {
+            // Agregar el servicio
+            $this->serviciosSeleccionados[] = $servicio;
+        }
+
+        Log::info("[AgendarCita] Servicios seleccionados actualizados: " . json_encode($this->serviciosSeleccionados));
+    }
+
+    /**
+     * Verifica si un servicio está seleccionado
+     */
+    public function isServicioSeleccionado(string $servicio): bool
+    {
+        return in_array($servicio, $this->serviciosSeleccionados);
     }
 
     /**
@@ -314,8 +377,20 @@ class AgendarCita extends Page
      */
     protected function cargarServiciosAdicionales(): void
     {
-        // Por solicitud del cliente, no cargamos los servicios adicionales tradicionales
+        // Inicializar opciones de servicios adicionales
         $this->opcionesServiciosAdicionales = [];
+
+        // Cargar servicios adicionales del maestro
+        try {
+            $serviciosAdicionales = AdditionalService::where('is_active', true)->get();
+            foreach ($serviciosAdicionales as $servicio) {
+                $this->opcionesServiciosAdicionales['servicio_' . $servicio->id] = $servicio->name;
+            }
+            Log::info('[AgendarCita] Servicios adicionales del maestro cargados: ' . count($serviciosAdicionales));
+        } catch (\Exception $e) {
+            Log::error('[AgendarCita] Error al cargar servicios adicionales del maestro: ' . $e->getMessage());
+        }
+
         // Cargar campañas activas
         $this->cargarCampanas();
     }
@@ -358,6 +433,60 @@ class AgendarCita extends Page
     }
 
     /**
+     * Cargar los tipos de mantenimiento disponibles desde la base de datos
+     */
+    protected function cargarTiposMantenimiento(): void
+    {
+        try {
+            $this->tiposMantenimientoDisponibles = MaintenanceType::getActivosParaSelector();
+            Log::info('[AgendarCita] Tipos de mantenimiento cargados: '.count($this->tiposMantenimientoDisponibles));
+        } catch (\Exception $e) {
+            Log::error('[AgendarCita] Error al cargar tipos de mantenimiento: '.$e->getMessage());
+            $this->tiposMantenimientoDisponibles = [];
+        }
+    }
+
+    /**
+     * Cargar los servicios adicionales disponibles desde la base de datos
+     */
+    protected function cargarServiciosAdicionalesDisponibles(): void
+    {
+        try {
+            $this->serviciosAdicionalesDisponibles = AdditionalService::getActivosParaSelector();
+            Log::info('[AgendarCita] Servicios adicionales cargados: '.count($this->serviciosAdicionalesDisponibles));
+        } catch (\Exception $e) {
+            Log::error('[AgendarCita] Error al cargar servicios adicionales: '.$e->getMessage());
+            $this->serviciosAdicionalesDisponibles = [];
+        }
+    }
+
+    /**
+     * Método que se ejecuta cuando se actualiza la selección del servicio adicional
+     */
+    public function updatedServicioAdicionalSeleccionado($value): void
+    {
+        if (!empty($value) && !in_array($value, $this->serviciosAdicionales)) {
+            // Agregar el servicio seleccionado a la lista de servicios adicionales
+            $this->serviciosAdicionales[] = $value;
+            Log::info("[AgendarCita] Servicio adicional agregado: {$value}");
+
+            // Limpiar la selección para permitir agregar más servicios
+            $this->servicioAdicionalSeleccionado = '';
+        }
+    }
+
+    /**
+     * Eliminar un servicio adicional de la lista
+     */
+    public function eliminarServicioAdicional($servicio): void
+    {
+        $this->serviciosAdicionales = array_values(array_filter($this->serviciosAdicionales, function($item) use ($servicio) {
+            return $item !== $servicio;
+        }));
+        Log::info("[AgendarCita] Servicio adicional eliminado: {$servicio}");
+    }
+
+    /**
      * Verificar si la modalidad Express está disponible para el vehículo y local actual
      */
     protected function esExpressDisponible(): bool
@@ -391,11 +520,11 @@ class AgendarCita extends Page
             }
 
             // Mostrar todos los registros de vehicles_express para depuración
-            $todosLosVehiculos = \App\Models\VehiculoExpress::where('activo', true)->get();
+            $todosLosVehiculos = \App\Models\VehiculoExpress::where('is_active', true)->get();
             Log::info('[AgendarCita] Total de vehículos Express activos en BD: '.$todosLosVehiculos->count());
 
             foreach ($todosLosVehiculos as $index => $veh) {
-                Log::info("[AgendarCita] Vehículo Express #{$index}: Modelo='{$veh->modelo}', Marca='{$veh->marca}', Año='{$veh->year}', Local='{$veh->local}', Mantenimiento=".json_encode($veh->mantenimiento));
+                Log::info("[AgendarCita] Vehículo Express #{$index}: Modelo='{$veh->model}', Marca='{$veh->brand}', Año='{$veh->year}', Local='{$veh->premises}', Mantenimiento=".json_encode($veh->maintenance));
             }
 
             // Obtener el nombre del local seleccionado
@@ -427,11 +556,11 @@ class AgendarCita extends Page
             Log::info("[AgendarCita] Mantenimiento normalizado: '{$this->tipoMantenimiento}' -> '{$mantenimientoNormalizado}'");
 
             // Buscar vehículos que coincidan con modelo, marca, año y local
-            $vehiculosExpress = \App\Models\VehiculoExpress::where('activo', true)
-                ->where('modelo', 'like', "%{$modelo}%")
-                ->where('marca', 'like', "%{$marca}%")
+            $vehiculosExpress = \App\Models\VehiculoExpress::where('is_active', true)
+                ->where('model', 'like', "%{$modelo}%")
+                ->where('brand', 'like', "%{$marca}%")
                 ->where('year', $anio)
-                ->where('local', $nombreLocal)
+                ->where('premises', $this->localSeleccionado)
                 ->get();
 
             Log::info('[AgendarCita] Vehículos encontrados para filtrar por mantenimiento: '.$vehiculosExpress->count());
@@ -481,7 +610,7 @@ class AgendarCita extends Page
 
             if ($vehiculoExpress) {
                 Log::info("[AgendarCita] ✓ Express disponible: encontrada configuración ID {$vehiculoExpress->id}");
-                Log::info("[AgendarCita]   Configuración encontrada: Modelo='{$vehiculoExpress->modelo}', Marca='{$vehiculoExpress->marca}', Año='{$vehiculoExpress->year}', Local='{$vehiculoExpress->local}', Mantenimiento=".json_encode($vehiculoExpress->mantenimiento));
+                Log::info("[AgendarCita]   Configuración encontrada: Modelo='{$vehiculoExpress->model}', Marca='{$vehiculoExpress->brand}', Año='{$vehiculoExpress->year}', Local='{$vehiculoExpress->premises}', Mantenimiento=".json_encode($vehiculoExpress->maintenance));
 
                 return true;
             }
@@ -513,7 +642,7 @@ class AgendarCita extends Page
             $this->verificarCampanaEspecifica('10214');
 
             // Obtener campañas activas con filtros inteligentes
-            $query = Campana::where('estado', 'Activo');
+            $query = Campana::where('status', 'active');
 
             // Filtrar por modelo del vehículo si está disponible
             if (! empty($this->vehiculo['modelo'])) {
@@ -525,7 +654,7 @@ class AgendarCita extends Page
                         ->from('campaign_models')
                         ->join('models', 'campaign_models.model_id', '=', 'models.id')
                         ->whereColumn('campaign_models.campaign_id', 'campaigns.id')
-                        ->where('models.nombre', 'like', "%{$modeloVehiculo}%");
+                        ->where('models.name', 'like', "%{$modeloVehiculo}%");
                 });
             }
 
@@ -559,19 +688,19 @@ class AgendarCita extends Page
             Log::info('[AgendarCita] Campañas filtradas encontradas: '.$campanas->count());
 
             // Verificar si hay campañas activas en la base de datos
-            $todasLasCampanas = Campana::where('estado', 'Activo')->get();
+            $todasLasCampanas = Campana::where('status', 'active')->get();
             Log::info('[AgendarCita] Total de campañas activas en la base de datos: '.$todasLasCampanas->count());
 
-            // Inicializar el array de opciones de servicios adicionales para campañas
-            $this->opcionesServiciosAdicionales = [];
+            // No reinicializar opcionesServiciosAdicionales aquí para mantener los servicios del maestro
+            // $this->opcionesServiciosAdicionales = [];
 
             foreach ($todasLasCampanas as $index => $campana) {
-                Log::info("[AgendarCita] Campaña #{$index} en DB: ID: {$campana->id}, Código: {$campana->codigo}, Título: {$campana->titulo}, Estado: {$campana->estado}, Fecha inicio: {$campana->start_date}, Fecha fin: {$campana->end_date}");
+                Log::info("[AgendarCita] Campaña #{$index} en DB: ID: {$campana->id}, Título: {$campana->title}, Estado: {$campana->status}, Fecha inicio: {$campana->start_date}, Fecha fin: {$campana->end_date}");
 
                 // Verificar si tiene imagen
                 try {
                     $imagen = DB::table('campaign_images')->where('campaign_id', $campana->id)->first();
-                    $tieneImagen = $imagen ? "Sí (ID: {$imagen->id}, Ruta: {$imagen->ruta})" : 'No';
+                    $tieneImagen = $imagen ? "Sí (ID: {$imagen->id}, Ruta: {$imagen->image_path})" : 'No';
                     Log::info("[AgendarCita] Campaña #{$index} tiene imagen: {$tieneImagen}");
                 } catch (\Exception $e) {
                     Log::error("[AgendarCita] Error al verificar imagen de campaña #{$index}: ".$e->getMessage());
@@ -582,7 +711,7 @@ class AgendarCita extends Page
                     $modelos = DB::table('campaign_models')
                         ->join('models', 'campaign_models.model_id', '=', 'models.id')
                         ->where('campaign_models.campaign_id', $campana->id)
-                        ->pluck('models.nombre')
+                        ->pluck('models.name')
                         ->toArray();
                     Log::info("[AgendarCita] Campaña #{$index} modelos: ".(empty($modelos) ? 'Ninguno' : implode(', ', $modelos)));
                 } catch (\Exception $e) {
@@ -618,7 +747,7 @@ class AgendarCita extends Page
 
                 foreach ($campanas as $campana) {
                     // Verificar que la campaña esté activa
-                    if ($campana->estado !== 'Activo') {
+                    if ($campana->status !== 'active') {
                         Log::info("[AgendarCita] Campaña {$campana->id} no está activa, omitiendo");
 
                         continue;
@@ -628,10 +757,10 @@ class AgendarCita extends Page
                     $imagenObj = DB::table('campaign_images')->where('campaign_id', $campana->id)->first();
 
                     // Construir la URL correcta para la imagen
-                    if ($imagenObj && $imagenObj->ruta) {
+                    if ($imagenObj && $imagenObj->image_path) {
                         try {
                             // Intentar diferentes enfoques para obtener la URL de la imagen
-                            $rutaCompleta = $imagenObj->ruta;
+                            $rutaCompleta = $imagenObj->image_path;
                             Log::info("[AgendarCita] Ruta completa de la imagen: {$rutaCompleta}");
 
                             // Método 1: Usar route('imagen.campana', ['id' => $campana->id])
@@ -653,17 +782,17 @@ class AgendarCita extends Page
 
                     $this->campanasDisponibles[] = [
                         'id' => $campana->id,
-                        'titulo' => $campana->titulo,
-                        'descripcion' => $campana->titulo, // Usamos el título como descripción ya que no hay campo de descripción
+                        'titulo' => $campana->title,
+                        'descripcion' => $campana->title, // Usamos el título como descripción ya que no hay campo de descripción
                         'imagen' => $imagen,
                         'fecha_inicio' => $campana->start_date,
                         'fecha_fin' => $campana->end_date,
                     ];
 
                     // Agregar al array de opciones de servicios adicionales para mostrar en el resumen
-                    $this->opcionesServiciosAdicionales['campana_'.$campana->id] = $campana->titulo;
+                    $this->opcionesServiciosAdicionales['campana_'.$campana->id] = $campana->title;
 
-                    Log::info("[AgendarCita] Campaña cargada: ID: {$campana->id}, Título: {$campana->titulo}, Imagen: {$imagen}");
+                    Log::info("[AgendarCita] Campaña cargada: ID: {$campana->id}, Título: {$campana->title}, Imagen: {$imagen}");
                 }
 
                 Log::info('[AgendarCita] Campañas disponibles cargadas: '.count($this->campanasDisponibles));
@@ -703,8 +832,8 @@ class AgendarCita extends Page
         try {
             Log::info("[AgendarCita] === VERIFICACIÓN ESPECÍFICA DE CAMPAÑA {$codigoCampana} ===");
 
-            // Buscar la campaña por código
-            $campana = Campana::where('codigo', $codigoCampana)->first();
+            // Buscar la campaña por ID (ya no hay código)
+            $campana = Campana::where('id', $codigoCampana)->first();
 
             if (! $campana) {
                 Log::warning("[AgendarCita] Campaña {$codigoCampana} no encontrada en la base de datos");
@@ -712,18 +841,18 @@ class AgendarCita extends Page
                 return;
             }
 
-            Log::info("[AgendarCita] Campaña encontrada: ID {$campana->id}, Título: {$campana->titulo}, Estado: {$campana->estado}");
+            Log::info("[AgendarCita] Campaña encontrada: ID {$campana->id}, Título: {$campana->title}, Estado: {$campana->status}");
 
             // Verificar modelos asociados
             $modelosAsociados = DB::table('campaign_models')
                 ->join('models', 'campaign_models.model_id', '=', 'models.id')
                 ->where('campaign_models.campaign_id', $campana->id)
-                ->select('models.nombre', 'models.codigo')
+                ->select('models.name', 'models.code')
                 ->get();
 
             Log::info("[AgendarCita] Modelos asociados a campaña {$codigoCampana}:");
             foreach ($modelosAsociados as $modelo) {
-                Log::info("[AgendarCita]   - {$modelo->nombre} (código: {$modelo->codigo})");
+                Log::info("[AgendarCita]   - {$modelo->name} (código: {$modelo->code})");
             }
 
             // Verificar años asociados
@@ -759,10 +888,10 @@ class AgendarCita extends Page
             // Verificar coincidencia de modelo
             $modeloCoincide = false;
             foreach ($modelosAsociados as $modelo) {
-                if (stripos($modelo->nombre, $modeloVehiculo) !== false ||
-                    stripos($modeloVehiculo, $modelo->nombre) !== false) {
+                if (stripos($modelo->name, $modeloVehiculo) !== false ||
+                    stripos($modeloVehiculo, $modelo->name) !== false) {
                     $modeloCoincide = true;
-                    Log::info("[AgendarCita]   ✓ Modelo coincide: '{$modelo->nombre}' contiene '{$modeloVehiculo}'");
+                    Log::info("[AgendarCita]   ✓ Modelo coincide: '{$modelo->name}' contiene '{$modeloVehiculo}'");
                     break;
                 }
             }
@@ -817,7 +946,7 @@ class AgendarCita extends Page
                 $modelosAsociados = DB::table('campaign_models')
                     ->join('models', 'campaign_models.model_id', '=', 'models.id')
                     ->where('campaign_models.campaign_id', $campana->id)
-                    ->pluck('models.nombre')
+                    ->pluck('models.name')
                     ->toArray();
 
                 if (! empty($modelosAsociados)) {
@@ -865,9 +994,9 @@ class AgendarCita extends Page
             }
 
             if ($aplicaCampana) {
-                Log::info("[AgendarCita] Campaña {$campana->id} ({$campana->titulo}) APLICA para el vehículo y local seleccionados");
+                Log::info("[AgendarCita] Campaña {$campana->id} ({$campana->title}) APLICA para el vehículo y local seleccionados");
             } else {
-                Log::info("[AgendarCita] Campaña {$campana->id} ({$campana->titulo}) NO APLICA. Razones: ".implode('; ', $razonesExclusion));
+                Log::info("[AgendarCita] Campaña {$campana->id} ({$campana->title}) NO APLICA. Razones: ".implode('; ', $razonesExclusion));
             }
 
             return $aplicaCampana;
@@ -966,20 +1095,6 @@ class AgendarCita extends Page
 
             Log::info("[AgendarCita] Local seleccionado para la cita: {$localSeleccionado->name} (ID: {$localSeleccionado->id})");
 
-            // Obtener el tipo de servicio
-            $serviceType = ServiceType::where('name', 'like', "%{$this->servicioSeleccionado}%")->first();
-
-            if (! $serviceType) {
-                // Si no encontramos el tipo de servicio, creamos uno nuevo
-                $serviceType = ServiceType::create([
-                    'code' => 'SERV-'.Str::random(5),
-                    'name' => $this->servicioSeleccionado,
-                    'category' => $this->servicioSeleccionado === 'Mantenimiento periódico' ? 'maintenance' : 'other',
-                    'duration_minutes' => 120,
-                    'is_active' => true,
-                ]);
-            }
-
             // Convertir la fecha de formato DD/MM/YYYY a YYYY-MM-DD
             $fechaPartes = explode('/', $this->fechaSeleccionada);
             $fechaFormateada = $fechaPartes[2].'-'.$fechaPartes[1].'-'.$fechaPartes[0];
@@ -991,8 +1106,7 @@ class AgendarCita extends Page
             $appointment = new Appointment;
             $appointment->appointment_number = 'CITA-'.date('Ymd').'-'.strtoupper(Str::random(5));
             $appointment->vehicle_id = $vehicle->id;
-            $appointment->service_center_id = $localSeleccionado->id;
-            $appointment->service_type_id = $serviceType->id;
+            $appointment->premise_id = $localSeleccionado->id;
             $appointment->customer_ruc = '20605414410';
             $appointment->customer_name = $this->nombreCliente;
             $appointment->customer_last_name = $this->apellidoCliente;
@@ -1000,7 +1114,23 @@ class AgendarCita extends Page
             $appointment->customer_phone = $this->celularCliente;
             $appointment->appointment_date = $fechaFormateada;
             $appointment->appointment_time = $horaFormateada;
-            $appointment->service_mode = $this->modalidadServicio;
+
+            // Determinar el service_mode basado en los servicios seleccionados
+            $serviceModes = [];
+            if (in_array('Mantenimiento periódico', $this->serviciosSeleccionados)) {
+                $serviceModes[] = 'Mantenimiento periódico';
+            }
+            if (in_array('Campañas / otros', $this->serviciosSeleccionados)) {
+                $serviceModes[] = 'Campañas / otros';
+            }
+            if (in_array('Reparación', $this->serviciosSeleccionados)) {
+                $serviceModes[] = 'Reparación';
+            }
+            if (in_array('Llamado a revisión', $this->serviciosSeleccionados)) {
+                $serviceModes[] = 'Llamado a revisión';
+            }
+
+            $appointment->service_mode = implode(', ', $serviceModes);
             $appointment->maintenance_type = $this->tipoMantenimiento;
             $appointment->comments = $this->comentarios;
             $appointment->status = 'pending';
@@ -1172,7 +1302,7 @@ class AgendarCita extends Page
             'localSeleccionado' => $this->localSeleccionado,
             'fechaSeleccionada' => $this->fechaSeleccionada,
             'horaSeleccionada' => $this->horaSeleccionada,
-            'servicioSeleccionado' => $this->servicioSeleccionado,
+            'serviciosSeleccionados' => $this->serviciosSeleccionados,
             'tipoMantenimiento' => $this->tipoMantenimiento,
             'modalidadServicio' => $this->modalidadServicio,
             'serviciosAdicionales' => $this->serviciosAdicionales,
@@ -1351,14 +1481,15 @@ class AgendarCita extends Page
         $fechaHoy = Carbon::today();
 
         for ($dia = 1; $dia <= $diasEnMes; $dia++) {
-            $fecha = Carbon::createFromDate($this->anoActual, $this->mesActual, $dia);
+            $fecha = Carbon::createFromDate($this->anoActual, $this->mesActual, $dia)->startOfDay();
 
-            // Verificar si la fecha es pasada o es hoy
+            // Verificar si la fecha es pasada o es hoy (ambos no disponibles)
             $esPasado = $fecha->lt($fechaHoy);
-            $esHoy = $fecha->eq($fechaHoy);
+            $esHoy = $fecha->isSameDay($fechaHoy);
 
             // Verificar si hay bloqueos para esta fecha y local
-            $disponible = ! $esPasado && $this->verificarDisponibilidadFecha($fecha);
+            // Solo está disponible si no es pasado, no es hoy, y no tiene bloqueos
+            $disponible = ! $esPasado && ! $esHoy && $this->verificarDisponibilidadFecha($fecha);
 
             $diasCalendario[] = [
                 'dia' => $dia,
@@ -1407,6 +1538,11 @@ class AgendarCita extends Page
      */
     private function verificarDisponibilidadFecha(Carbon $fecha): bool
     {
+        // Si la fecha es hoy o anterior, no está disponible
+        if ($fecha->startOfDay()->lte(Carbon::today()) || $fecha->isSameDay(Carbon::today())) {
+            return false;
+        }
+
         // Si no hay local seleccionado, no podemos verificar disponibilidad
         if (empty($this->localSeleccionado) || empty($this->locales[$this->localSeleccionado]['id'])) {
             return true;
@@ -1418,14 +1554,14 @@ class AgendarCita extends Page
         Log::info("[AgendarCita] Verificando disponibilidad para fecha: {$fechaStr}, local ID: {$localId}");
 
         // Buscar bloqueos para esta fecha y local que sean de todo el día
-        $bloqueoCompleto = Bloqueo::where('local', $localId)
+        $bloqueoCompleto = Bloqueo::where('premises', $localId)
             ->where('start_date', '<=', $fechaStr)
             ->where('end_date', '>=', $fechaStr)
             ->where('all_day', true)
             ->exists();
 
         // Depuración detallada de la consulta de bloqueos completos
-        $queryBloqueoCompleto = Bloqueo::where('local', $localId)
+        $queryBloqueoCompleto = Bloqueo::where('premises', $localId)
             ->where('start_date', '<=', $fechaStr)
             ->where('end_date', '>=', $fechaStr)
             ->where('all_day', true)
@@ -1441,7 +1577,7 @@ class AgendarCita extends Page
         }
 
         // Verificar si hay al menos un horario disponible en esta fecha
-        $bloqueosParciales = Bloqueo::where('local', $localId)
+        $bloqueosParciales = Bloqueo::where('premises', $localId)
             ->where('start_date', '<=', $fechaStr)
             ->where('end_date', '>=', $fechaStr)
             ->where('all_day', false)
@@ -1532,7 +1668,7 @@ class AgendarCita extends Page
         }
 
         // Buscar citas existentes para esta fecha y local
-        $citas = Appointment::where('service_center_id', $localId)
+        $citas = Appointment::where('premise_id', $localId)
             ->where('appointment_date', $fechaStr)
             ->get();
 
@@ -1586,7 +1722,7 @@ class AgendarCita extends Page
             Log::info("[AgendarCita] Código del local para buscar bloqueos: '{$codigoLocal}'");
 
             // Buscar bloqueos para esta fecha y local (por código)
-            $bloqueos = Bloqueo::where('local', $codigoLocal)
+            $bloqueos = Bloqueo::where('premises', $codigoLocal)
                 ->where('start_date', '<=', $fechaStr)
                 ->where('end_date', '>=', $fechaStr)
                 ->get();
@@ -1599,16 +1735,16 @@ class AgendarCita extends Page
             Log::info('[AgendarCita] Total de bloqueos en la base de datos: '.$todosLosBloqueos->count());
 
             foreach ($todosLosBloqueos as $index => $bloqueo) {
-                Log::info("[AgendarCita] Bloqueo #{$index} en DB: Local: {$bloqueo->local}, Fecha: {$bloqueo->start_date} a {$bloqueo->end_date}, Hora: {$bloqueo->start_time} a {$bloqueo->end_time}, Todo día: ".($bloqueo->all_day ? 'Sí' : 'No'));
+                Log::info("[AgendarCita] Bloqueo #{$index} en DB: Local: {$bloqueo->premises}, Fecha: {$bloqueo->start_date} a {$bloqueo->end_date}, Hora: {$bloqueo->start_time} a {$bloqueo->end_time}, Todo día: ".($bloqueo->all_day ? 'Sí' : 'No'));
             }
 
             // Depuración detallada de la consulta de bloqueos
-            $query = Bloqueo::where('local', $codigoLocal)
+            $query = Bloqueo::where('premises', $codigoLocal)
                 ->where('start_date', '<=', $fechaStr)
                 ->where('end_date', '>=', $fechaStr)
                 ->toSql();
             $bindings = [
-                'local' => $codigoLocal,
+                'premises' => $codigoLocal,
                 'start_date' => $fechaStr,
                 'end_date' => $fechaStr,
             ];
@@ -1620,7 +1756,7 @@ class AgendarCita extends Page
             if ($bloqueos->count() > 0) {
                 Log::info('[AgendarCita] Detalles de bloqueos encontrados:');
                 foreach ($bloqueos as $index => $bloqueo) {
-                    Log::info("[AgendarCita] Bloqueo #{$index}: Local: {$bloqueo->local}, Fecha: {$bloqueo->start_date} a {$bloqueo->end_date}, Hora: {$bloqueo->start_time} a {$bloqueo->end_time}, Todo día: ".($bloqueo->all_day ? 'Sí' : 'No'));
+                    Log::info("[AgendarCita] Bloqueo #{$index}: Local: {$bloqueo->premises}, Fecha: {$bloqueo->start_date} a {$bloqueo->end_date}, Hora: {$bloqueo->start_time} a {$bloqueo->end_time}, Todo día: ".($bloqueo->all_day ? 'Sí' : 'No'));
                 }
             }
 
@@ -1716,7 +1852,7 @@ class AgendarCita extends Page
             }
 
             // Buscar citas existentes para esta fecha y local
-            $citas = Appointment::where('service_center_id', $localId)
+            $citas = Appointment::where('premise_id', $localId)
                 ->where('appointment_date', $fechaStr)
                 ->get();
 
@@ -1886,13 +2022,13 @@ class AgendarCita extends Page
     {
         // Verificar si la fecha es válida
         try {
-            $fechaCarbon = Carbon::createFromFormat('d/m/Y', $fecha);
+            $fechaCarbon = Carbon::createFromFormat('d/m/Y', $fecha)->startOfDay();
 
-            // Verificar si la fecha es pasada
-            if ($fechaCarbon->lt(Carbon::today())) {
-                Log::warning("[AgendarCita] Intento de seleccionar fecha pasada: {$fecha}");
+            // Verificar si la fecha es pasada o es hoy
+            if ($fechaCarbon->lte(Carbon::today()) || $fechaCarbon->isSameDay(Carbon::today())) {
+                Log::warning("[AgendarCita] Intento de seleccionar fecha pasada o actual: {$fecha}");
 
-                // No permitir seleccionar fechas pasadas
+                // No permitir seleccionar fechas pasadas o el día de hoy
                 return;
             }
 

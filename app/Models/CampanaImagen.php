@@ -13,10 +13,13 @@ class CampanaImagen extends Model
 
     protected $fillable = [
         'campaign_id',
-        'ruta',
-        'nombre_original',
-        'mime_type',
-        'tamano',
+        'image_path',
+        'alt_text',
+        'is_primary',
+    ];
+
+    protected $casts = [
+        'is_primary' => 'boolean',
     ];
 
     /**

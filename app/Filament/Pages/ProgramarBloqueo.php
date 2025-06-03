@@ -36,36 +36,36 @@ class ProgramarBloqueo extends Page implements HasForms
     public $totalSteps = 3;
 
     // Datos del formulario
-    public $local;
+    public $premises;
 
-    public $fechaInicio;
+    public $start_date;
 
-    public $fechaFin;
+    public $end_date;
 
-    public $horaInicio;
+    public $start_time;
 
-    public $horaFin;
+    public $end_time;
 
-    public $todoDia = false;
+    public $all_day = false;
 
-    public $comentarios;
+    public $comments;
 
     public $data = [];
 
     // Errores de validación
     public $errors = [
-        'local' => false,
-        'fechaInicio' => false,
-        'fechaFin' => false,
-        'horaInicio' => false,
-        'horaFin' => false,
+        'premises' => false,
+        'start_date' => false,
+        'end_date' => false,
+        'start_time' => false,
+        'end_time' => false,
     ];
 
-    public function mount($local = null): void
+    public function mount($premises = null): void
     {
         // Si se recibe un local, preseleccionarlo
-        if ($local) {
-            $this->data['local'] = $local;
+        if ($premises) {
+            $this->data['premises'] = $premises;
         }
 
         $this->form->fill($this->data);
@@ -75,40 +75,40 @@ class ProgramarBloqueo extends Page implements HasForms
     {
         // Resetear errores
         $this->errors = [
-            'local' => false,
-            'fechaInicio' => false,
-            'fechaFin' => false,
-            'horaInicio' => false,
-            'horaFin' => false,
+            'premises' => false,
+            'start_date' => false,
+            'end_date' => false,
+            'start_time' => false,
+            'end_time' => false,
         ];
 
         // Validar campos requeridos
         $hasErrors = false;
 
-        if (empty($this->data['local'])) {
-            $this->errors['local'] = true;
+        if (empty($this->data['premises'])) {
+            $this->errors['premises'] = true;
             $hasErrors = true;
         }
 
-        if (empty($this->data['fechaInicio'])) {
-            $this->errors['fechaInicio'] = true;
+        if (empty($this->data['start_date'])) {
+            $this->errors['start_date'] = true;
             $hasErrors = true;
         }
 
-        if (empty($this->data['fechaFin'])) {
-            $this->errors['fechaFin'] = true;
+        if (empty($this->data['end_date'])) {
+            $this->errors['end_date'] = true;
             $hasErrors = true;
         }
 
         // Solo validar horas si no está marcado "Todo el día"
-        if (empty($this->data['todoDia']) || ! $this->data['todoDia']) {
-            if (empty($this->data['horaInicio'])) {
-                $this->errors['horaInicio'] = true;
+        if (empty($this->data['all_day']) || ! $this->data['all_day']) {
+            if (empty($this->data['start_time'])) {
+                $this->errors['start_time'] = true;
                 $hasErrors = true;
             }
 
-            if (empty($this->data['horaFin'])) {
-                $this->errors['horaFin'] = true;
+            if (empty($this->data['end_time'])) {
+                $this->errors['end_time'] = true;
                 $hasErrors = true;
             }
         }
@@ -119,19 +119,19 @@ class ProgramarBloqueo extends Page implements HasForms
         }
 
         // Si está marcado "Todo el día", asegurarse de que los horarios sean los correctos
-        if (! empty($this->data['todoDia']) && $this->data['todoDia']) {
-            $this->data['horaInicio'] = '08:00'; // 8:00 AM
-            $this->data['horaFin'] = '18:00';    // 6:00 PM
+        if (! empty($this->data['all_day']) && $this->data['all_day']) {
+            $this->data['start_time'] = '08:00'; // 8:00 AM
+            $this->data['end_time'] = '18:00';    // 6:00 PM
         }
 
         // Guardar los datos del formulario
-        $this->local = $this->data['local'];
-        $this->fechaInicio = $this->data['fechaInicio'];
-        $this->fechaFin = $this->data['fechaFin'];
-        $this->horaInicio = $this->data['horaInicio'];
-        $this->horaFin = $this->data['horaFin'];
-        $this->todoDia = ! empty($this->data['todoDia']) ? $this->data['todoDia'] : false;
-        $this->comentarios = ! empty($this->data['comentarios']) ? $this->data['comentarios'] : '';
+        $this->premises = $this->data['premises'];
+        $this->start_date = $this->data['start_date'];
+        $this->end_date = $this->data['end_date'];
+        $this->start_time = $this->data['start_time'];
+        $this->end_time = $this->data['end_time'];
+        $this->all_day = ! empty($this->data['all_day']) ? $this->data['all_day'] : false;
+        $this->comments = ! empty($this->data['comments']) ? $this->data['comments'] : '';
 
         // Avanzar al siguiente paso
         if ($this->currentStep < $this->totalSteps) {
@@ -151,13 +151,13 @@ class ProgramarBloqueo extends Page implements HasForms
     {
         // Guardar el bloqueo en la base de datos
         \App\Models\Bloqueo::create([
-            'local' => $this->local,
-            'start_date' => $this->fechaInicio,
-            'end_date' => $this->fechaFin,
-            'start_time' => $this->todoDia ? '00:00' : $this->horaInicio,
-            'end_time' => $this->todoDia ? '12:00' : $this->horaFin,
-            'all_day' => $this->todoDia,
-            'comentarios' => $this->comentarios,
+            'premises' => $this->premises,
+            'start_date' => $this->start_date,
+            'end_date' => $this->end_date,
+            'start_time' => $this->all_day ? '00:00' : $this->start_time,
+            'end_time' => $this->all_day ? '12:00' : $this->end_time,
+            'all_day' => $this->all_day,
+            'comments' => $this->comments,
         ]);
 
         // Avanzar al paso de confirmación
@@ -172,18 +172,18 @@ class ProgramarBloqueo extends Page implements HasForms
 
     public function cerrarYVolver()
     {
-        // Redirigir a la página de programación de citas
-        return redirect()->route('filament.admin.pages.programacion-citas-servicio');
+        // Redirigir a la página de programación de citas con parámetro para forzar recarga
+        return redirect()->route('filament.admin.pages.programacion-citas-servicio', ['refresh' => time()]);
     }
 
     public function updatedData($value, $name)
     {
         // Si se actualiza el checkbox de "Todo el día"
-        if ($name === 'todoDia') {
-            if ($this->data['todoDia']) {
+        if ($name === 'all_day') {
+            if ($this->data['all_day']) {
                 // Si se marca "Todo el día", establecer horarios predeterminados
-                $this->data['horaInicio'] = '00:00'; // 12:00 AM
-                $this->data['horaFin'] = '12:00';    // 12:00 PM
+                $this->data['start_time'] = '00:00'; // 12:00 AM
+                $this->data['end_time'] = '12:00';    // 12:00 PM
             }
             // Forzar una actualización de la vista
             $this->dispatch('refresh');
@@ -210,46 +210,46 @@ class ProgramarBloqueo extends Page implements HasForms
     {
         return $form
             ->schema([
-                Select::make('local')
+                Select::make('premises')
                     ->options(function () {
                         return Local::getActivosParaSelector();
                     })
                     ->placeholder('Elegir local')
                     ->required(),
 
-                DatePicker::make('fechaInicio')
+                DatePicker::make('start_date')
                     ->label('Fecha de inicio')
                     ->placeholder('Elige la fecha de inicio')
                     ->format('Y-m-d')
                     ->displayFormat('d/m/Y')
                     ->required(),
 
-                DatePicker::make('fechaFin')
+                DatePicker::make('end_date')
                     ->label('Fecha de fin')
                     ->placeholder('Elige la fecha de fin')
                     ->format('Y-m-d')
                     ->displayFormat('d/m/Y')
                     ->required(),
 
-                TimePicker::make('horaInicio')
+                TimePicker::make('start_time')
                     ->label('Hora de inicio')
                     ->placeholder('Elige la hora de inicio')
                     ->seconds(false)
                     ->required()
-                    ->disabled(fn (callable $get) => $get('todoDia')),
+                    ->disabled(fn (callable $get) => $get('all_day')),
 
-                TimePicker::make('horaFin')
+                TimePicker::make('end_time')
                     ->label('Hora de fin')
                     ->placeholder('Elige la hora de fin')
                     ->seconds(false)
                     ->required()
-                    ->disabled(fn (callable $get) => $get('todoDia')),
+                    ->disabled(fn (callable $get) => $get('all_day')),
 
-                Checkbox::make('todoDia')
+                Checkbox::make('all_day')
                     ->label('Todo el día')
                     ->reactive(),
 
-                Textarea::make('comentarios')
+                Textarea::make('comments')
                     ->label('Comentarios o observaciones')
                     ->placeholder('Comentarios o observaciones')
                     ->rows(4),

@@ -18,13 +18,13 @@ class ImagenController extends Controller
             // Buscar la imagen en la base de datos
             $imagen = DB::table('campaign_images')->where('campaign_id', $id)->first();
 
-            if (! $imagen || empty($imagen->ruta)) {
+            if (! $imagen || empty($imagen->image_path)) {
                 Log::warning("[ImagenController] No se encontró imagen para la campaña ID: {$id}");
 
                 return $this->imagenPorDefecto();
             }
 
-            $rutaCompleta = $imagen->ruta;
+            $rutaCompleta = $imagen->image_path;
             Log::info("[ImagenController] Ruta completa de la imagen: {$rutaCompleta}");
 
             // Normalizar la ruta para evitar problemas con separadores

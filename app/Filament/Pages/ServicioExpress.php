@@ -51,11 +51,11 @@ class ServicioExpress extends Page
 
     public array $vehiculoEnEdicion = [
         'id' => null,
-        'modelo' => '',
-        'marca' => '',
+        'model' => '',
+        'brand' => '',
         'year' => '',
-        'mantenimiento' => '',
-        'local' => '',
+        'maintenance' => '',
+        'premises' => '',
     ];
 
     // Lista de locales disponibles para el selector
@@ -98,18 +98,18 @@ class ServicioExpress extends Page
             foreach ($vehiculosDB as $vehiculo) {
                 $this->vehiculos->push([
                     'id' => $vehiculo->id,
-                    'modelo' => $vehiculo->modelo,
-                    'marca' => $vehiculo->marca,
+                    'model' => $vehiculo->model,
+                    'brand' => $vehiculo->brand,
                     'year' => $vehiculo->year,
-                    'mantenimiento' => $vehiculo->mantenimiento,
-                    'local' => $vehiculo->local,
-                    'activo' => $vehiculo->activo,
+                    'maintenance' => $vehiculo->maintenance,
+                    'premises' => $vehiculo->premises,
+                    'is_active' => $vehiculo->is_active,
                 ]);
             }
 
             // Inicializar el estado de los vehículos
             foreach ($this->vehiculos as $vehiculo) {
-                $this->estadoVehiculos[$vehiculo['id']] = $vehiculo['activo'];
+                $this->estadoVehiculos[$vehiculo['id']] = $vehiculo['is_active'];
             }
 
             Log::info('[ServicioExpress] Se cargaron '.$this->vehiculos->count().' vehículos desde la base de datos');
@@ -151,7 +151,7 @@ class ServicioExpress extends Page
             // Actualizar el estado en la colección de vehículos
             $this->vehiculos = $this->vehiculos->map(function ($vehiculo) use ($id) {
                 if ($vehiculo['id'] === $id) {
-                    $vehiculo['activo'] = $this->estadoVehiculos[$id];
+                    $vehiculo['is_active'] = $this->estadoVehiculos[$id];
                 }
 
                 return $vehiculo;
@@ -159,7 +159,7 @@ class ServicioExpress extends Page
 
             // Actualizar el estado en la base de datos
             $vehiculo = VehiculoExpress::findOrFail($id);
-            $vehiculo->activo = $this->estadoVehiculos[$id];
+            $vehiculo->is_active = $this->estadoVehiculos[$id];
             $vehiculo->save();
 
             // Mostrar notificación con el estado actual
@@ -198,11 +198,11 @@ class ServicioExpress extends Page
             // Cargar los datos del vehículo en el array de edición
             $this->vehiculoEnEdicion = [
                 'id' => $vehiculo->id,
-                'modelo' => $vehiculo->modelo,
-                'marca' => $vehiculo->marca,
+                'model' => $vehiculo->model,
+                'brand' => $vehiculo->brand,
                 'year' => $vehiculo->year,
-                'mantenimiento' => $vehiculo->mantenimiento,
-                'local' => $vehiculo->local,
+                'maintenance' => $vehiculo->maintenance,
+                'premises' => $vehiculo->premises,
             ];
 
             // Abrir el modal de edición
@@ -238,11 +238,11 @@ class ServicioExpress extends Page
     {
         $this->vehiculoEnEdicion = [
             'id' => null,
-            'modelo' => '',
-            'marca' => '',
+            'model' => '',
+            'brand' => '',
             'year' => '',
-            'mantenimiento' => '',
-            'local' => '',
+            'maintenance' => '',
+            'premises' => '',
         ];
     }
 
@@ -253,11 +253,11 @@ class ServicioExpress extends Page
     {
         try {
             // Validar los datos
-            if (empty($this->vehiculoEnEdicion['modelo'])) {
+            if (empty($this->vehiculoEnEdicion['model'])) {
                 throw new \Exception('El modelo es obligatorio');
             }
 
-            if (empty($this->vehiculoEnEdicion['marca'])) {
+            if (empty($this->vehiculoEnEdicion['brand'])) {
                 throw new \Exception('La marca es obligatoria');
             }
 
@@ -265,11 +265,11 @@ class ServicioExpress extends Page
                 throw new \Exception('El año es obligatorio');
             }
 
-            if (empty($this->vehiculoEnEdicion['mantenimiento']) || ! is_array($this->vehiculoEnEdicion['mantenimiento'])) {
+            if (empty($this->vehiculoEnEdicion['maintenance']) || ! is_array($this->vehiculoEnEdicion['maintenance'])) {
                 throw new \Exception('Debe seleccionar al menos un tipo de mantenimiento');
             }
 
-            if (empty($this->vehiculoEnEdicion['local'])) {
+            if (empty($this->vehiculoEnEdicion['premises'])) {
                 throw new \Exception('El local es obligatorio');
             }
 
@@ -277,11 +277,11 @@ class ServicioExpress extends Page
             $vehiculo = VehiculoExpress::findOrFail($this->vehiculoEnEdicion['id']);
 
             // Actualizar los datos
-            $vehiculo->modelo = $this->vehiculoEnEdicion['modelo'];
-            $vehiculo->marca = $this->vehiculoEnEdicion['marca'];
+            $vehiculo->model = $this->vehiculoEnEdicion['model'];
+            $vehiculo->brand = $this->vehiculoEnEdicion['brand'];
             $vehiculo->year = $this->vehiculoEnEdicion['year'];
-            $vehiculo->mantenimiento = $this->vehiculoEnEdicion['mantenimiento'];
-            $vehiculo->local = $this->vehiculoEnEdicion['local'];
+            $vehiculo->maintenance = $this->vehiculoEnEdicion['maintenance'];
+            $vehiculo->premises = $this->vehiculoEnEdicion['premises'];
 
             // Guardar los cambios
             $vehiculo->save();
@@ -319,8 +319,8 @@ class ServicioExpress extends Page
             $vehiculo = VehiculoExpress::findOrFail($id);
 
             // Guardar información para la notificación
-            $modelo = $vehiculo->modelo;
-            $marca = $vehiculo->marca;
+            $modelo = $vehiculo->model;
+            $marca = $vehiculo->brand;
 
             // Eliminar el vehículo
             $vehiculo->delete();
@@ -431,7 +431,7 @@ class ServicioExpress extends Page
 
             // Verificar que las cabeceras sean correctas
             $cabeceras = $rows[0];
-            $cabecerasEsperadas = ['Modelo', 'Marca', 'Año', 'Mantenimiento', 'Local'];
+            $cabecerasEsperadas = ['Model', 'Brand', 'Year', 'Maintenance', 'Premises'];
 
             // Normalizar las cabeceras (eliminar espacios, convertir a minúsculas)
             $cabecerasNormalizadas = array_map(function ($cabecera) {
@@ -483,12 +483,12 @@ class ServicioExpress extends Page
 
                     // Crear el vehículo
                     $vehiculo = new VehiculoExpress;
-                    $vehiculo->modelo = $row[0] ?? 'Sin modelo';
-                    $vehiculo->marca = $row[1] ?? 'Sin marca';
+                    $vehiculo->model = $row[0] ?? 'Sin modelo';
+                    $vehiculo->brand = $row[1] ?? 'Sin marca';
                     $vehiculo->year = $row[2] ?? 'Sin año';
-                    $vehiculo->mantenimiento = $mantenimiento;
-                    $vehiculo->local = $row[4] ?? 'Sin local';
-                    $vehiculo->activo = true;
+                    $vehiculo->maintenance = $mantenimiento;
+                    $vehiculo->premises = $row[4] ?? 'Sin local';
+                    $vehiculo->is_active = true;
                     $vehiculo->save();
 
                     Log::info("[ServicioExpress] Vehículo guardado: ID {$vehiculo->id}, Mantenimientos: ".json_encode($mantenimiento));
@@ -574,11 +574,11 @@ class ServicioExpress extends Page
             $sheet = $spreadsheet->getActiveSheet();
 
             // Establecer las cabeceras
-            $sheet->setCellValue('A1', 'Modelo');
-            $sheet->setCellValue('B1', 'Marca');
-            $sheet->setCellValue('C1', 'Año');
-            $sheet->setCellValue('D1', 'Mantenimiento');
-            $sheet->setCellValue('E1', 'Local');
+            $sheet->setCellValue('A1', 'Model');
+            $sheet->setCellValue('B1', 'Brand');
+            $sheet->setCellValue('C1', 'Year');
+            $sheet->setCellValue('D1', 'Maintenance');
+            $sheet->setCellValue('E1', 'Premises');
 
             // Dar formato a las cabeceras
             $sheet->getStyle('A1:E1')->getFont()->setBold(true);
