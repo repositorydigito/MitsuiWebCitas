@@ -25,37 +25,37 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div class="w-full">
-                            <select wire:model="data.local" class="w-full rounded-lg border {{ $errors['local'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3">
+                            <select wire:model="data.premises" class="w-full rounded-lg border {{ $errors['premises'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3">
                                 <option value="">Elegir local</option>
-                                @foreach(\App\Models\Local::where('activo', true)->orderBy('nombre')->get() as $local)
-                                    <option value="{{ $local->codigo }}">{{ $local->nombre }}</option>
+                                @foreach(\App\Models\Local::where('is_active', true)->orderBy('name')->get() as $local)
+                                    <option value="{{ $local->code }}">{{ $local->name }}</option>
                                 @endforeach
                             </select>
-                            @if($errors['local'])
+                            @if($errors['premises'])
                                 <p class="text-primary-500 text-sm mt-1">Elige una opción disponible.</p>
                             @endif
                         </div>
 
                     <div class="flex items-center gap-2">
-                        <input type="checkbox" wire:model.live="data.todoDia" wire:click="$refresh" id="todoDia" class="rounded border-primary-500 text-primary-600 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
-                        <label for="todoDia" class="ml-2 text-gray-700">Todo el día</label>
+                        <input type="checkbox" wire:model.live="data.all_day" wire:click="$refresh" id="all_day" class="rounded border-primary-500 text-primary-600 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
+                        <label for="all_day" class="ml-2 text-gray-700">Todo el día</label>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <input type="date" wire:model="data.fechaInicio" class="w-full rounded-lg border {{ $errors['fechaInicio'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3" placeholder="Elige la fecha de inicio">
-                        @if($errors['fechaInicio'])
+                        <input type="date" wire:model="data.start_date" class="w-full rounded-lg border {{ $errors['start_date'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3" placeholder="Elige la fecha de inicio">
+                        @if($errors['start_date'])
                             <p class="text-primary-500 text-sm mt-1">Elige una opción disponible.</p>
                         @endif
                     </div>
                     <div>
-                        @if ($data['todoDia'])
+                        @if ($data['all_day'])
                             <div class="w-full rounded-lg border border-gray-300 bg-gray-100 text-gray-500 py-2 px-3">
                                 08:00 AM
                             </div>
                         @else
-                            <select wire:model="data.horaInicio" class="w-full rounded-lg border {{ $errors['horaInicio'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3">
+                            <select wire:model="data.start_time" class="w-full rounded-lg border {{ $errors['start_time'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3">
                                 <option value="">Hora de inicio</option>
                                 @for ($hour = 8; $hour <= 18; $hour++)
                                     <option value="{{ sprintf('%02d', $hour) }}:00">{{ sprintf('%02d', $hour) }}:00</option>
@@ -64,7 +64,7 @@
                                     @endif
                                 @endfor
                             </select>
-                            @if($errors['horaInicio'])
+                            @if($errors['start_time'])
                                 <p class="text-primary-500 text-sm mt-1">Elige una opción disponible.</p>
                             @endif
                         @endif
@@ -73,18 +73,18 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <input type="date" wire:model="data.fechaFin" class="w-full rounded-lg border {{ $errors['fechaFin'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3" placeholder="Elige la fecha de fin">
-                        @if($errors['fechaFin'])
+                        <input type="date" wire:model="data.end_date" class="w-full rounded-lg border {{ $errors['end_date'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3" placeholder="Elige la fecha de fin">
+                        @if($errors['end_date'])
                             <p class="text-primary-500 text-sm mt-1">Elige una opción disponible.</p>
                         @endif
                     </div>
                     <div>
-                        @if ($data['todoDia'])
+                        @if ($data['all_day'])
                             <div class="w-full rounded-lg border border-gray-300 bg-gray-100 text-gray-500 py-2 px-3">
                                 06:00 PM
                             </div>
                         @else
-                            <select wire:model="data.horaFin" class="w-full rounded-lg border {{ $errors['horaFin'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3">
+                            <select wire:model="data.end_time" class="w-full rounded-lg border {{ $errors['end_time'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3">
                                 <option value="">Hora de fin</option>
                                 @for ($hour = 8; $hour <= 18; $hour++)
                                     <option value="{{ sprintf('%02d', $hour) }}:00">{{ sprintf('%02d', $hour) }}:00</option>
@@ -93,7 +93,7 @@
                                     @endif
                                 @endfor
                             </select>
-                            @if($errors['horaFin'])
+                            @if($errors['end_time'])
                                 <p class="text-primary-500 text-sm mt-1">Elige una opción disponible.</p>
                             @endif
                         @endif
@@ -101,7 +101,7 @@
                 </div>
 
                 <div class="mb-4">
-                    <textarea wire:model="data.comentarios" class="w-full rounded-lg border border-primary-500 text-gray-700 py-2 px-3" rows="4" placeholder="Comentarios u observaciones"></textarea>
+                    <textarea wire:model="data.comments" class="w-full rounded-lg border border-primary-500 text-gray-700 py-2 px-3" rows="4" placeholder="Comentarios u observaciones"></textarea>
                 </div>
 
                 <div class="flex justify-between border-t pt-4">
@@ -135,32 +135,32 @@
                     <div class="mb-4">
                         <p class="text-sm text-gray-500">Local</p>
                         <p class="font-medium">
-                                {{ \App\Models\Local::where('codigo', $local)->value('nombre') ?? $local }}
+                                {{ \App\Models\Local::where('code', $premises)->value('name') ?? $premises }}
                         </p>
                     </div>
                     <div class="mb-4">
                         <p class="text-sm text-gray-500">Duración</p>
                         <p class="font-medium">
-                                @if($todoDia)
+                                @if($all_day)
                                     Todo el día
                                 @else
-                                    {{ $horaInicio }} - {{ $horaFin }}
+                                    {{ $start_time }} - {{ $end_time }}
                                 @endif
                         </p>
                     </div>
                     <div class="mb-4">
                             <p class="text-sm text-gray-500">Fecha de inicio</p>
-                            <p class="font-medium">{{ \Carbon\Carbon::parse($fechaInicio)->format('d/m/Y') }}</p>
+                            <p class="font-medium">{{ \Carbon\Carbon::parse($start_date)->format('d/m/Y') }}</p>
                     </div>
                     <div class="mb-4">
                             <p class="text-sm text-gray-500">Fecha de fin</p>
-                            <p class="font-medium">{{ \Carbon\Carbon::parse($fechaFin)->format('d/m/Y') }}</p>
+                            <p class="font-medium">{{ \Carbon\Carbon::parse($end_date)->format('d/m/Y') }}</p>
                     </div>
 
-                @if($comentarios)
+                @if($comments)
                     <div class="mb-4">
                         <p class="text-sm text-gray-500">Comentarios</p>
-                        <p class="font-medium">{{ $comentarios }}</p>
+                        <p class="font-medium">{{ $comments }}</p>
                     </div>
                 @endif
                 </div>
@@ -194,32 +194,32 @@
                         <div class="mb-4">
                             <p class="text-sm text-gray-500">Local</p>
                             <p class="font-medium">
-                                {{ \App\Models\Local::where('codigo', $local)->value('nombre') ?? $local }}
+                                {{ \App\Models\Local::where('code', $premises)->value('name') ?? $premises }}
                             </p>
                         </div>
                         <div class="mb-4">
                             <p class="text-sm text-gray-500">Duración</p>
                             <p class="font-medium">
-                                @if($todoDia)
+                                @if($all_day)
                                     Todo el día
                                 @else
-                                    {{ $horaInicio }} - {{ $horaFin }}
+                                    {{ $start_time }} - {{ $end_time }}
                                 @endif
                             </p>
                         </div>
                         <div class="mb-4">
                             <p class="text-sm text-gray-500">Fecha de inicio</p>
-                            <p class="font-medium">{{ \Carbon\Carbon::parse($fechaInicio)->format('d/m/Y') }}</p>
+                            <p class="font-medium">{{ \Carbon\Carbon::parse($start_date)->format('d/m/Y') }}</p>
                         </div>
                         <div class="mb-4">
                             <p class="text-sm text-gray-500">Fecha de fin</p>
-                            <p class="font-medium">{{ \Carbon\Carbon::parse($fechaFin)->format('d/m/Y') }}</p>
+                            <p class="font-medium">{{ \Carbon\Carbon::parse($end_date)->format('d/m/Y') }}</p>
                         </div>
 
-                    @if($comentarios)
+                    @if($comments)
                         <div class="mb-4">
                             <p class="text-sm text-gray-500">Comentarios</p>
-                            <p class="font-medium">{{ $comentarios }}</p>
+                            <p class="font-medium">{{ $comments }}</p>
                         </div>
                     @endif
                 </div>

@@ -33,11 +33,11 @@ class AdministrarModelos extends Page implements HasForms
     public $currentModeloId = null;
 
     public $formData = [
-        'codigo' => '',
-        'nombre' => '',
-        'marca' => 'TOYOTA',
-        'descripcion' => '',
-        'activo' => true,
+        'code' => '',
+        'name' => '',
+        'brand' => 'TOYOTA',
+        'description' => '',
+        'is_active' => true,
     ];
 
     // Variables para el formulario de años
@@ -51,8 +51,8 @@ class AdministrarModelos extends Page implements HasForms
 
     // Errores de validación
     public $errors = [
-        'codigo' => false,
-        'nombre' => false,
+        'code' => false,
+        'name' => false,
         'nuevoAno' => false,
     ];
 
@@ -63,7 +63,7 @@ class AdministrarModelos extends Page implements HasForms
 
     public function cargarModelos()
     {
-        $this->modelos = Modelo::with('anos')->orderBy('nombre')->get();
+        $this->modelos = Modelo::with('anos')->orderBy('name')->get();
     }
 
     public function abrirModal($id = null)
@@ -73,11 +73,11 @@ class AdministrarModelos extends Page implements HasForms
         if ($id) {
             $modelo = Modelo::findOrFail($id);
             $this->formData = [
-                'codigo' => $modelo->codigo,
-                'nombre' => $modelo->nombre,
-                'marca' => $modelo->marca,
-                'descripcion' => $modelo->descripcion,
-                'activo' => $modelo->activo,
+                'code' => $modelo->code,
+                'name' => $modelo->name,
+                'brand' => $modelo->brand,
+                'description' => $modelo->description,
+                'is_active' => $modelo->is_active,
             ];
             $this->editMode = true;
             $this->currentModeloId = $id;
@@ -97,16 +97,16 @@ class AdministrarModelos extends Page implements HasForms
     public function resetearFormulario()
     {
         $this->formData = [
-            'codigo' => '',
-            'nombre' => '',
-            'marca' => 'TOYOTA',
-            'descripcion' => '',
-            'activo' => true,
+            'code' => '',
+            'name' => '',
+            'brand' => 'TOYOTA',
+            'description' => '',
+            'is_active' => true,
         ];
 
         $this->errors = [
-            'codigo' => false,
-            'nombre' => false,
+            'code' => false,
+            'name' => false,
             'nuevoAno' => false,
         ];
     }
@@ -115,20 +115,20 @@ class AdministrarModelos extends Page implements HasForms
     {
         // Resetear errores
         $this->errors = [
-            'codigo' => false,
-            'nombre' => false,
+            'code' => false,
+            'name' => false,
         ];
 
         // Validar campos requeridos
         $hasErrors = false;
 
-        if (empty($this->formData['codigo'])) {
-            $this->errors['codigo'] = true;
+        if (empty($this->formData['code'])) {
+            $this->errors['code'] = true;
             $hasErrors = true;
         }
 
-        if (empty($this->formData['nombre'])) {
-            $this->errors['nombre'] = true;
+        if (empty($this->formData['name'])) {
+            $this->errors['name'] = true;
             $hasErrors = true;
         }
 
@@ -139,9 +139,9 @@ class AdministrarModelos extends Page implements HasForms
 
         // Validar que el código sea único
         if (! $this->editMode) {
-            $existeCodigo = Modelo::where('codigo', $this->formData['codigo'])->exists();
+            $existeCodigo = Modelo::where('code', $this->formData['code'])->exists();
             if ($existeCodigo) {
-                $this->errors['codigo'] = true;
+                $this->errors['code'] = true;
                 Notification::make()
                     ->danger()
                     ->title('El código ya existe')
@@ -157,10 +157,10 @@ class AdministrarModelos extends Page implements HasForms
                 // Actualizar modelo existente
                 $modelo = Modelo::findOrFail($this->currentModeloId);
                 $modelo->update([
-                    'nombre' => $this->formData['nombre'],
-                    'marca' => $this->formData['marca'],
-                    'descripcion' => $this->formData['descripcion'],
-                    'activo' => $this->formData['activo'],
+                    'name' => $this->formData['name'],
+                    'brand' => $this->formData['brand'],
+                    'description' => $this->formData['description'],
+                    'is_active' => $this->formData['is_active'],
                 ]);
 
                 Notification::make()
@@ -171,19 +171,19 @@ class AdministrarModelos extends Page implements HasForms
             } else {
                 // Crear nuevo modelo
                 $modelo = Modelo::create([
-                    'codigo' => $this->formData['codigo'],
-                    'nombre' => $this->formData['nombre'],
-                    'marca' => $this->formData['marca'],
-                    'descripcion' => $this->formData['descripcion'],
-                    'activo' => $this->formData['activo'],
+                    'code' => $this->formData['code'],
+                    'name' => $this->formData['name'],
+                    'brand' => $this->formData['brand'],
+                    'description' => $this->formData['description'],
+                    'is_active' => $this->formData['is_active'],
                 ]);
 
                 // Crear años por defecto para el nuevo modelo
                 $anos = ['2018', '2019', '2020', '2021', '2022', '2023', '2024'];
                 foreach ($anos as $ano) {
                     ModeloAno::create([
-                        'modelo_id' => $modelo->id,
-                        'ano' => $ano,
+                        'model_id' => $modelo->id,
+                        'year' => $ano,
                         'activo' => true,
                     ]);
                 }
@@ -234,7 +234,7 @@ class AdministrarModelos extends Page implements HasForms
         try {
             $modelo = Modelo::findOrFail($id);
             $modelo->update([
-                'activo' => ! $modelo->activo,
+                'is_active' => ! $modelo->is_active,
             ]);
 
             Notification::make()
@@ -257,8 +257,8 @@ class AdministrarModelos extends Page implements HasForms
     {
         $modelo = Modelo::with('anos')->findOrFail($id);
         $this->currentModeloId = $id;
-        $this->currentModeloNombre = $modelo->nombre;
-        $this->modeloAnosData = $modelo->anos->sortByDesc('ano')->values()->toArray();
+        $this->currentModeloNombre = $modelo->name;
+        $this->modeloAnosData = $modelo->anos->sortByDesc('year')->values()->toArray();
         $this->nuevoAno = '';
         $this->errors['nuevoAno'] = false;
         $this->anosModalVisible = true;
@@ -283,8 +283,8 @@ class AdministrarModelos extends Page implements HasForms
 
         try {
             // Verificar si el año ya existe para este modelo
-            $existeAno = ModeloAno::where('modelo_id', $this->currentModeloId)
-                ->where('ano', $this->nuevoAno)
+            $existeAno = ModeloAno::where('model_id', $this->currentModeloId)
+                ->where('year', $this->nuevoAno)
                 ->exists();
 
             if ($existeAno) {
@@ -299,14 +299,14 @@ class AdministrarModelos extends Page implements HasForms
 
             // Crear nuevo año
             ModeloAno::create([
-                'modelo_id' => $this->currentModeloId,
-                'ano' => $this->nuevoAno,
+                'model_id' => $this->currentModeloId,
+                'year' => $this->nuevoAno,
                 'activo' => true,
             ]);
 
             // Recargar años
             $modelo = Modelo::with('anos')->findOrFail($this->currentModeloId);
-            $this->modeloAnosData = $modelo->anos->sortByDesc('ano')->values()->toArray();
+            $this->modeloAnosData = $modelo->anos->sortByDesc('year')->values()->toArray();
             $this->nuevoAno = '';
 
             Notification::make()
@@ -333,7 +333,7 @@ class AdministrarModelos extends Page implements HasForms
 
             // Recargar años
             $modelo = Modelo::with('anos')->findOrFail($this->currentModeloId);
-            $this->modeloAnosData = $modelo->anos->sortByDesc('ano')->values()->toArray();
+            $this->modeloAnosData = $modelo->anos->sortByDesc('year')->values()->toArray();
 
             Notification::make()
                 ->success()
@@ -357,7 +357,7 @@ class AdministrarModelos extends Page implements HasForms
 
             // Recargar años
             $modelo = Modelo::with('anos')->findOrFail($this->currentModeloId);
-            $this->modeloAnosData = $modelo->anos->sortByDesc('ano')->values()->toArray();
+            $this->modeloAnosData = $modelo->anos->sortByDesc('year')->values()->toArray();
 
             Notification::make()
                 ->success()

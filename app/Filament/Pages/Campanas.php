@@ -129,7 +129,7 @@ class Campanas extends Page
 
             // Filtrar por estado
             if (! empty($this->estadoSeleccionado)) {
-                $query->where('estado', $this->estadoSeleccionado);
+                $query->where('status', $this->estadoSeleccionado === 'Activo' ? 'active' : 'inactive');
             }
 
             // Filtrar por fecha
@@ -192,8 +192,8 @@ class Campanas extends Page
             if (! empty($this->busqueda)) {
                 $busqueda = '%'.$this->busqueda.'%';
                 $query->where(function ($q) use ($busqueda) {
-                    $q->where('codigo', 'like', $busqueda)
-                        ->orWhere('titulo', 'like', $busqueda);
+                    $q->where('title', 'like', $busqueda)
+                        ->orWhere('description', 'like', $busqueda);
                 });
             }
 
@@ -239,7 +239,7 @@ class Campanas extends Page
                     }
 
                     // Registrar información sobre los locales encontrados
-                    Log::info("[CampanasPage] Campaña {$campana->codigo} tiene ".count($localesNombres).' locales: '.implode(', ', $localesNombres));
+                    Log::info("[CampanasPage] Campaña {$campana->id} tiene ".count($localesNombres).' locales: '.implode(', ', $localesNombres));
 
                     // Obtener la URL de la imagen
                     $imagenUrl = 'https://via.placeholder.com/150';
@@ -260,16 +260,16 @@ class Campanas extends Page
                     // Obtener los modelos
                     $modelosNombres = [];
                     if ($campana->modelos && $campana->modelos->count() > 0) {
-                        $modelosNombres = $campana->modelos->pluck('nombre')->toArray();
+                        $modelosNombres = $campana->modelos->pluck('name')->toArray();
                     }
 
                     // Crear el array con los datos de la campaña
                     $campanasTransformadas->push([
-                        'codigo' => $campana->codigo,
-                        'nombre' => $campana->titulo,
+                        'codigo' => $campana->id, // Usar ID como código temporal
+                        'nombre' => $campana->title,
                         'fecha_inicio' => $campana->start_date->format('d/m/Y'),
                         'fecha_fin' => $campana->end_date->format('d/m/Y'),
-                        'estado' => $campana->estado,
+                        'estado' => $campana->status === 'active' ? 'Activo' : 'Inactivo',
                         // Campos adicionales para uso interno
                         'id' => $campana->id,
                         'modelos' => $modelosNombres,
@@ -568,7 +568,7 @@ class Campanas extends Page
             Log::info("[CampanasPage] Intentando ver detalle de campaña con JavaScript, código: {$codigo}");
 
             // Obtener la campaña con sus relaciones
-            $campana = Campana::with(['imagen', 'modelos', 'anos', 'locales'])->where('codigo', $codigo)->first();
+            $campana = Campana::with(['imagen', 'modelos', 'anos', 'locales'])->where('id', $codigo)->first();
 
             if (! $campana) {
                 Log::warning("[CampanasPage] Campaña no encontrada con código: {$codigo}");
@@ -652,24 +652,24 @@ class Campanas extends Page
             // Obtener los modelos
             $modelosNombres = [];
             if ($campana->modelos && $campana->modelos->count() > 0) {
-                $modelosNombres = $campana->modelos->pluck('nombre')->toArray();
+                $modelosNombres = $campana->modelos->pluck('name')->toArray();
             }
 
             // Preparar los datos para el modal
             $this->campanaDetalle = [
                 'id' => $campana->id,
-                'codigo' => $campana->codigo,
-                'nombre' => $campana->titulo,
+                'codigo' => $campana->id, // Usar ID como código temporal
+                'nombre' => $campana->title,
                 'fecha_inicio' => $campana->start_date->format('d/m/Y'),
                 'fecha_fin' => $campana->end_date->format('d/m/Y'),
-                'estado' => $campana->estado,
+                'estado' => $campana->status === 'active' ? 'Activo' : 'Inactivo',
                 'modelos' => $modelosNombres,
                 'anos' => $anosPivot,
                 'locales' => $localesNombres,
                 'imagen' => $imagenUrl,
             ];
 
-            Log::info("[CampanasPage] Datos de campaña procesados correctamente: {$campana->codigo}");
+            Log::info("[CampanasPage] Datos de campaña procesados correctamente: {$campana->id}");
         } catch (\Exception $e) {
             Log::error('[CampanasPage] Error al procesar datos de campaña: '.$e->getMessage());
             throw $e; // Re-lanzar la excepción para que sea capturada por el método que llamó a este
@@ -684,7 +684,7 @@ class Campanas extends Page
         try {
             Log::info("[CampanasPage] Intentando ver detalle de campaña con código: {$codigo}");
 
-            $campana = Campana::with(['imagen', 'modelos', 'anos', 'locales'])->where('codigo', $codigo)->first();
+            $campana = Campana::with(['imagen', 'modelos', 'anos', 'locales'])->where('id', $codigo)->first();
 
             if ($campana) {
                 try {
@@ -692,7 +692,7 @@ class Campanas extends Page
                     $localesNombres = [];
 
                     // Registrar información detallada para depuración
-                    Log::info("[CampanasPage] Campaña ID: {$campana->id}, Código: {$campana->codigo}");
+                    Log::info("[CampanasPage] Campaña ID: {$campana->id}");
                     Log::info('[CampanasPage] Relación locales cargada: '.($campana->relationLoaded('locales') ? 'Sí' : 'No'));
 
                     if ($campana->relationLoaded('locales')) {
@@ -857,7 +857,7 @@ class Campanas extends Page
     private function getImageUrl($imagen): string
     {
         // Registrar la ruta original para depuración
-        Log::info('[CampanasPage] Ruta de imagen original: '.$imagen->ruta);
+        Log::info('[CampanasPage] Ruta de imagen original: '.$imagen->image_path);
 
         // Usar la ruta de imagen.campana para generar la URL, igual que en AgendarCita
         $url = route('imagen.campana', ['id' => $imagen->campaign_id]);
@@ -867,10 +867,10 @@ class Campanas extends Page
 
         // Verificar si el archivo existe en diferentes ubicaciones
         $rutasAVerificar = [
-            storage_path('app/'.$imagen->ruta),
-            storage_path('app/private/'.$imagen->ruta),
-            storage_path('app/private/public/images/campanas/'.basename($imagen->ruta)),
-            public_path($imagen->ruta),
+            storage_path('app/'.$imagen->image_path),
+            storage_path('app/private/'.$imagen->image_path),
+            storage_path('app/private/public/images/campanas/'.basename($imagen->image_path)),
+            public_path($imagen->image_path),
         ];
 
         $existe = false;
@@ -893,14 +893,14 @@ class Campanas extends Page
     public function eliminar($codigo): void
     {
         try {
-            $campana = Campana::where('codigo', $codigo)->first();
+            $campana = Campana::where('id', $codigo)->first();
 
             if ($campana) {
                 // Eliminar la imagen si existe
                 $imagen = $campana->imagen;
                 if ($imagen) {
                     // Eliminar el archivo físico
-                    $rutaCompleta = public_path($imagen->ruta);
+                    $rutaCompleta = public_path($imagen->image_path);
                     if (file_exists($rutaCompleta)) {
                         unlink($rutaCompleta);
                         Log::info("[CampanasPage] Archivo eliminado: {$rutaCompleta}");

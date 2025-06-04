@@ -12,15 +12,15 @@ class Modelo extends Model
     protected $table = 'models';
 
     protected $fillable = [
-        'codigo',
-        'nombre',
-        'marca',
-        'descripcion',
-        'activo',
+        'code',
+        'name',
+        'brand',
+        'description',
+        'is_active',
     ];
 
     protected $casts = [
-        'activo' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     /**
@@ -28,7 +28,7 @@ class Modelo extends Model
      */
     public function anos()
     {
-        return $this->hasMany(ModeloAno::class);
+        return $this->hasMany(ModeloAno::class, 'model_id');
     }
 
     /**
@@ -36,9 +36,9 @@ class Modelo extends Model
      */
     public static function getActivosParaSelector()
     {
-        return self::where('activo', true)
-            ->orderBy('nombre')
-            ->pluck('nombre', 'codigo')
+        return self::where('is_active', true)
+            ->orderBy('name')
+            ->pluck('name', 'code')
             ->toArray();
     }
 }

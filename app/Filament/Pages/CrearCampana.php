@@ -258,12 +258,12 @@ class CrearCampana extends Page
     {
         try {
             // Obtener los modelos activos
-            $modelosActivos = Modelo::where('activo', true)
-                ->orderBy('nombre')
+            $modelosActivos = Modelo::where('is_active', true)
+                ->orderBy('name')
                 ->get();
 
             // Convertir a array de nombres
-            $this->modelos = $modelosActivos->pluck('nombre')->toArray();
+            $this->modelos = $modelosActivos->pluck('name')->toArray();
         } catch (\Exception $e) {
             Log::error('[CrearCampana] Error al cargar modelos: '.$e->getMessage());
             $this->modelos = [];
@@ -376,7 +376,7 @@ class CrearCampana extends Page
             // Guardar los modelos seleccionados
             if (! empty($this->modelosSeleccionados)) {
                 foreach ($this->modelosSeleccionados as $modeloNombre) {
-                    $modelo = Modelo::where('nombre', $modeloNombre)->first();
+                    $modelo = Modelo::where('name', $modeloNombre)->first();
                     if ($modelo) {
                         $campana->modelos()->attach($modelo->id);
                     }

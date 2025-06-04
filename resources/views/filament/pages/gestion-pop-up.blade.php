@@ -69,16 +69,16 @@
                     @forelse ($this->popupsPaginados as $index => $popup)
                         <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-gray-100">
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <img src="{{ $popup['imagen'] }}" alt="{{ $popup['nombre'] }}" class="h-10 w-10 object-cover rounded">
+                                <img src="{{ $popup['image'] }}" alt="{{ $popup['name'] }}" class="h-10 w-10 object-cover rounded">
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $popup['nombre'] }}
+                                {{ $popup['name'] }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $popup['medidas'] }}
+                                {{ $popup['sizes'] }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $popup['formato'] }}
+                                {{ $popup['format'] }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 truncate max-w-xs">
                                 {{ $popup['url_wp'] }}
@@ -220,13 +220,13 @@
 
                     <div class="flex flex-col">
                         <h3 class="text-xl font-bold text-primary-600 text-center mb-4" id="modal-title">
-                            {{ $accionFormulario === 'crear' ? 'Agregar nueva opción' : 'Editar opción: ' . ($popupEnEdicion['nombre'] ?? '') }}
+                            {{ $accionFormulario === 'crear' ? 'Agregar nueva opción' : 'Editar opción: ' . ($popupEnEdicion['name'] ?? '') }}
                         </h3>
 
                         <form wire:submit.prevent="guardarPopup" class="space-y-4">
                             <div>
-                                <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre</label>
-                                <input type="text" id="nombre" wire:model.defer="popupEnEdicion.nombre" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                                <label for="name" class="block text-sm font-medium text-gray-700">Nombre</label>
+                                <input type="text" id="name" wire:model.defer="popupEnEdicion.name" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
                             </div>
 
                             <div>
@@ -245,8 +245,8 @@
                                         <div class="mt-2">
                                             <img src="{{ $imagenPreview }}" alt="Vista previa" class="h-32 w-auto object-contain border border-gray-300 rounded-md">
                                             <div class="mt-1 text-xs text-gray-500">
-                                                <span>{{ $popupEnEdicion['medidas'] ?? '' }}</span>
-                                                <span class="ml-2">{{ $popupEnEdicion['formato'] ?? '' }}</span>
+                                                <span>{{ $popupEnEdicion['sizes'] ?? '' }}</span>
+                                                <span class="ml-2">{{ $popupEnEdicion['format'] ?? '' }}</span>
                                             </div>
                                         </div>
                                     @endif
@@ -268,8 +268,8 @@
                             </div>
 
                             <div class="flex items-center">
-                                <input id="activo" type="checkbox" wire:model.defer="popupEnEdicion.activo" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
-                                <label for="activo" class="px-2 block text-sm text-gray-900">Activo</label>
+                                <input id="is_active" type="checkbox" wire:model.defer="popupEnEdicion.is_active" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                <label for="is_active" class="px-2 block text-sm text-gray-900">Activo</label>
                             </div>
 
                             <div class="flex justify-center pt-4 gap-4">

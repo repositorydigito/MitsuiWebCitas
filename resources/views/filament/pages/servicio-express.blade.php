@@ -56,23 +56,23 @@
                     @forelse ($this->vehiculosPaginados as $index => $vehiculo)
                         <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-gray-100">
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $vehiculo['modelo'] }}
+                                {{ $vehiculo['model'] }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $vehiculo['marca'] }}
+                                {{ $vehiculo['brand'] }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ $vehiculo['year'] }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                @if(is_array($vehiculo['mantenimiento']))
-                                    {{ implode(', ', $vehiculo['mantenimiento']) }}
+                                @if(is_array($vehiculo['maintenance']))
+                                    {{ implode(', ', $vehiculo['maintenance']) }}
                                 @else
-                                    {{ $vehiculo['mantenimiento'] }}
+                                    {{ $vehiculo['maintenance'] }}
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $vehiculo['local'] }}
+                                {{ $vehiculo['premises'] }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                 <div class="flex justify-center items-center gap-6">
@@ -234,11 +234,11 @@
                             <div class="flex flex-col space-y-4">
                                 <!-- Campo Modelo -->
                                 <div class="flex flex-col">
-                                    <label for="modelo" class="text-sm font-medium text-gray-700 mb-1">Modelo</label>
+                                    <label for="model" class="text-sm font-medium text-gray-700 mb-1">Modelo</label>
                                     <input
                                         type="text"
-                                        id="modelo"
-                                        wire:model.live="vehiculoEnEdicion.modelo"
+                                        id="model"
+                                        wire:model.live="vehiculoEnEdicion.model"
                                         class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                         placeholder="Ingrese el modelo"
                                     >
@@ -246,11 +246,11 @@
 
                                 <!-- Campo Marca -->
                                 <div class="flex flex-col">
-                                    <label for="marca" class="text-sm font-medium text-gray-700 mb-1">Marca</label>
+                                    <label for="brand" class="text-sm font-medium text-gray-700 mb-1">Marca</label>
                                     <input
                                         type="text"
-                                        id="marca"
-                                        wire:model.live="vehiculoEnEdicion.marca"
+                                        id="brand"
+                                        wire:model.live="vehiculoEnEdicion.brand"
                                         class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                         placeholder="Ingrese la marca"
                                     >
@@ -290,12 +290,12 @@
                                             <div class="flex items-center">
                                                 <input
                                                     type="checkbox"
-                                                    id="mantenimiento_{{ $loop->index }}"
+                                                    id="maintenance_{{ $loop->index }}"
                                                     value="{{ $tipo }}"
-                                                    wire:model="vehiculoEnEdicion.mantenimiento"
+                                                    wire:model="vehiculoEnEdicion.maintenance"
                                                     class="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                                                 >
-                                                <label for="mantenimiento_{{ $loop->index }}" class="ml-2 text-sm text-gray-700">
+                                                <label for="maintenance_{{ $loop->index }}" class="ml-2 text-sm text-gray-700">
                                                     {{ $tipo }}
                                                 </label>
                                             </div>
@@ -306,10 +306,10 @@
 
                                 <!-- Campo Local -->
                                 <div class="flex flex-col">
-                                    <label for="local" class="text-sm font-medium text-gray-700 mb-1">Local</label>
+                                    <label for="premises" class="text-sm font-medium text-gray-700 mb-1">Local</label>
                                     <select
-                                        id="local"
-                                        wire:model.live="vehiculoEnEdicion.local"
+                                        id="premises"
+                                        wire:model.live="vehiculoEnEdicion.premises"
                                         class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                     >
                                         <option value="">Seleccione un local</option>

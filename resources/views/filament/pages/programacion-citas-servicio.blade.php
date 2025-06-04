@@ -34,7 +34,7 @@
     <!-- Título de programación -->
     <div class="bg-primary-500 text-white font-semibold p-3 rounded-lg">
         Programación Toyota -
-        {{ \App\Models\Local::where('codigo', $data['selectedLocal'] ?? $selectedLocal)->value('nombre') ?? 'Seleccione un local' }}
+        {{ \App\Models\Local::where('code', $data['selectedLocal'] ?? $selectedLocal)->value('name') ?? 'Seleccione un local' }}
     </div>
 
     <div class="flex justify-between">

@@ -163,9 +163,9 @@
                     <div class="grid grid-cols-7 gap-1 text-center">
                         @foreach($diasCalendario as $dia)
                             <div
-                                class="py-2 text-base {{ $dia['esActual'] ? ($dia['disponible'] ? 'cursor-pointer hover:bg-primary-100' : 'text-gray-400') : 'text-gray-400' }}
-                                {{ $dia['fecha'] === $fechaSeleccionada ? 'bg-primary-500 text-white rounded-md' : ($dia['disponible'] && $dia['esActual'] ? 'text-primary-600' : '') }}
-                                {{ $dia['esPasado'] ? 'opacity-50' : '' }}"
+                                class="py-2 text-base {{ $dia['disponible'] ? 'cursor-pointer hover:bg-primary-100 text-primary-600' : 'text-gray-400' }}
+                                {{ $dia['fecha'] === $fechaSeleccionada ? 'bg-primary-500 text-white rounded-md' : '' }}
+                                {{ $dia['esPasado'] || $dia['esHoy'] ? 'opacity-50' : '' }}"
                                 @if($dia['disponible'])
                                     wire:click="seleccionarFecha('{{ $dia['fecha'] }}')"
                                 @endif
@@ -186,14 +186,14 @@
 
                     @if(empty($fechaSeleccionada))
                         <div class="text-center py-8 text-gray-500">
-                            <svg class="w-4 h-4 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <svg class="w-8 h-8 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
                             <p>Selecciona una fecha para ver los horarios disponibles</p>
                         </div>
                     @elseif(empty($horariosDisponibles))
                         <div class="text-center py-8 text-gray-500">
-                            <svg class="w-12 h-12 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <svg class="w-8 h-8 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                             <p>No hay horarios disponibles para esta fecha</p>
@@ -258,25 +258,35 @@
         <div class="mb-4">
             <h2 class="text-xl font-semibold mb-4">4. Elige el servicio</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="border rounded-lg p-4 {{ $servicioSeleccionado == 'Mantenimiento periódico' ? 'border-gray-500 bg-primary-50' : 'border-gray-300' }}">
-                    <div class="flex items-start">
+                <div class="border rounded-lg p-4 {{ in_array('Mantenimiento periódico', $serviciosSeleccionados) ? 'border-primary-500 bg-primary-50' : 'border-gray-300' }}">
+                    <div class="flex items-start mb-4">
                         <div class="flex items-center h-6 mt-1">
-                            <input type="radio" id="servicio-mantenimiento" name="servicio" value="Mantenimiento periódico" wire:model="servicioSeleccionado" class="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500">
+                            <input
+                                type="checkbox"
+                                id="servicio-mantenimiento"
+                                wire:click="toggleServicio('Mantenimiento periódico')"
+                                {{ in_array('Mantenimiento periódico', $serviciosSeleccionados) ? 'checked' : '' }}
+                                class="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
+                            >
                         </div>
                         <div class="p-1">
                             <label for="servicio-mantenimiento" class="font-medium text-gray-700">Mantenimiento periódico</label>
                             <p class="text-gray-500 text-xs">Servicio según el kilometraje</p>
                         </div>
                     </div>
-                    <br>
 
-                    @if ($servicioSeleccionado == 'Mantenimiento periódico')
-                        <div class="mt-4 mb-4">
+                    @if (in_array('Mantenimiento periódico', $serviciosSeleccionados))
+                        <div class="mt-6 mb-4">
                             <label for="tipoMantenimiento" class="block text-sm font-medium text-gray-700 mb-2">Tipo de mantenimiento</label>
-                            <select id="tipoMantenimiento" wire:model.live="tipoMantenimiento" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50">
-                                <option value="10,000 Km">10,000 Km</option>
-                                <option value="20,000 Km">20,000 Km</option>
-                                <option value="30,000 Km">30,000 Km</option>
+                            <select
+                                id="tipoMantenimiento"
+                                wire:model.live="tipoMantenimiento"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50"
+                            >
+                                <option value="">Selecciona un tipo de mantenimiento</option>
+                                @foreach($tiposMantenimientoDisponibles as $id => $nombre)
+                                    <option value="{{ $nombre }}">{{ $nombre }}</option>
+                                @endforeach
                             </select>
                         </div>
 
@@ -291,65 +301,107 @@
                                 @endforeach
                             </div>
                         </div>
+                    @else
+                        <div class="mt-6 mb-4">
+                            <label for="tipoMantenimiento" class="block text-sm font-medium text-gray-400 mb-2">Tipo de mantenimiento</label>
+                            <select
+                                id="tipoMantenimiento"
+                                disabled
+                                class="w-full rounded-md border-gray-300 shadow-sm bg-gray-100 text-gray-400 cursor-not-allowed"
+                            >
+                                <option value="">Selecciona un tipo de mantenimiento</option>
+                            </select>
+                        </div>
+
+                        <div class="mt-4">
+                            <p class="text-sm font-medium text-gray-400 mb-2">Modalidad</p>
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <input type="radio" disabled class="h-4 w-4 text-gray-400 border-gray-300 cursor-not-allowed">
+                                    <label class="p-2 text-sm text-gray-400">Regular</label>
+                                </div>
+                            </div>
+                        </div>
                     @endif
                 </div>
 
-                <div class="border rounded-lg p-4 {{ $servicioSeleccionado == 'Consultas / otros' ? 'border-gray-300 bg-primary-50' : 'border-gray-300' }}">
-    <!-- Primer servicio -->
-    <div class="flex items-start mb-4">
-        <div class="flex items-center mt-6">
-            <input
-                type="radio"
-                id="servicio-consultas-1"
-                name="servicio"
-                value="Consultas / otros 1"
-                wire:model="servicioSeleccionado"
-                class="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
-            >
-        </div>
-        <div class="p-3">
-            <label for="servicio-consultas-1" class="font-medium text-gray-700">Campañas / otros</label>
-            <p class="text-gray-500 text-xs">Servicio en base a pedido del cliente (Ej: lavado)</p>
-        </div>
-    </div>
+                <div class="border rounded-lg p-4 {{ in_array('Campañas / otros', $serviciosSeleccionados) ? 'border-primary-500 bg-primary-50' : 'border-gray-300' }}">
+                    <!-- Primer servicio -->
+                    <div class="flex items-start mb-4">
+                        <div class="flex items-center mt-6">
+                            <input
+                                type="checkbox"
+                                id="servicio-consultas-1"
+                                wire:click="toggleServicio('Campañas / otros')"
+                                {{ in_array('Campañas / otros', $serviciosSeleccionados) ? 'checked' : '' }}
+                                class="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
+                            >
+                        </div>
+                        <div class="p-3">
+                            <label for="servicio-consultas-1" class="font-medium text-gray-700">Campañas / otros</label>
+                            <p class="text-gray-500 text-xs">Servicio en base a pedido del cliente (Ej: lavado)</p>
+                        </div>
+                    </div>
 
-    <!-- Segundo servicio -->
-    <div class="flex items-start mb-4">
-        <div class="flex items-center mt-6">
-            <input
-                type="radio"
-                id="servicio-consultas-2"
-                name="servicio"
-                value="Consultas / otros 2"
-                wire:model="servicioSeleccionado"
-                class="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
-            >
-        </div>
-        <div class="p-3">
-            <label for="servicio-consultas-2" class="font-medium text-gray-700">Reparación</label>
-            <p class="text-gray-500 text-xs">Servicio de diagnóstico y reparación de averías</p>
-        </div>
-    </div>
+                    <!-- Dropdown de servicios adicionales -->
+                    @if (in_array('Campañas / otros', $serviciosSeleccionados))
+                        @if(count($serviciosAdicionalesDisponibles) > 0)
+                            <div class="mb-6">
+                                <label for="servicioAdicional" class="block text-sm font-medium text-gray-700 mb-2">Servicios adicionales disponibles</label>
+                                <select
+                                    id="servicioAdicional"
+                                    wire:model.live="servicioAdicionalSeleccionado"
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50"
+                                >
+                                    <option value="">Selecciona un servicio adicional</option>
+                                    @foreach($serviciosAdicionalesDisponibles as $id => $nombre)
+                                        <option value="servicio_{{ $id }}">{{ $nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+                    @else
+                        @if(count($serviciosAdicionalesDisponibles) > 0)
+                            <div class="mb-6">
+                                <label for="servicioAdicional" class="block text-sm font-medium text-gray-400 mb-2">Servicios adicionales disponibles</label>
+                                <select
+                                    id="servicioAdicional"
+                                    disabled
+                                    class="w-full rounded-md border-gray-300 shadow-sm bg-gray-100 text-gray-400 cursor-not-allowed"
+                                >
+                                    <option value="">Selecciona un servicio adicional</option>
+                                </select>
+                            </div>
+                        @endif
+                    @endif
 
-    <!-- Tercer servicio -->
-    <div class="flex items-start">
-        <div class="flex items-center mt-6">
-            <input
-                type="radio"
-                id="servicio-consultas-3"
-                name="servicio"
-                value="Consultas / otros 3"
-                wire:model="servicioSeleccionado"
-                class="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
-            >
-        </div>
-        <div class="p-3">
-            <label for="servicio-consultas-3" class="font-medium text-gray-700">Llamado a revisión</label>
-            <p class="text-gray-500 text-xs">Revisión del correcto funcionamiento del vehículo</p>
-        </div>
-    </div>
-</div>
-
+                    <!-- Servicios adicionales seleccionados -->
+                    @if(count($serviciosAdicionales) > 0)
+                        <div class="mt-4 mb-6">
+                            <h3 class="text-sm font-medium text-gray-700 mb-3">Servicios adicionales seleccionados:</h3>
+                            <div class="space-y-2">
+                                @foreach($serviciosAdicionales as $index => $servicio)
+                                    @if(str_starts_with($servicio, 'servicio_'))
+                                        <div class="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                            <span class="text-sm text-blue-800">
+                                                {{ $opcionesServiciosAdicionales[$servicio] ?? $servicio }}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                wire:click="eliminarServicioAdicional('{{ $servicio }}')"
+                                                class="text-blue-600 hover:text-blue-800 text-sm"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
         <br>
@@ -357,8 +409,6 @@
         <!-- Servicios adicionales -->
         <div class="mb-4">
             <h2 class="text-xl font-semibold mb-4">5. Elige un servicio adicional (opcional)</h2>
-
-
 
             <!-- Estilos para el carrusel -->
             <style>
@@ -625,35 +675,29 @@
                         </tr>
                         <tr>
                             <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-primary-800">Servicio</span>
+                                <span class="font-medium text-primary-800">Servicios</span>
                             </td>
                             <td class="py-2 text-gray-800">
-                                @if($servicioSeleccionado == 'Mantenimiento periódico')
-                                    Mantenimiento periódico
-                                @elseif($servicioSeleccionado == 'Consultas / otros 1')
-                                    Campañas / otros
-                                @elseif($servicioSeleccionado == 'Consultas / otros 2')
-                                    Reparación
-                                @elseif($servicioSeleccionado == 'Consultas / otros 3')
-                                    Llamado a revisión
+                                @if(count($serviciosSeleccionados) > 0)
+                                    {{ implode(', ', $serviciosSeleccionados) }}
                                 @else
-                                    {{ $servicioSeleccionado }}
+                                    No seleccionado
                                 @endif
                             </td>
                         </tr>
 
-                        @if ($servicioSeleccionado == 'Mantenimiento periódico')
+                        @if (in_array('Mantenimiento periódico', $serviciosSeleccionados))
                             <tr>
                                 <td class="py-2 pr-4 w-1/3">
-                                    <span class="font-medium text-primary-800">Mantenimiento</span>
+                                    <span class="font-medium text-primary-800">Tipo de Mantenimiento</span>
                                 </td>
-                                <td class="py-2 text-gray-800">{{ $tipoMantenimiento }}</td>
+                                <td class="py-2 text-gray-800">{{ $tipoMantenimiento ?: 'No seleccionado' }}</td>
                             </tr>
                             <tr>
                                 <td class="py-2 pr-4 w-1/3">
                                     <span class="font-medium text-primary-800">Modalidad</span>
                                 </td>
-                                <td class="py-2 text-gray-800">{{ $modalidadServicio }}</td>
+                                <td class="py-2 text-gray-800">{{ $modalidadServicio ?: 'No seleccionado' }}</td>
                             </tr>
                         @endif
 
@@ -785,35 +829,29 @@
                         </tr>
                         <tr>
                             <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-primary-800">Servicio</span>
+                                <span class="font-medium text-primary-800">Servicios</span>
                             </td>
                             <td class="py-2 text-gray-800">
-                                @if($servicioSeleccionado == 'Mantenimiento periódico')
-                                    Mantenimiento periódico
-                                @elseif($servicioSeleccionado == 'Consultas / otros 1')
-                                    Campañas / otros
-                                @elseif($servicioSeleccionado == 'Consultas / otros 2')
-                                    Reparación
-                                @elseif($servicioSeleccionado == 'Consultas / otros 3')
-                                    Llamado a revisión
+                                @if(count($serviciosSeleccionados) > 0)
+                                    {{ implode(', ', $serviciosSeleccionados) }}
                                 @else
-                                    {{ $servicioSeleccionado }}
+                                    No seleccionado
                                 @endif
                             </td>
                         </tr>
 
-                        @if ($servicioSeleccionado == 'Mantenimiento periódico')
+                        @if (in_array('Mantenimiento periódico', $serviciosSeleccionados))
                             <tr>
                                 <td class="py-2 pr-4 w-1/3">
-                                    <span class="font-medium text-primary-800">Mantenimiento</span>
+                                    <span class="font-medium text-primary-800">Tipo de Mantenimiento</span>
                                 </td>
-                                <td class="py-2 text-gray-800">{{ $tipoMantenimiento }}</td>
+                                <td class="py-2 text-gray-800">{{ $tipoMantenimiento ?: 'No seleccionado' }}</td>
                             </tr>
                             <tr>
                                 <td class="py-2 pr-4 w-1/3">
                                     <span class="font-medium text-primary-800">Modalidad</span>
                                 </td>
-                                <td class="py-2 text-gray-800">{{ $modalidadServicio }}</td>
+                                <td class="py-2 text-gray-800">{{ $modalidadServicio ?: 'No seleccionado' }}</td>
                             </tr>
                         @endif
 

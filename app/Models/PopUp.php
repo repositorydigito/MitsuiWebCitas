@@ -7,15 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 class PopUp extends Model
 {
     protected $fillable = [
-        'nombre',
-        'imagen_path',
-        'medidas',
-        'formato',
+        'name',
+        'image_path',
+        'sizes',
+        'format',
         'url_wp',
-        'activo',
+        'is_active',
     ];
 
     protected $casts = [
-        'activo' => 'boolean',
+        'is_active' => 'boolean',
     ];
 }

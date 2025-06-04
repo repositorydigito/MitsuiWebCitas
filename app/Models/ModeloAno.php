@@ -26,7 +26,7 @@ class ModeloAno extends Model
      */
     public function modelo()
     {
-        return $this->belongsTo(Modelo::class);
+        return $this->belongsTo(Modelo::class, 'model_id');
     }
 
     /**
@@ -46,7 +46,7 @@ class ModeloAno extends Model
      */
     public static function getAnosActivosParaSelector()
     {
-        return self::where('activo', true)
+        return self::where('is_active', true)
             ->orderBy('year', 'desc')
             ->pluck('year')
             ->unique()

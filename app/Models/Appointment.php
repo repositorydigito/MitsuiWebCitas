@@ -22,8 +22,7 @@ class Appointment extends Model
         'appointment_number',
         'c4c_uuid',
         'vehicle_id',
-        'service_center_id',
-        'service_type_id',
+        'premise_id',
         'customer_ruc',
         'customer_name',
         'customer_last_name',
@@ -73,6 +72,14 @@ class Appointment extends Model
     public function vehicle(): BelongsTo
     {
         return $this->belongsTo(Vehicle::class);
+    }
+
+    /**
+     * Get the premise that owns the appointment.
+     */
+    public function premise(): BelongsTo
+    {
+        return $this->belongsTo(Local::class, 'premise_id');
     }
 
     // Relaciones eliminadas: serviceCenter, serviceType, additionalServices
