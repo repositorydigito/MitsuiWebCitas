@@ -23,7 +23,7 @@
         >
             <main
                     @class([
-                        'fi-simple-main  w-full bg-white'
+                        'fi-simple-main  w-full bg-white dark:bg-gray-900'
                     ])
             >
                 {{ $slot }}
