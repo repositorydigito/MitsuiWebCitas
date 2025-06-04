@@ -1,4 +1,4 @@
-<?php
+<?php                                                                                                                                                                                                   
 
 namespace App\Providers\Filament;
 
@@ -20,7 +20,6 @@ use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\View\PanelsRenderHook;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -30,18 +29,23 @@ use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Joaopaulolndev\FilamentEditProfile\FilamentEditProfilePlugin;
-use Solutionforest\FilamentLoginScreen\Filament\Pages\Auth\Themes\Theme1\LoginScreenPage;
+use App\Filament\Pages\Auth\Login;
+use Filament\Support\Facades\FilamentView;
+use Filament\View\PanelsRenderHook;
+use Illuminate\Support\Facades\Blade;
 
 class AdminPanelProvider extends PanelProvider
 {
+
+
     public function panel(Panel $panel): Panel
     {
         return $panel
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login(LoginScreenPage::class)
-            ->darkMode()
+            ->login(Login::class)
+            ->darkMode(false)
             ->sidebarFullyCollapsibleOnDesktop()
             ->colors([
                 'primary' => '#0075BF',
@@ -90,6 +94,10 @@ class AdminPanelProvider extends PanelProvider
                     ->setIcon('heroicon-o-user-circle')
                     ->shouldRegisterNavigation(),
             ])
+            ->renderHook(
+                PanelsRenderHook::BODY_START,
+                fn (): string => Blade::render('<div id="corporate-theme-enhancer"></div>'),
+            )
             ->renderHook(
                 PanelsRenderHook::BODY_END,
                 fn () => auth()->check() ? view('customFooter') : '',
