@@ -25,9 +25,16 @@ Route::prefix('c4c')->group(function () {
     // Customer routes
     Route::post('/customers/find', [CustomerController::class, 'findByDocument']);
 
+    // New customer search methods (like Python examples)
+    Route::post('/customers/find-with-fallback', [CustomerController::class, 'findWithFallback']);
+    Route::post('/customers/find-multiple', [CustomerController::class, 'findMultiple']);
+
     // Appointment routes
     Route::post('/appointments', [AppointmentController::class, 'create']);
     Route::put('/appointments/{uuid}', [AppointmentController::class, 'update']);
     Route::delete('/appointments/{uuid}', [AppointmentController::class, 'delete']);
     Route::get('/appointments/pending', [AppointmentController::class, 'getPendingAppointments']);
+
+    // Bulk appointment verification (like Python example 4)
+    Route::post('/appointments/bulk-check', [AppointmentController::class, 'bulkCheckPendingAppointments']);
 });

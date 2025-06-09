@@ -123,54 +123,66 @@ class MockCustomerService
             return $response;
         }
 
-        // Datos de ejemplo para otros DNIs (formato simplificado pero manteniendo la estructura)
-        $customer = [
-            'uuid' => '00163e10-02f9-1ee7-86ae-7e8d16f8d608',
-            'internal_id' => '80019',
-            'external_id' => '0000080019',
-            'category_code' => '1',
-            'life_cycle_status_code' => '2',
-            'organisation' => [
-                'first_line_name' => 'JUAN PEREZ',
-            ],
-            'address_information' => [
-                'address' => [
-                    'postal_address' => [
-                        'country_code' => 'PE',
-                        'city_name' => 'LIMA',
-                        'street_name' => 'AV. JAVIER PRADO ESTE 123',
-                        'street_postal_code' => '15024',
-                    ],
-                    'email' => [
-                        'uri' => 'juan.perez@example.com',
-                    ],
-                    'telephone' => [
-                        [
-                            'formatted_number_description' => '+51 987654321',
-                            'mobile_phone_number_indicator' => true,
+        // Datos específicos para el DNI 12345678 (cliente genérico VARIOS del ejemplo Python)
+        if ($dni === '12345678') {
+            $customer = [
+                'uuid' => '00163e10-02f9-1ee7-86ae-7e8d16f8d608',
+                'internal_id' => '1200020962',
+                'external_id' => '1200020962',
+                'category_code' => '1',
+                'life_cycle_status_code' => '2',
+                'organisation' => [
+                    'first_line_name' => 'VARIOS',
+                ],
+                'address_information' => [
+                    'address' => [
+                        'postal_address' => [
+                            'country_code' => 'PE',
+                            'city_name' => 'LIMA',
+                            'street_name' => 'AV. JAVIER PRADO ESTE 123',
+                            'street_postal_code' => '15024',
+                        ],
+                        'email' => [
+                            'uri' => 'varios@example.com',
+                        ],
+                        'telephone' => [
+                            [
+                                'formatted_number_description' => '+51 987654321',
+                                'mobile_phone_number_indicator' => true,
+                            ],
                         ],
                     ],
                 ],
-            ],
-            'sales_arrangement' => [
-                'sales_organisation_id' => 'DM07',
-                'distribution_channel_code' => 'D4',
-                'sales_group_id' => 'D03',
-                'currency_code' => 'PEN',
-                'customer_group_code' => 'T1',
-            ],
-            'zDNI' => $dni,
-        ];
+                'sales_arrangement' => [
+                    'sales_organisation_id' => 'DM07',
+                    'distribution_channel_code' => 'D4',
+                    'sales_group_id' => 'D03',
+                    'currency_code' => 'PEN',
+                    'customer_group_code' => 'T1',
+                ],
+                'zDNI' => $dni,
+            ];
+
+            return [
+                'success' => true,
+                'error' => null,
+                'data' => [$customer],
+                'count' => 1,
+                'processing_conditions' => [
+                    'returned_query_hits_number_value' => 1,
+                    'more_hits_available_indicator' => false,
+                ],
+            ];
+        }
+
+        // Para cualquier otro DNI que no esté específicamente definido, devolver "no encontrado"
+        Log::warning("MockCustomerService: DNI {$dni} no encontrado en datos mock");
 
         return [
-            'success' => true,
-            'error' => null,
-            'data' => [$customer],
-            'count' => 1,
-            'processing_conditions' => [
-                'returned_query_hits_number_value' => 1,
-                'more_hits_available_indicator' => false,
-            ],
+            'success' => false,
+            'error' => 'Customer not found in mock data',
+            'data' => null,
+            'count' => 0,
         ];
     }
 
@@ -356,54 +368,14 @@ class MockCustomerService
             ];
         }
 
-        // Datos de ejemplo para otros RUCs (formato simplificado pero manteniendo la estructura)
-        $customer = [
-            'uuid' => '00163e10-02f9-1ee7-86ae-7e8d16f8d608',
-            'internal_id' => '80019',
-            'external_id' => '0000080019',
-            'category_code' => '2',
-            'life_cycle_status_code' => '2',
-            'organisation' => [
-                'first_line_name' => 'EMPRESA DE PRUEBA S.A.C.',
-            ],
-            'address_information' => [
-                'address' => [
-                    'postal_address' => [
-                        'country_code' => 'PE',
-                        'city_name' => 'LIMA',
-                        'street_name' => 'AV. JAVIER PRADO ESTE 6042',
-                        'street_postal_code' => '15024',
-                    ],
-                    'email' => [
-                        'uri' => 'contacto@empresaprueba.com',
-                    ],
-                    'telephone' => [
-                        [
-                            'formatted_number_description' => '+51 1 345-6789',
-                            'mobile_phone_number_indicator' => false,
-                        ],
-                    ],
-                ],
-            ],
-            'sales_arrangement' => [
-                'sales_organisation_id' => 'DM07',
-                'distribution_channel_code' => 'D4',
-                'sales_group_id' => 'D03',
-                'currency_code' => 'PEN',
-                'customer_group_code' => 'T1',
-            ],
-            'zRuc' => $ruc,
-        ];
+        // Para cualquier otro RUC que no esté específicamente definido, devolver "no encontrado"
+        Log::warning("MockCustomerService: RUC {$ruc} no encontrado en datos mock");
 
         return [
-            'success' => true,
-            'error' => null,
-            'data' => [$customer],
-            'count' => 1,
-            'processing_conditions' => [
-                'returned_query_hits_number_value' => 1,
-                'more_hits_available_indicator' => false,
-            ],
+            'success' => false,
+            'error' => 'Customer not found in mock data',
+            'data' => null,
+            'count' => 0,
         ];
     }
 
@@ -523,54 +495,14 @@ class MockCustomerService
             return $response;
         }
 
-        // Datos de ejemplo para otros CEs (formato simplificado pero manteniendo la estructura)
-        $customer = [
-            'uuid' => '00163e10-02f9-1ee7-86ae-7e8d16f8d608',
-            'internal_id' => '80020',
-            'external_id' => '0000080020',
-            'category_code' => '1',
-            'life_cycle_status_code' => '2',
-            'organisation' => [
-                'first_line_name' => 'MARIA RODRIGUEZ',
-            ],
-            'address_information' => [
-                'address' => [
-                    'postal_address' => [
-                        'country_code' => 'PE',
-                        'city_name' => 'LIMA',
-                        'street_name' => 'AV. JAVIER PRADO ESTE 456',
-                        'street_postal_code' => '15024',
-                    ],
-                    'email' => [
-                        'uri' => 'maria.rodriguez@example.com',
-                    ],
-                    'telephone' => [
-                        [
-                            'formatted_number_description' => '+51 987654322',
-                            'mobile_phone_number_indicator' => true,
-                        ],
-                    ],
-                ],
-            ],
-            'sales_arrangement' => [
-                'sales_organisation_id' => 'DM07',
-                'distribution_channel_code' => 'D4',
-                'sales_group_id' => 'D03',
-                'currency_code' => 'PEN',
-                'customer_group_code' => 'T1',
-            ],
-            'zCE' => $ce,
-        ];
+        // Para cualquier otro CE que no esté específicamente definido, devolver "no encontrado"
+        Log::warning("MockCustomerService: CE {$ce} no encontrado en datos mock");
 
         return [
-            'success' => true,
-            'error' => null,
-            'data' => [$customer],
-            'count' => 1,
-            'processing_conditions' => [
-                'returned_query_hits_number_value' => 1,
-                'more_hits_available_indicator' => false,
-            ],
+            'success' => false,
+            'error' => 'Customer not found in mock data',
+            'data' => null,
+            'count' => 0,
         ];
     }
 
@@ -690,54 +622,14 @@ class MockCustomerService
             return $response;
         }
 
-        // Datos de ejemplo para otros Pasaportes (formato simplificado pero manteniendo la estructura)
-        $customer = [
-            'uuid' => '00163e10-02f9-1ee7-86ae-7e8d16f8d608',
-            'internal_id' => '80021',
-            'external_id' => '0000080021',
-            'category_code' => '1',
-            'life_cycle_status_code' => '2',
-            'organisation' => [
-                'first_line_name' => 'JOHN SMITH',
-            ],
-            'address_information' => [
-                'address' => [
-                    'postal_address' => [
-                        'country_code' => 'PE',
-                        'city_name' => 'LIMA',
-                        'street_name' => 'AV. JAVIER PRADO ESTE 789',
-                        'street_postal_code' => '15024',
-                    ],
-                    'email' => [
-                        'uri' => 'john.smith@example.com',
-                    ],
-                    'telephone' => [
-                        [
-                            'formatted_number_description' => '+51 987654323',
-                            'mobile_phone_number_indicator' => true,
-                        ],
-                    ],
-                ],
-            ],
-            'sales_arrangement' => [
-                'sales_organisation_id' => 'DM07',
-                'distribution_channel_code' => 'D4',
-                'sales_group_id' => 'D03',
-                'currency_code' => 'PEN',
-                'customer_group_code' => 'T1',
-            ],
-            'zPasaporte' => $passport,
-        ];
+        // Para cualquier otro Passport que no esté específicamente definido, devolver "no encontrado"
+        Log::warning("MockCustomerService: Passport {$passport} no encontrado en datos mock");
 
         return [
-            'success' => true,
-            'error' => null,
-            'data' => [$customer],
-            'count' => 1,
-            'processing_conditions' => [
-                'returned_query_hits_number_value' => 1,
-                'more_hits_available_indicator' => false,
-            ],
+            'success' => false,
+            'error' => 'Customer not found in mock data',
+            'data' => null,
+            'count' => 0,
         ];
     }
 }

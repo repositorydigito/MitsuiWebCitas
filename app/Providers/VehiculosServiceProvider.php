@@ -29,12 +29,13 @@ class VehiculosServiceProvider extends ServiceProvider
             return new MockVehiculoService;
         });
 
-        // Registrar el servicio SOAP de vehículos
+        // Registrar el servicio SOAP de vehículos con nueva configuración
         $this->app->singleton(VehiculoSoapService::class, function ($app) {
             return new VehiculoSoapService(
-                config('services.vehiculos.wsdl_url'),
+                config('services.sap_3p.wsdl_url'), // Usar la nueva configuración SAP 3P
                 app(VehiculoWebServiceHealthCheck::class),
-                app(MockVehiculoService::class)
+                app(MockVehiculoService::class),
+                app(\App\Services\C4C\AppointmentQueryService::class) // Nueva dependencia C4C
             );
         });
     }

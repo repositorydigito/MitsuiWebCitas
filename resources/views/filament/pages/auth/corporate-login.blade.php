@@ -81,7 +81,7 @@
         .right-panel-overlay {
             position: absolute;
             inset: 0;
-            background: linear-gradient(135deg, rgba(60, 141, 190, 0.9), rgba(7, 53, 104, 0.95));
+            background: linear-gradient(135deg, rgba(0, 117, 191, 0.9), rgba(7, 53, 104, 0.95));
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -190,27 +190,6 @@
         .submit-button:hover {
             background-color: #073568;
         }
-
-        .register-link {
-            display: block;
-            text-align: center;
-            margin-top: 1.5rem;
-            color: #6b7280;
-            text-decoration: none;
-            font-size: 0.875rem;
-            transition: color 0.2s;
-        }
-
-        .success-message {
-            background-color: #d1fae5;
-            border: 1px solid #10b981;
-            color: #065f46;
-            padding: 0.75rem 1rem;
-            border-radius: 0.375rem;
-            margin-bottom: 1.5rem;
-            font-size: 0.875rem;
-            text-align: center;
-        }
         
         /* Responsive */
         @media (max-width: 1024px) {
@@ -240,6 +219,11 @@
             border-radius: 0.375rem !important;
         }
         
+        .fi-input:focus {
+            border-color: #0075BF !important;
+            box-shadow: 0 0 0 3px rgba(0, 117, 191, 0.1) !important;
+        }
+        
         .fi-btn {
             background-color: #0075BF !important;
             border-radius: 0.375rem !important;
@@ -263,19 +247,17 @@
         <!-- Panel izquierdo - Formulario -->
         <div class="left-panel">
             <div class="form-container">
-                <div class="flex items-center justify-center mb-4">
-                    <img src="{{ asset('images/logoMitsui.svg') }}" alt="logoMitsui" style="margin-bottom:20px; width: 15rem; height: auto;">
-                </div>
-                <!-- Título -->
-                <h1 class="form-title text-center">Iniciar Sesión</h1>
-                <p class="form-subtitle text-center">Ingresa tus credenciales para acceder al sistema</p>
+                <!-- Back to dashboard link -->
+                <a href="/" class="back-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                    </svg>
+                    Volver al inicio
+                </a>
 
-                <!-- Mensaje de éxito del registro -->
-                @if(session('status'))
-                    <div class="success-message">
-                        {{ session('status') }}
-                    </div>
-                @endif
+                <!-- Título -->
+                <h1 class="form-title">Iniciar Sesión</h1>
+                <p class="form-subtitle">Ingresa tus credenciales para acceder al sistema</p>
 
                 <!-- Formulario -->
                 <x-filament-panels::form wire:submit="authenticate">
@@ -288,19 +270,13 @@
                         />
                     </div>
                 </x-filament-panels::form>
-
-                <!-- Enlace para ir al registro -->
-                @if(filament()->hasRegistration())
-                    <p class="register-link">
-                        ¿No tienes cuenta? <a href="{{ filament()->getRegistrationUrl() }}" style="color: #0075BF; text-decoration: none; font-weight: 500;">Regístrate aquí</a>
-                    </p>
-                @endif
             </div>
         </div>
 
         <!-- Panel derecho - Branding -->
         <div class="right-panel">
             <div class="right-panel-overlay">
+                <img src="{{ asset('images/logoMitsui.svg') }}" alt="Mitsui Logo" class="brand-logo">
                 <h2 class="brand-title">Sistema de Gestión Mitsui</h2>
                 <p class="brand-subtitle">Plataforma integral para la administración de citas y servicios automotrices</p>
             </div>
@@ -332,7 +308,7 @@
 
             observer.observe(document.documentElement, {
                 attributes: true,
-                attributeFilter: ['class']Add commentMore actions
+                attributeFilter: ['class']
             });
         });
     </script>

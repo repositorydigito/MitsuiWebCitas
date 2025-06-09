@@ -484,7 +484,7 @@ class CargaCampanasPage extends Page
      */
     public function volverACampanas()
     {
-        return redirect(Campanas::getUrl());
+        $this->redirect(Campanas::getUrl());
     }
 
     /**

@@ -244,7 +244,7 @@ class ProgramacionCitasServicio extends Page implements HasForms
         // Redirigir a la página de programación de bloqueo con el local seleccionado
         $localSeleccionado = $this->data['selectedLocal'] ?? $this->selectedLocal;
 
-        return redirect()->route('filament.admin.pages.programar-bloqueo', ['local' => $localSeleccionado]);
+        $this->redirect(route('filament.admin.pages.programar-bloqueo', ['local' => $localSeleccionado]));
     }
 
     /**

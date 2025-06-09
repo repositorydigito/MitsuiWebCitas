@@ -1,0 +1,58 @@
+{
+	"info": {
+		"_postman_id": "9cf70949-65ee-4cdc-94c0-ad97c609dcd3",
+		"name": "MITSUI",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "4416590"
+	},
+	"item": [
+		{
+			"name": "https://my317791.crm.ondemand.com/sap/c4c/odata/cust/v1/dw_listaproducto/BOListaProductosRootCollection",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "/sap/ap/ui/cloginA!\"2",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "_ODATA",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://my317791.crm.ondemand.com/sap/c4c/odata/cust/v1/dw_listaproducto/BOListaProductosRootCollection",
+					"protocol": "https",
+					"host": [
+						"my317791",
+						"crm",
+						"ondemand",
+						"com"
+					],
+					"path": [
+						"sap",
+						"c4c",
+						"odata",
+						"cust",
+						"v1",
+						"dw_listaproducto",
+						"BOListaProductosRootCollection"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

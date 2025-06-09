@@ -39,12 +39,43 @@ class CustomerService
     }
 
     /**
+     * Find a customer by document type and number.
+     *
+     * @return array|null
+     */
+    public function findByDocument(string $documentType, string $documentNumber): ?array
+    {
+        Log::info("Buscando cliente con {$documentType}: {$documentNumber}");
+
+        $result = match($documentType) {
+            'DNI' => $this->findByDNI($documentNumber),
+            'RUC' => $this->findByRUC($documentNumber),
+            'CE' => $this->findByCE($documentNumber),
+            'PASAPORTE' => $this->findByPassport($documentNumber),
+            default => [
+                'success' => false,
+                'error' => 'Tipo de documento no válido',
+                'data' => null,
+            ],
+        };
+
+        // Si encontró datos, devolver el primer cliente
+        if ($result['success'] && !empty($result['data'])) {
+            return $result['data'][0]; // Retornar primer cliente encontrado
+        }
+
+        return null; // No encontrado
+    }
+
+    /**
      * Find a customer by DNI.
      *
      * @return array
      */
     public function findByDNI(string $dni)
     {
+        Log::info("Buscando cliente con DNI: {$dni}");
+
         $params = [
             'CustomerSelectionByElements' => [
                 'y6s:zDNI_EA8AE8AUBVHCSXVYS0FJ1R3ON' => [
@@ -57,16 +88,78 @@ class CustomerService
                 ],
             ],
             'ProcessingConditions' => [
-                'QueryHitsMaximumNumberValue' => 20,
+                'QueryHitsMaximumNumberValue' => 20,  // Usar 20 como en Python para obtener más resultados
                 'QueryHitsUnlimitedIndicator' => false,
             ],
         ];
 
+        // Log de parámetros enviados
+        Log::info("Enviando parámetros SOAP para DNI: {$dni}", [
+            'params' => $params,
+            'wsdl' => $this->wsdl,
+            'method' => $this->method
+        ]);
+
         $result = C4CClient::call($this->wsdl, $this->method, $params);
 
-        if ($result['success'] && isset($result['data']->Customer)) {
-            return $this->formatCustomerData($result['data']);
+        // Log de respuesta recibida
+        Log::info("Respuesta SOAP recibida para DNI: {$dni}", [
+            'success' => $result['success'],
+            'error' => $result['error'] ?? null,
+            'has_customer_data' => isset($result['data']->Customer),
+            'raw_response_preview' => isset($result['data']) ? substr(json_encode($result['data']), 0, 500) : null
+        ]);
+
+        // Verificar la estructura correcta de la respuesta como viene del HTTP request
+        $hasCustomerData = false;
+        $customerData = null;
+
+        if ($result['success'] && $result['data']) {
+            // Estructura del HTTP request: Body->CustomerByElementsResponse_sync->Customer
+            if (isset($result['data']->Body->CustomerByElementsResponse_sync->Customer)) {
+                $hasCustomerData = true;
+                $customerData = $result['data']->Body->CustomerByElementsResponse_sync;
+                Log::info('✅ Estructura HTTP: Customer encontrado en Body->CustomerByElementsResponse_sync->Customer');
+            }
+            // Estructura del SoapClient tradicional: Customer directo
+            elseif (isset($result['data']->Customer)) {
+                $hasCustomerData = true;
+                $customerData = $result['data'];
+                Log::info('✅ Estructura SoapClient: Customer encontrado directamente');
+            }
+            else {
+                Log::warning('❌ No se encontró Customer en ninguna estructura conocida');
+                Log::info('Estructura disponible:', [
+                    'data_keys' => array_keys((array)$result['data'])
+                ]);
+            }
         }
+
+        if ($hasCustomerData && $customerData) {
+            $formattedResult = $this->formatCustomerData($customerData);
+
+            // Implementar la MISMA lógica que Python: success + 'Customer' en respuesta
+            if ($formattedResult['success'] && !empty($formattedResult['data'])) {
+
+                // Python considera exitoso si hay clientes en la respuesta, sin filtrar por DNI específico
+                $customer = $formattedResult['data'][0]; // Tomar el primer cliente como Python
+                $customerName = $customer['organisation']['first_line_name'] ?? 'N/A';
+
+                Log::info("✅ Cliente encontrado por DNI: {$dni} (lógica Python)", [
+                    'customer_name' => $customerName,
+                    'internal_id' => $customer['internal_id'] ?? null,
+                    'external_id' => $customer['external_id'] ?? null,
+                    'total_customers_returned' => count($formattedResult['data']),
+                    'behavior' => 'same_as_python_examples'
+                ]);
+
+                return $formattedResult; // Devolver todos los clientes como Python
+            }
+
+            return $formattedResult;
+        }
+
+        Log::warning("No se encontró ningún cliente con DNI: {$dni}");
 
         return [
             'success' => false,
@@ -103,42 +196,47 @@ class CustomerService
 
         $result = C4CClient::call($this->wsdl, $this->method, $params);
 
-        if ($result['success'] && isset($result['data']->Customer)) {
-            $formattedResult = $this->formatCustomerData($result['data']);
+        // Verificar la estructura correcta de la respuesta como viene del HTTP request
+        $hasCustomerData = false;
+        $customerData = null;
 
-            // Si tenemos resultados, intentamos filtrar para encontrar coincidencias exactas
-            if ($formattedResult['success'] && ! empty($formattedResult['data'])) {
-                // Buscar coincidencias exactas por RUC
-                $exactMatches = [];
+        if ($result['success'] && $result['data']) {
+            // Estructura del HTTP request: Body->CustomerByElementsResponse_sync->Customer
+            if (isset($result['data']->Body->CustomerByElementsResponse_sync->Customer)) {
+                $hasCustomerData = true;
+                $customerData = $result['data']->Body->CustomerByElementsResponse_sync;
+                Log::info('✅ Estructura HTTP: Customer encontrado en Body->CustomerByElementsResponse_sync->Customer para RUC');
+            }
+            // Estructura del SoapClient tradicional: Customer directo
+            elseif (isset($result['data']->Customer)) {
+                $hasCustomerData = true;
+                $customerData = $result['data'];
+                Log::info('✅ Estructura SoapClient: Customer encontrado directamente para RUC');
+            }
+            else {
+                Log::warning('❌ No se encontró Customer en ninguna estructura conocida para RUC');
+            }
+        }
 
-                foreach ($formattedResult['data'] as $customer) {
-                    // Verificar si el cliente tiene el RUC exacto
-                    // El RUC podría estar en diferentes campos según la estructura de datos
-                    $customerRuc = null;
+        if ($hasCustomerData && $customerData) {
+            $formattedResult = $this->formatCustomerData($customerData);
 
-                    // Verificar en campos comunes donde podría estar el RUC
-                    if (isset($customer['external_id']) && $customer['external_id'] === $ruc) {
-                        $exactMatches[] = $customer;
-                    }
-                    // También podría estar en un campo personalizado como zRuc
-                    elseif (isset($customer['zRuc']) && $customer['zRuc'] === $ruc) {
-                        $exactMatches[] = $customer;
-                    }
-                    // O podría estar en un campo de identificación general
-                    elseif (isset($customer['identification']) && isset($customer['identification']['ruc']) &&
-                            $customer['identification']['ruc'] === $ruc) {
-                        $exactMatches[] = $customer;
-                    }
-                }
+            // Implementar la MISMA lógica que Python: success + 'Customer' en respuesta
+            if ($formattedResult['success'] && !empty($formattedResult['data'])) {
 
-                // Si encontramos coincidencias exactas, actualizamos el resultado
-                if (! empty($exactMatches)) {
-                    Log::info('Se encontraron '.count($exactMatches)." coincidencias exactas para el RUC: {$ruc}");
-                    $formattedResult['data'] = $exactMatches;
-                    $formattedResult['count'] = count($exactMatches);
-                } else {
-                    Log::info("No se encontraron coincidencias exactas para el RUC: {$ruc}. Devolviendo todos los resultados.");
-                }
+                // Python considera exitoso si hay clientes en la respuesta, sin filtrar por RUC específico
+                $customer = $formattedResult['data'][0]; // Tomar el primer cliente como Python
+                $customerName = $customer['organisation']['first_line_name'] ?? 'N/A';
+
+                Log::info("✅ Cliente encontrado por RUC: {$ruc} (lógica Python)", [
+                    'customer_name' => $customerName,
+                    'internal_id' => $customer['internal_id'] ?? null,
+                    'external_id' => $customer['external_id'] ?? null,
+                    'total_customers_returned' => count($formattedResult['data']),
+                    'behavior' => 'same_as_python_examples'
+                ]);
+
+                return $formattedResult; // Devolver todos los clientes como Python
             }
 
             return $formattedResult;
@@ -160,6 +258,8 @@ class CustomerService
      */
     public function findByCE(string $ce)
     {
+        Log::info("Buscando cliente con CE: {$ce}");
+
         $params = [
             'CustomerSelectionByElements' => [
                 'y6s:zCE_EA8AE8AUBVHCSXVYS0FJ1R3ON' => [
@@ -179,9 +279,53 @@ class CustomerService
 
         $result = C4CClient::call($this->wsdl, $this->method, $params);
 
-        if ($result['success'] && isset($result['data']->Customer)) {
-            return $this->formatCustomerData($result['data']);
+        // Verificar la estructura correcta de la respuesta como viene del HTTP request
+        $hasCustomerData = false;
+        $customerData = null;
+
+        if ($result['success'] && $result['data']) {
+            // Estructura del HTTP request: Body->CustomerByElementsResponse_sync->Customer
+            if (isset($result['data']->Body->CustomerByElementsResponse_sync->Customer)) {
+                $hasCustomerData = true;
+                $customerData = $result['data']->Body->CustomerByElementsResponse_sync;
+                Log::info('✅ Estructura HTTP: Customer encontrado en Body->CustomerByElementsResponse_sync->Customer para CE');
+            }
+            // Estructura del SoapClient tradicional: Customer directo
+            elseif (isset($result['data']->Customer)) {
+                $hasCustomerData = true;
+                $customerData = $result['data'];
+                Log::info('✅ Estructura SoapClient: Customer encontrado directamente para CE');
+            }
+            else {
+                Log::warning('❌ No se encontró Customer en ninguna estructura conocida para CE');
+            }
         }
+
+        if ($hasCustomerData && $customerData) {
+            $formattedResult = $this->formatCustomerData($customerData);
+
+            // Implementar la MISMA lógica que Python: success + 'Customer' en respuesta
+            if ($formattedResult['success'] && !empty($formattedResult['data'])) {
+
+                // Python considera exitoso si hay clientes en la respuesta, sin filtrar por CE específico
+                $customer = $formattedResult['data'][0]; // Tomar el primer cliente como Python
+                $customerName = $customer['organisation']['first_line_name'] ?? 'N/A';
+
+                Log::info("✅ Cliente encontrado por CE: {$ce} (lógica Python)", [
+                    'customer_name' => $customerName,
+                    'internal_id' => $customer['internal_id'] ?? null,
+                    'external_id' => $customer['external_id'] ?? null,
+                    'total_customers_returned' => count($formattedResult['data']),
+                    'behavior' => 'same_as_python_examples'
+                ]);
+
+                return $formattedResult; // Devolver todos los clientes como Python
+            }
+
+            return $formattedResult;
+        }
+
+        Log::warning("No se encontró ningún cliente con CE: {$ce}");
 
         return [
             'success' => false,
@@ -197,6 +341,8 @@ class CustomerService
      */
     public function findByPassport(string $passport)
     {
+        Log::info("Buscando cliente con Passport: {$passport}");
+
         $params = [
             'CustomerSelectionByElements' => [
                 'y6s:zPasaporte_EA8AE8AUBVHCSXVYS0FJ1R3ON' => [
@@ -216,14 +362,159 @@ class CustomerService
 
         $result = C4CClient::call($this->wsdl, $this->method, $params);
 
-        if ($result['success'] && isset($result['data']->Customer)) {
-            return $this->formatCustomerData($result['data']);
+        // Verificar la estructura correcta de la respuesta como viene del HTTP request
+        $hasCustomerData = false;
+        $customerData = null;
+
+        if ($result['success'] && $result['data']) {
+            // Estructura del HTTP request: Body->CustomerByElementsResponse_sync->Customer
+            if (isset($result['data']->Body->CustomerByElementsResponse_sync->Customer)) {
+                $hasCustomerData = true;
+                $customerData = $result['data']->Body->CustomerByElementsResponse_sync;
+                Log::info('✅ Estructura HTTP: Customer encontrado en Body->CustomerByElementsResponse_sync->Customer para Passport');
+            }
+            // Estructura del SoapClient tradicional: Customer directo
+            elseif (isset($result['data']->Customer)) {
+                $hasCustomerData = true;
+                $customerData = $result['data'];
+                Log::info('✅ Estructura SoapClient: Customer encontrado directamente para Passport');
+            }
+            else {
+                Log::warning('❌ No se encontró Customer en ninguna estructura conocida para Passport');
+            }
         }
+
+        if ($hasCustomerData && $customerData) {
+            $formattedResult = $this->formatCustomerData($customerData);
+
+            // Implementar la MISMA lógica que Python: success + 'Customer' en respuesta
+            if ($formattedResult['success'] && !empty($formattedResult['data'])) {
+
+                // Python considera exitoso si hay clientes en la respuesta, sin filtrar por Passport específico
+                $customer = $formattedResult['data'][0]; // Tomar el primer cliente como Python
+                $customerName = $customer['organisation']['first_line_name'] ?? 'N/A';
+
+                Log::info("✅ Cliente encontrado por Passport: {$passport} (lógica Python)", [
+                    'customer_name' => $customerName,
+                    'internal_id' => $customer['internal_id'] ?? null,
+                    'external_id' => $customer['external_id'] ?? null,
+                    'total_customers_returned' => count($formattedResult['data']),
+                    'behavior' => 'same_as_python_examples'
+                ]);
+
+                return $formattedResult; // Devolver todos los clientes como Python
+            }
+
+            return $formattedResult;
+        }
+
+        Log::warning("No se encontró ningún cliente con Passport: {$passport}");
 
         return [
             'success' => false,
             'error' => $result['error'] ?? 'Customer not found',
             'data' => null,
+        ];
+    }
+
+
+
+    /**
+     * Find customer with fallback (DNI -> RUC).
+     *
+     * @return array
+     */
+    public function findWithFallback(string $dni, string $ruc = null)
+    {
+        Log::info("Buscando cliente con fallback - DNI: {$dni}, RUC: {$ruc}");
+
+        // Paso 1: Buscar por DNI
+        $result = $this->findByDNI($dni);
+
+        if ($result['success'] && !empty($result['data'])) {
+            Log::info("Cliente encontrado por DNI: {$dni}");
+            return array_merge($result, [
+                'search_type' => 'DNI',
+                'document_used' => $dni,
+                'fallback_used' => false
+            ]);
+        }
+
+        // Paso 2: Si se proporciona RUC, buscar por RUC
+        if ($ruc) {
+            Log::info("Cliente no encontrado por DNI, intentando con RUC: {$ruc}");
+            $result = $this->findByRUC($ruc);
+
+            if ($result['success'] && !empty($result['data'])) {
+                Log::info("Cliente encontrado por RUC: {$ruc}");
+                return array_merge($result, [
+                    'search_type' => 'RUC',
+                    'document_used' => $ruc,
+                    'fallback_used' => true
+                ]);
+            }
+        }
+
+        Log::warning("Cliente no encontrado con ningún documento - DNI: {$dni}, RUC: {$ruc}");
+
+        return [
+            'success' => false,
+            'error' => 'Customer not found with any provided document',
+            'data' => null,
+            'search_type' => null,
+            'document_used' => null,
+            'fallback_used' => true
+        ];
+    }
+
+    /**
+     * Find customers with multiple documents.
+     *
+     * @return array
+     */
+    public function findMultiple(array $documents)
+    {
+        Log::info("Búsqueda múltiple con documentos: " . implode(', ', $documents));
+
+        foreach ($documents as $index => $document) {
+            $document = trim($document);
+
+            // Determinar tipo por longitud (simplificado)
+            if (strlen($document) == 8) {
+                $searchType = 'DNI';
+                $result = $this->findByDNI($document);
+            } elseif (strlen($document) == 11) {
+                $searchType = 'RUC';
+                $result = $this->findByRUC($document);
+            } else {
+                Log::warning("Documento {$document} no tiene formato reconocido");
+                continue;
+            }
+
+            if ($result['success'] && !empty($result['data'])) {
+                Log::info("Cliente encontrado con {$searchType}: {$document}");
+                return array_merge($result, [
+                    'search_type' => $searchType,
+                    'document_used' => $document,
+                    'attempt_number' => $index + 1,
+                    'total_attempts' => count($documents),
+                    'documents_tried' => array_slice($documents, 0, $index + 1)
+                ]);
+            } else {
+                Log::info("No encontrado con {$searchType}: {$document}");
+            }
+        }
+
+        Log::warning("Cliente no encontrado con ningún documento de: " . implode(', ', $documents));
+
+        return [
+            'success' => false,
+            'error' => 'Customer not found with any provided document',
+            'data' => null,
+            'search_type' => null,
+            'document_used' => null,
+            'documents_tried' => $documents,
+            'total_attempts' => count($documents)
         ];
     }
 
@@ -437,6 +728,27 @@ class CustomerService
                     $formattedCustomer[$key] = $value;
                 }
             }
+
+            // Agregar campos específicos de identificación que sabemos que existen
+            if (isset($customer->zDNI)) {
+                $formattedCustomer['zDNI'] = $customer->zDNI;
+                Log::info('✅ zDNI encontrado en customer', ['zDNI' => $customer->zDNI]);
+            }
+            if (isset($customer->zRuc)) {
+                $formattedCustomer['zRuc'] = $customer->zRuc;
+            }
+            if (isset($customer->zCE)) {
+                $formattedCustomer['zCE'] = $customer->zCE;
+            }
+            if (isset($customer->zPasaporte)) {
+                $formattedCustomer['zPasaporte'] = $customer->zPasaporte;
+            }
+
+            // Debug: mostrar todas las propiedades del customer
+            Log::info('Propiedades del customer:', [
+                'customer_keys' => array_keys((array)$customer),
+                'customer_preview' => json_encode($customer, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+            ]);
 
             // Agregar el cliente formateado a la lista
             $customers[] = $formattedCustomer;

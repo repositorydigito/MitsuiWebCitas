@@ -10,8 +10,10 @@ use App\Models\Local;
 use App\Models\MaintenanceType;
 use App\Models\Vehicle;
 use App\Services\VehiculoSoapService;
+use App\Services\C4C\AppointmentService;
 use Carbon\Carbon;
 use Filament\Pages\Page;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -38,14 +40,14 @@ class AgendarCita extends Page
         'marca' => 'TOYOTA',
     ];
 
-    // Datos del formulario
-    public string $nombreCliente = 'PABLO';
+    // Datos del formulario (se cargarán automáticamente desde el usuario autenticado)
+    public string $nombreCliente = '';
 
-    public string $emailCliente = 'pablo@mitsui.com.pe';
+    public string $emailCliente = '';
 
-    public string $apellidoCliente = 'RODRIGUEZ MENDOZA';
+    public string $apellidoCliente = '';
 
-    public string $celularCliente = '987654321';
+    public string $celularCliente = '';
 
     // Datos de la cita
     public string $fechaSeleccionada = '';
@@ -159,6 +161,51 @@ class AgendarCita extends Page
         }
     }
 
+    /**
+     * Cargar datos del cliente autenticado automáticamente
+     */
+    protected function cargarDatosCliente(): void
+    {
+        try {
+            $user = Auth::user();
+            
+            if ($user) {
+                // Dividir el nombre completo en nombres y apellidos
+                $nombreCompleto = $user->name ?? '';
+                $partesNombre = explode(' ', trim($nombreCompleto));
+                
+                // Si hay al menos una palabra, la primera va a nombres
+                if (count($partesNombre) >= 1) {
+                    $this->nombreCliente = $partesNombre[0];
+                }
+                
+                // Si hay más de una palabra, el resto va a apellidos
+                if (count($partesNombre) > 1) {
+                    $this->apellidoCliente = implode(' ', array_slice($partesNombre, 1));
+                }
+                
+                // Asignar email y teléfono
+                $this->emailCliente = $user->email ?? '';
+                $this->celularCliente = $user->phone ?? '';
+                
+                Log::info('[AgendarCita] Datos del cliente cargados automáticamente:', [
+                    'nombre' => $this->nombreCliente,
+                    'apellido' => $this->apellidoCliente,
+                    'email' => $this->emailCliente,
+                    'celular' => $this->celularCliente,
+                    'user_id' => $user->id,
+                    'document_type' => $user->document_type,
+                    'document_number' => $user->document_number,
+                ]);
+            } else {
+                Log::warning('[AgendarCita] No hay usuario autenticado. Manteniendo campos vacíos.');
+            }
+        } catch (\Exception $e) {
+            Log::error('[AgendarCita] Error al cargar datos del cliente: ' . $e->getMessage());
+            // Los campos quedarán vacíos en caso de error
+        }
+    }
+
     public function mount($vehiculoId = null): void
     {
         // Registrar todos los parámetros recibidos para depuración
@@ -167,6 +214,9 @@ class AgendarCita extends Page
             'request_all' => request()->all(),
             'query_string' => request()->getQueryString(),
         ]);
+
+        // CARGAR DATOS DEL CLIENTE AUTENTICADO AUTOMÁTICAMENTE
+        $this->cargarDatosCliente();
 
         // Intentar obtener el ID del vehículo de diferentes fuentes
         if (empty($vehiculoId) && request()->has('vehiculoId')) {
@@ -200,7 +250,17 @@ class AgendarCita extends Page
                 // Si no encontramos el vehículo en la base de datos, intentamos buscarlo en el servicio SOAP
                 try {
                     $service = app(VehiculoSoapService::class);
-                    $documentoCliente = '20605414410'; // En un caso real, esto vendría del usuario autenticado
+                    
+                    // Obtener documento del usuario autenticado
+                    $user = Auth::user();
+                    $documentoCliente = $user ? $user->document_number : null;
+                    
+                    if (!$documentoCliente) {
+                        Log::warning('[AgendarCita] No se encontró documento del usuario autenticado, usando documento por defecto');
+                        $documentoCliente = '20605414410'; // Fallback
+                    }
+                    
+                    Log::info("[AgendarCita] Consultando vehículos con documento: {$documentoCliente}");
                     $marcas = ['Z01', 'Z02', 'Z03']; // Todas las marcas disponibles
 
                     // Obtener todos los vehículos del cliente
@@ -1102,12 +1162,84 @@ class AgendarCita extends Page
             // Convertir la hora de formato "11:15 AM" a formato "HH:MM:SS"
             $horaFormateada = date('H:i:s', strtotime($this->horaSeleccionada));
 
-            // Crear la cita
+            // Obtener el usuario autenticado
+            $user = Auth::user();
+
+            // **PASO 1: ENVIAR A C4C PRIMERO** 🚀
+            Log::info("[AgendarCita] Enviando cita a C4C...");
+            
+            // Aumentar timeout de PHP para permitir operaciones largas con C4C
+            $timeoutOriginal = ini_get('max_execution_time');
+            set_time_limit(300); // 5 minutos para operaciones C4C
+            Log::info("[AgendarCita] Timeout PHP aumentado de {$timeoutOriginal}s a 300s");
+            
+            $appointmentService = app(AppointmentService::class);
+            
+            // Preparar datos para C4C
+            $fechaHoraInicio = Carbon::createFromFormat('Y-m-d H:i:s', $fechaFormateada . ' ' . $horaFormateada);
+            $fechaHoraFin = $fechaHoraInicio->copy()->addMinutes(45); // 45 minutos por defecto
+            
+            $citaData = [
+                'customer_id' => $user->c4c_internal_id ?? '1270002726', // Cliente de prueba si no tiene C4C ID
+                'employee_id' => '1740', // ID del asesor por defecto
+                'start_date' => $fechaHoraInicio->format('Y-m-d H:i:s'),
+                'end_date' => $fechaHoraFin->format('Y-m-d H:i:s'),
+                'center_id' => $localSeleccionado->code,
+                'vehicle_plate' => $vehicle->license_plate,
+                'customer_name' => $this->nombreCliente . ' ' . $this->apellidoCliente,
+                'notes' => $this->comentarios ?: 'Cita agendada desde la aplicación web',
+                'express' => false,
+            ];
+
+            Log::info("[AgendarCita] Datos C4C:", $citaData);
+
+            // Enviar a C4C
+            try {
+                $resultadoC4C = $appointmentService->create($citaData);
+            } catch (\Exception $e) {
+                Log::error("[AgendarCita] Excepción al enviar cita a C4C: " . $e->getMessage());
+                
+                // Restaurar timeout original de PHP en caso de excepción
+                set_time_limit($timeoutOriginal);
+                Log::info("[AgendarCita] Timeout PHP restaurado a {$timeoutOriginal}s (por excepción)");
+                
+                \Filament\Notifications\Notification::make()
+                    ->title('Error al Agendar Cita')
+                    ->body('Error de conexión con C4C: ' . $e->getMessage())
+                    ->danger()
+                    ->send();
+
+                return;
+            }
+
+            if (!$resultadoC4C['success']) {
+                Log::error("[AgendarCita] Error al enviar cita a C4C: " . ($resultadoC4C['error'] ?? 'Error desconocido'));
+                
+                // Restaurar timeout original de PHP en caso de error
+                set_time_limit($timeoutOriginal);
+                Log::info("[AgendarCita] Timeout PHP restaurado a {$timeoutOriginal}s (por error)");
+                
+                \Filament\Notifications\Notification::make()
+                    ->title('Error al Agendar Cita')
+                    ->body('Error al comunicarse con el sistema C4C: ' . ($resultadoC4C['error'] ?? 'Error desconocido'))
+                    ->danger()
+                    ->send();
+
+                return;
+            }
+
+            Log::info("[AgendarCita] ✅ Cita enviada exitosamente a C4C", $resultadoC4C['data'] ?? []);
+
+            // Restaurar timeout original de PHP
+            set_time_limit($timeoutOriginal);
+            Log::info("[AgendarCita] Timeout PHP restaurado a {$timeoutOriginal}s");
+
+            // **PASO 2: GUARDAR EN BD LOCAL** 💾
             $appointment = new Appointment;
             $appointment->appointment_number = 'CITA-'.date('Ymd').'-'.strtoupper(Str::random(5));
             $appointment->vehicle_id = $vehicle->id;
             $appointment->premise_id = $localSeleccionado->id;
-            $appointment->customer_ruc = '20605414410';
+            $appointment->customer_ruc = $user ? $user->document_number : '20605414410';
             $appointment->customer_name = $this->nombreCliente;
             $appointment->customer_last_name = $this->apellidoCliente;
             $appointment->customer_email = $this->emailCliente;
@@ -1133,7 +1265,13 @@ class AgendarCita extends Page
             $appointment->service_mode = implode(', ', $serviceModes);
             $appointment->maintenance_type = $this->tipoMantenimiento;
             $appointment->comments = $this->comentarios;
-            $appointment->status = 'pending';
+            $appointment->status = 'confirmed'; // Confirmada porque ya fue enviada a C4C
+            
+            // **CAMPOS C4C** 🎯
+            $appointment->c4c_uuid = $resultadoC4C['data']['uuid'] ?? null;
+            $appointment->is_synced = true;
+            $appointment->synced_at = now();
+            
             $appointment->save();
 
             // Guardar los servicios adicionales

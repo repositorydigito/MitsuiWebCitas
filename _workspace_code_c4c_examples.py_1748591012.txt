@@ -1,0 +1,65 @@
+2025-05-30 15:43:28,298 - INFO - 🚀 EJECUTANDO EJEMPLOS PRÁCTICOS DE USO
+2025-05-30 15:43:28,298 - INFO - Cliente C4C inicializado para https://my317791.crm.ondemand.com
+
+============================================================
+📝 EJEMPLO 1: FLUJO DE REGISTRO DE CLIENTE
+============================================================
+2025-05-30 15:43:28,298 - INFO - 🔍 EJEMPLO: Flujo de registro para DNI 40359482
+2025-05-30 15:43:28,298 - INFO - Consultando cliente por DNI: 40359482
+2025-05-30 15:43:28,298 - INFO - Enviando request SOAP a: https://my317791.crm.ondemand.com/sap/bc/srt/scs/sap/querycustomerin1?sap-vhost=my317791.crm.ondemand.com
+2025-05-30 15:43:28,747 - INFO - Request exitoso - Status: 200
+2025-05-30 15:43:28,747 - INFO - ✅ Cliente encontrado por DNI
+Resultado: {'found': True, 'search_type': 'DNI', 'document': '40359482', 'client_data': {'internal_id': '1000140', 'external_id': '500000080', 'name': 'ALEJANDRO TOLEDO PARRA'}}
+
+============================================================
+📅 EJEMPLO 2: FLUJO DE RESERVA DE CITA
+============================================================
+2025-05-30 15:43:28,748 - INFO - 📅 EJEMPLO: Reserva de cita para cliente 1270000347
+2025-05-30 15:43:28,748 - INFO - 🔍 Verificando citas pendientes existentes...
+2025-05-30 15:43:28,748 - INFO - Consultando citas pendientes para cliente: 1270000347
+2025-05-30 15:43:28,748 - INFO - Enviando request SOAP a: https://my317791.crm.ondemand.com/sap/bc/srt/scs/sap/yy6saj0kgy_wscitas?sap-vhost=my317791.crm.ondemand.com
+2025-05-30 15:43:29,115 - INFO - Request exitoso - Status: 200
+2025-05-30 15:43:29,115 - INFO - 📊 Cliente tiene 2 cita(s) pendiente(s)
+2025-05-30 15:43:29,115 - INFO - 📝 Creando cita para 2025-05-31 15:00
+2025-05-30 15:43:29,115 - INFO - Creando cita para cliente: 1270000347
+2025-05-30 15:43:29,115 - INFO - Enviando request SOAP a: https://my317791.crm.ondemand.com/sap/bc/srt/scs/sap/manageappointmentactivityin1?sap-vhost=my317791.crm.ondemand.com
+2025-05-30 15:43:31,191 - INFO - Request exitoso - Status: 200
+2025-05-30 15:43:31,191 - INFO - ✅ Cita creada exitosamente
+2025-05-30 15:43:31,191 - INFO - 🔍 Verificando que la cita fue creada...
+2025-05-30 15:43:31,191 - INFO - Consultando citas pendientes para cliente: 1270000347
+2025-05-30 15:43:31,191 - INFO - Enviando request SOAP a: https://my317791.crm.ondemand.com/sap/bc/srt/scs/sap/yy6saj0kgy_wscitas?sap-vhost=my317791.crm.ondemand.com
+2025-05-30 15:43:31,639 - INFO - Request exitoso - Status: 200
+Resultado: {'appointment_created': True, 'previous_appointments': 2, 'current_appointments': 3, 'appointment_data': {'business_partner_id': '1270000347', 'employee_id': '7000002', 'start_datetime': '2025-05-31T15:00:00Z', 'end_datetime': '2025-05-31T15:45:00Z', 'observation': 'Cita reservada via sistema web - 2025-05-30 15:43', 'client_name': 'Cliente Sistema Web', 'exit_date': '2025-05-31', 'exit_time': '15:45:00', 'center_id': 'M013', 'license_plate': 'WEB-001', 'appointment_status': '1', 'is_express': 'false'}, 'creation_response': {'url': 'https://my317791.crm.ondemand.com/sap/bc/srt/scs/sap/manageappointmentactivityin1?sap-vhost=my317791.crm.ondemand.com', 'status_code': 200, 'headers': {'Content-Type': 'text/xml; charset=utf-8', 'Content-Encoding': 'gzip', 'Content-Length': '553', 'Accept': 'text/xml', 'sap-srt_id': '20250530/024331/v1.00_final_6.40/4158D15E4B3A1FD08FA538FE2221840D', 'sap-srt_server_info': 'LRC_117,2032 ,http://sap.com/xi/A1S/Global,ManageAppointmentActivityIn,AppointmentActivityBundleMaintainRequest_sync_V1,1885', 'sap-srt_server_info_ext': '0', 'Date': 'Fri, 30 May 2025 07:43:31 GMT', 'Connection': 'keep-alive', 'Vary': 'Accept-Encoding', 'Server-Timing': 'edge; dur=2, origin; dur=2069, cdn-cache; desc=MISS', 'Strict-Transport-Security': 'max-age=31536000 ; includeSubDomains', 'X-TEST-CONFIG': 'YES'}, 'response_text': '<soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/"><soap-env:Header/><soap-env:Body><n0:AppointmentActivityBundleMaintainConfirmation_sync_V1 xmlns:n0="http://sap.com/xi/SAPGlobal20/Global" xmlns:prx="urn:sap.com:proxy:LRC:/1SAI/TAE7E61618918A450C3B9F6:804"><AppointmentActivity><ChangeStateID>                 20250530074329.8638200</ChangeStateID><UUID>4158d15e-4b3a-1fd0-8fa5-38e22988440d</UUID><ID>6761</ID><GroupwareItemID> </GroupwareItemID></AppointmentActivity><Log><MaximumLogItemSeverityCode>2</MaximumLogItemSeverityCode><Item><TypeID>001(/Y6SAJ0KGY_A0EE55D4C3/)</TypeID><SeverityCode>2</SeverityCode><Note>No se encontró la placa.</Note></Item><Item><TypeID>013(/BUSINESS_ACTIVITY_RO/)</TypeID><SeverityCode>2</SeverityCode><Note>Please enter a location or it will be defaulted on save.</Note></Item><Item><TypeID>002(/BUSINESS_ACTIVITY_RO/)</TypeID><SeverityCode>2</SeverityCode><Note>Please make an entry. Otherwise, the system will enter one when you save.</Note></Item></Log></n0:AppointmentActivityBundleMaintainConfirmation_sync_V1></soap-env:Body></soap-env:Envelope>', 'request_headers': {'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': '""', 'Authorization': 'Basic VVNDUDpJbmljaW8wMQ==', 'User-Agent': 'C4C-Test-Client/1.0'}, 'request_body': '<?xml version="1.0" encoding="UTF-8"?>\n<soapenv:Envelope \n    xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" \n    xmlns:glob="http://sap.com/xi/SAPGlobal20/Global" \n    xmlns:y6s="http://0002961282-one-off.sap.com/Y6SAJ0KGY_" \n    xmlns:a25="http://sap.com/xi/AP/CustomerExtension/BYD/A252F">\n    <soapenv:Header/>\n    <soapenv:Body>\n        <glob:AppointmentActivityBundleMaintainRequest_sync_V1>\n            <AppointmentActivity actionCode="01">\n                <DocumentTypeCode>0001</DocumentTypeCode>\n                <LifeCycleStatusCode>1</LifeCycleStatusCode>\n                <MainActivityParty>\n                    <BusinessPartnerInternalID>1270000347</BusinessPartnerInternalID>\n                </MainActivityParty>\n                <AttendeeParty>\n                    <EmployeeID>7000002</EmployeeID>\n                </AttendeeParty>\n                <StartDateTime timeZoneCode="UTC-5">2025-05-31T15:00:00Z</StartDateTime>\n                <EndDateTime timeZoneCode="UTC-5">2025-05-31T15:45:00Z</EndDateTime>\n                <Text actionCode="01">\n                    <TextTypeCode>10002</TextTypeCode>\n                    <ContentText>Cita reservada via sistema web - 2025-05-30 15:43</ContentText>\n                </Text>\n                <y6s:zClienteComodin>Cliente Sistema Web</y6s:zClienteComodin>\n                <y6s:zFechaHoraProbSalida>2025-05-31</y6s:zFechaHoraProbSalida>\n                <y6s:zHoraProbSalida>15:45:00</y6s:zHoraProbSalida>\n                <y6s:zIDCentro>M013</y6s:zIDCentro>\n                <y6s:zPlaca>WEB-001</y6s:zPlaca>\n                <y6s:zEstadoCita>1</y6s:zEstadoCita>\n                <y6s:zVieneHCP>X</y6s:zVieneHCP>\n                <y6s:zExpress>false</y6s:zExpress>\n            </AppointmentActivity>\n        </glob:AppointmentActivityBundleMaintainRequest_sync_V1>\n    </soapenv:Body>\n</soapenv:Envelope>', 'timestamp': '2025-05-30T15:43:31.191082', 'success': True}}
+
+============================================================
+🔍 EJEMPLO 3: BÚSQUEDA CON FALLBACK
+============================================================
+2025-05-30 15:43:31,639 - INFO - 🔍 EJEMPLO: Búsqueda con fallback para documentos ['12345678', '40359482', '99999999999']
+2025-05-30 15:43:31,639 - INFO - Consultando cliente por DNI: 12345678
+2025-05-30 15:43:31,639 - INFO - Enviando request SOAP a: https://my317791.crm.ondemand.com/sap/bc/srt/scs/sap/querycustomerin1?sap-vhost=my317791.crm.ondemand.com
+2025-05-30 15:43:32,070 - INFO - Request exitoso - Status: 200
+2025-05-30 15:43:32,070 - INFO - ✅ Cliente encontrado con DNI: 12345678
+Resultado: {'found': True, 'search_type': 'DNI', 'document_used': '12345678', 'attempt_number': 1, 'total_attempts': 3, 'client_data': {'internal_id': '1200020962', 'external_id': '1200020962', 'name': 'VARIOS'}}
+
+============================================================
+📊 EJEMPLO 4: VERIFICACIÓN MASIVA DE CITAS
+============================================================
+2025-05-30 15:43:32,070 - INFO - 📊 EJEMPLO: Verificación masiva para 3 clientes
+2025-05-30 15:43:32,070 - INFO - 🔍 Verificando cliente 1270002726
+2025-05-30 15:43:32,070 - INFO - Consultando citas pendientes para cliente: 1270002726
+2025-05-30 15:43:32,070 - INFO - Enviando request SOAP a: https://my317791.crm.ondemand.com/sap/bc/srt/scs/sap/yy6saj0kgy_wscitas?sap-vhost=my317791.crm.ondemand.com
+2025-05-30 15:43:32,366 - INFO - Request exitoso - Status: 200
+2025-05-30 15:43:32,366 - INFO - ✅ Cliente 1270002726: 1 cita(s)
+2025-05-30 15:43:32,366 - INFO - 🔍 Verificando cliente 1000000001
+2025-05-30 15:43:32,366 - INFO - Consultando citas pendientes para cliente: 1000000001
+2025-05-30 15:43:32,366 - INFO - Enviando request SOAP a: https://my317791.crm.ondemand.com/sap/bc/srt/scs/sap/yy6saj0kgy_wscitas?sap-vhost=my317791.crm.ondemand.com
+2025-05-30 15:43:32,521 - INFO - Request exitoso - Status: 200
+2025-05-30 15:43:32,521 - INFO - ✅ Cliente 1000000001: 0 cita(s)
+2025-05-30 15:43:32,521 - INFO - 🔍 Verificando cliente 1270000347
+2025-05-30 15:43:32,521 - INFO - Consultando citas pendientes para cliente: 1270000347
+2025-05-30 15:43:32,521 - INFO - Enviando request SOAP a: https://my317791.crm.ondemand.com/sap/bc/srt/scs/sap/yy6saj0kgy_wscitas?sap-vhost=my317791.crm.ondemand.com
+2025-05-30 15:43:32,847 - INFO - Request exitoso - Status: 200
+2025-05-30 15:43:32,847 - INFO - ✅ Cliente 1270000347: 3 cita(s)
+2025-05-30 15:43:32,847 - INFO - 📊 Resumen: 3/3 exitosos, 4 citas total
+Resultado resumen: {'total_clients_checked': 3, 'successful_checks': 3, 'failed_checks': 0, 'total_pending_appointments': 4, 'clients_with_appointments': 2, 'clients_without_appointments': 1, 'detailed_results': [{'client_id': '1270002726', 'success': True, 'pending_appointments': 1, 'has_appointments': True}, {'client_id': '1000000001', 'success': True, 'pending_appointments': 0, 'has_appointments': False}, {'client_id': '1270000347', 'success': True, 'pending_appointments': 3, 'has_appointments': True}]}
+2025-05-30 15:43:32,847 - INFO - 🏁 EJEMPLOS COMPLETADOS

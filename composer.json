@@ -13,7 +13,9 @@
         "joaopaulolndev/filament-edit-profile": "^1.0",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
+        "livewire/livewire": "^3.6",
         "phpoffice/phpspreadsheet": "^4.2",
+        "solution-forest/filament-simplelightbox": "^0.0.11",
         "spatie/laravel-permission": "^6.18",
         "tomatophp/filament-users": "*"
     },

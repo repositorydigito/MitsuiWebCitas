@@ -12,7 +12,7 @@ return [
         'password' => env('C4C_PASSWORD', 'Inicio01'),
     ],
 
-    'timeout' => env('C4C_TIMEOUT', 30),
+    'timeout' => env('C4C_TIMEOUT', 120),
 
     'services' => [
         'customer' => [

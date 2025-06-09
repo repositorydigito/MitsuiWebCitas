@@ -130,8 +130,8 @@ class VehiculoWebServiceHealthCheck
                         'verify_peer_name' => false,
                     ],
                 ]),
-                'login' => config('services.vehiculos.usuario'),
-                'password' => config('services.vehiculos.password'),
+                'login' => config('services.sap_3p.usuario'),
+                'password' => config('services.sap_3p.password'),
             ];
 
             // Intentar crear el cliente SOAP

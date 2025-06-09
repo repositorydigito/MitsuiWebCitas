@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class MiCuenta extends Page
 {
@@ -32,16 +33,6 @@ class MiCuenta extends Page
         return [];
     }
 
-    // Datos del usuario (simulados por ahora)
-    public array $usuario = [
-        'nombres' => 'Francisco Luis',
-        'apellidos' => 'Salas Ruiz',
-        'celular' => '994025223',
-        'correo' => 'fsalas@mitsuiautomotriz.com',
-        'tipo_documento' => 'DNI',
-        'numero_documento' => '44885533',
-    ];
-
     // Variables para el modo de edición
     public int $pasoActual = 1;
 
@@ -53,14 +44,51 @@ class MiCuenta extends Page
     // Tipos de documento disponibles
     public array $tiposDocumento = [
         'DNI' => 'DNI',
+        'RUC' => 'RUC',
         'CE' => 'Carnet de Extranjería',
-        'PAS' => 'Pasaporte',
+        'PASAPORTE' => 'Pasaporte',
     ];
 
     public function mount(): void
     {
-        // Inicializar los datos de edición con los datos actuales del usuario
-        $this->datosEdicion = $this->usuario;
+        // Inicializar los datos de edición con los datos del usuario autenticado
+        $this->datosEdicion = $this->getUserData();
+    }
+
+    // Método para obtener datos del usuario autenticado
+    public function getUserData(): array
+    {
+        $user = Auth::user();
+        
+        return [
+            'nombres' => $this->splitName($user->name)['nombres'],
+            'apellidos' => $this->splitName($user->name)['apellidos'],
+            'celular' => $user->phone ?? '',
+            'correo' => $user->email ?? '',
+            'tipo_documento' => $user->document_type ?? '',
+            'numero_documento' => $user->document_number ?? '',
+        ];
+    }
+
+    // Método auxiliar para dividir el nombre completo
+    private function splitName(?string $fullName): array
+    {
+        if (!$fullName) {
+            return ['nombres' => '', 'apellidos' => ''];
+        }
+
+        $parts = explode(' ', trim($fullName));
+        
+        // Si solo hay una palabra, va a nombres
+        if (count($parts) === 1) {
+            return ['nombres' => $parts[0], 'apellidos' => ''];
+        }
+        
+        // Si hay dos o más palabras, la primera va a nombres, el resto a apellidos
+        $nombres = $parts[0];
+        $apellidos = implode(' ', array_slice($parts, 1));
+        
+        return ['nombres' => $nombres, 'apellidos' => $apellidos];
     }
 
     // Método para iniciar la edición
@@ -68,7 +96,7 @@ class MiCuenta extends Page
     {
         $this->modoEdicion = true;
         $this->pasoActual = 1;
-        $this->datosEdicion = $this->usuario;
+        $this->datosEdicion = $this->getUserData();
     }
 
     // Método para cancelar la edición
@@ -76,7 +104,7 @@ class MiCuenta extends Page
     {
         $this->modoEdicion = false;
         $this->pasoActual = 1;
-        $this->datosEdicion = $this->usuario;
+        $this->datosEdicion = $this->getUserData();
     }
 
     // Método para avanzar al siguiente paso
@@ -89,7 +117,7 @@ class MiCuenta extends Page
                 'datosEdicion.apellidos' => 'required|string|max:100',
                 'datosEdicion.correo' => 'required|email|max:100',
                 'datosEdicion.celular' => 'required|string|max:15',
-                'datosEdicion.tipo_documento' => 'required|string|in:DNI,CE,PAS',
+                'datosEdicion.tipo_documento' => 'required|string|in:DNI,RUC,CE,PASAPORTE',
                 'datosEdicion.numero_documento' => 'required|string|max:20',
             ]);
         }
@@ -109,14 +137,24 @@ class MiCuenta extends Page
     // Método para guardar los cambios
     public function guardarCambios(): void
     {
-        // Aquí se guardarían los cambios en la base de datos
-        // Por ahora, solo actualizamos los datos del usuario en memoria
-        $this->usuario = $this->datosEdicion;
+        $user = Auth::user();
+        
+        // Combinar nombres y apellidos para el campo name
+        $fullName = trim($this->datosEdicion['nombres'] . ' ' . $this->datosEdicion['apellidos']);
+        
+        // Actualizar el usuario en la base de datos
+        $user->update([
+            'name' => $fullName,
+            'email' => $this->datosEdicion['correo'],
+            'phone' => $this->datosEdicion['celular'],
+            'document_type' => $this->datosEdicion['tipo_documento'],
+            'document_number' => $this->datosEdicion['numero_documento'],
+        ]);
 
         // Registrar la acción en los logs
         Log::info('Usuario actualizó sus datos personales', [
-            'usuario' => $this->usuario['correo'],
-            'datos' => $this->usuario,
+            'user_id' => $user->id,
+            'datos' => $this->datosEdicion,
         ]);
 
         // Mostrar notificación de éxito
@@ -138,7 +176,6 @@ class MiCuenta extends Page
         $this->pasoActual = 1;
 
         // Redirigir a la página de Cita de servicio
-        // En un entorno real, esto redireccionaría a la página de citas
-        return redirect()->to('/admin/vehiculos');
+        $this->redirect('/admin/vehiculos');
     }
 }

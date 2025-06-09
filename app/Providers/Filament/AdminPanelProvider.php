@@ -1,4 +1,4 @@
-<?php
+<?php                                                                                                                                                                                                   
 
 namespace App\Providers\Filament;
 
@@ -30,13 +30,14 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Joaopaulolndev\FilamentEditProfile\FilamentEditProfilePlugin;
 use App\Filament\Pages\Auth\Login;
-use App\Filament\Pages\Auth\Register;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Blade;
 
 class AdminPanelProvider extends PanelProvider
 {
+
+
     public function panel(Panel $panel): Panel
     {
         return $panel
@@ -44,7 +45,6 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login(Login::class)
-            ->registration(Register::class)
             ->darkMode(false)
             ->sidebarFullyCollapsibleOnDesktop()
             ->colors([
@@ -94,6 +94,10 @@ class AdminPanelProvider extends PanelProvider
                     ->setIcon('heroicon-o-user-circle')
                     ->shouldRegisterNavigation(),
             ])
+            ->renderHook(
+                PanelsRenderHook::BODY_START,
+                fn (): string => Blade::render('<div id="corporate-theme-enhancer"></div>'),
+            )
             ->renderHook(
                 PanelsRenderHook::BODY_END,
                 fn () => auth()->check() ? view('customFooter') : '',

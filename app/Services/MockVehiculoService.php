@@ -40,6 +40,9 @@ class MockVehiculoService
             $suffix = substr($documentoCliente, -4);
             $vehiculo['vhclie'] = str_replace('AA', $suffix, $vehiculo['vhclie']);
 
+            // **NUEVO: Agregar campo fuente_datos para compatibilidad con persistencia**
+            $vehiculo['fuente_datos'] = 'Mock_Data';
+
             return $vehiculo;
         });
 
@@ -83,6 +86,7 @@ class MockVehiculoService
                 'aniomod' => $anio,
                 'modver' => "{$modelo} {$version}",
                 'marca_codigo' => $marca,
+                'fuente_datos' => 'Mock_Data_Ejemplo',
             ]);
         }
 
