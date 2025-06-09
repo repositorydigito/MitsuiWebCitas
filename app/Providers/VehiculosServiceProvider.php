@@ -34,7 +34,8 @@ class VehiculosServiceProvider extends ServiceProvider
             return new VehiculoSoapService(
                 config('services.sap_3p.wsdl_url'), // Usar la nueva configuración SAP 3P
                 app(VehiculoWebServiceHealthCheck::class),
-                app(MockVehiculoService::class)
+                app(MockVehiculoService::class),
+                app(\App\Services\C4C\AppointmentQueryService::class) // Nueva dependencia C4C
             );
         });
     }

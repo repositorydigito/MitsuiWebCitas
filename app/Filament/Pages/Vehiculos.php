@@ -86,29 +86,68 @@ class Vehiculos extends Page
             if ($webserviceEnabled) {
                 // Activar estado de carga para webservice
                 $this->isLoading = true;
-                $this->loadingMessage = 'Consultando vehículos en el webservice SAP...';
+                $this->loadingMessage = 'Consultando vehículos en SAP (15s timeout)...';
                 $this->dataSource = 'webservice';
 
-                Log::info('[VehiculosPage] Webservice habilitado, cargando vehículos desde el servicio SOAP');
+                Log::info('[VehiculosPage] Webservice habilitado, cargando vehículos con timeout de 15 segundos');
 
-                $documentoCliente = '20605414410';
+                // Obtener el documento del usuario autenticado
+                $user = \Illuminate\Support\Facades\Auth::user();
+                $documentoCliente = $user?->document_number ?? '20605414410';
+                Log::info("[VehiculosPage] Usando documento del usuario autenticado: {$documentoCliente}");
+
                 $service = app(VehiculoSoapService::class);
-                $this->todosLosVehiculos = $service->getVehiculosCliente($documentoCliente, $codigosMarca);
-
-                // Verificar si realmente obtuvo datos del webservice o usó mock
-                if ($this->todosLosVehiculos->isNotEmpty()) {
-                    // Verificar si los datos parecen ser mock (tienen ciertos patrones)
-                    $primerVehiculo = $this->todosLosVehiculos->first();
-                    if (isset($primerVehiculo['numpla']) && str_contains($primerVehiculo['numpla'], 'ABC-')) {
-                        $this->dataSource = 'mock';
-                        $this->loadingMessage = 'Datos obtenidos desde servicio mock (webservice no disponible)';
+                
+                // Implementar timeout de 15 segundos usando set_time_limit
+                $timeoutStart = time();
+                $maxExecutionTime = 15;
+                
+                try {
+                    // Establecer timeout específico para esta operación
+                    set_time_limit($maxExecutionTime + 5); // +5 segundos de margen
+                    
+                    $this->todosLosVehiculos = $service->getVehiculosCliente($documentoCliente, $codigosMarca);
+                    
+                    $executionTime = time() - $timeoutStart;
+                    Log::info("[VehiculosPage] Flujo completado en {$executionTime} segundos");
+                    
+                    // Verificar la fuente real de los datos basándose en el campo fuente_datos
+                    if ($this->todosLosVehiculos->isNotEmpty()) {
+                        $primerVehiculo = $this->todosLosVehiculos->first();
+                        $fuenteDatos = $primerVehiculo['fuente_datos'] ?? 'unknown';
+                        
+                        switch ($fuenteDatos) {
+                            case 'SAP_Z3PF':
+                                $this->dataSource = 'webservice';
+                                $this->loadingMessage = "Datos obtenidos desde SAP en {$executionTime}s";
+                                break;
+                            case 'C4C_WSCitas':
+                                $this->dataSource = 'c4c';
+                                $this->loadingMessage = "Datos obtenidos desde C4C en {$executionTime}s";
+                                break;
+                            case 'BaseDatos_Local':
+                                $this->dataSource = 'database';
+                                $this->loadingMessage = "Datos obtenidos desde BD local en {$executionTime}s";
+                                break;
+                            default:
+                                $this->dataSource = 'mock';
+                                $this->loadingMessage = "Datos simulados (servicios no disponibles) - {$executionTime}s";
+                                break;
+                        }
                     } else {
-                        $this->dataSource = 'webservice';
-                        $this->loadingMessage = 'Datos obtenidos desde webservice SAP exitosamente';
+                        $this->dataSource = 'empty';
+                        $this->loadingMessage = 'No se encontraron vehículos en ningún sistema';
                     }
-                } else {
-                    $this->dataSource = 'mock';
-                    $this->loadingMessage = 'No se encontraron vehículos en el webservice';
+                    
+                } catch (\Exception $e) {
+                    $executionTime = time() - $timeoutStart;
+                    if ($executionTime >= $maxExecutionTime) {
+                        Log::warning("[VehiculosPage] Timeout alcanzado ({$executionTime}s), usando fallback");
+                        $this->loadingMessage = 'Timeout en servicios, cargando desde BD local...';
+                        throw new \Exception("Timeout de {$maxExecutionTime}s alcanzado");
+                    } else {
+                        throw $e;
+                    }
                 }
 
             } else {

@@ -654,7 +654,7 @@ class CrearCampana extends Page
 
     public function volverACampanas()
     {
-        return $this->redirect(Campanas::getUrl());
+        $this->redirect(Campanas::getUrl());
     }
 
     /**

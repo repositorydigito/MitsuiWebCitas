@@ -839,7 +839,7 @@ class Campanas extends Page
             Log::info("[CampanasPage] Redirigiendo a edición de campaña: {$campana->codigo} con ID: {$campana->id} - URL: {$url}");
 
             // Usar el método redirect de Livewire
-            return $this->redirect($url);
+            $this->redirect($url);
 
         } catch (\Exception $e) {
             Log::error('[CampanasPage] Error al editar campaña: '.$e->getMessage()."\nTrace: ".$e->getTraceAsString());

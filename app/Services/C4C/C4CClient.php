@@ -21,7 +21,7 @@ class C4CClient
                 'trace' => true,
                 'exceptions' => true,
                 'cache_wsdl' => WSDL_CACHE_NONE,
-                'connection_timeout' => config('c4c.timeout', 30),
+                'connection_timeout' => config('c4c.timeout', 120),
                 'login' => config('c4c.auth.username'),
                 'password' => config('c4c.auth.password'),
                 'stream_context' => stream_context_create([
@@ -34,7 +34,7 @@ class C4CClient
                             'Authorization: Basic '.base64_encode(config('c4c.auth.username').':'.config('c4c.auth.password')),
                             'Content-Type: text/xml; charset=utf-8',
                         ],
-                        'timeout' => config('c4c.timeout', 30),
+                        'timeout' => config('c4c.timeout', 120),
                     ],
                 ]),
             ];
@@ -52,7 +52,7 @@ class C4CClient
                     'header' => [
                         'Authorization: Basic '.base64_encode(config('c4c.auth.username').':'.config('c4c.auth.password')),
                     ],
-                    'timeout' => config('c4c.timeout', 30),
+                    'timeout' => config('c4c.timeout', 120),
                 ],
             ]));
 
@@ -161,10 +161,10 @@ class C4CClient
             ]);
 
             // Configurar timeout específico para citas (más tiempo)
-            $timeout = config('c4c.timeout', 30); // Default
+            $timeout = config('c4c.timeout', 120); // Default aumentado
             if (strpos($wsdl, 'manageappointmentactivityin1') !== false ||
                 strpos($wsdl, 'yy6saj0kgy_wscitas') !== false) {
-                $timeout = 60; // 60 segundos para operaciones de citas
+                $timeout = 180; // 3 minutos para operaciones de citas
                 Log::info("⏱️ Usando timeout extendido para operaciones de citas: {$timeout}s");
             }
 
@@ -177,7 +177,7 @@ class C4CClient
                 CURLOPT_HTTPHEADER => $headers,
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_TIMEOUT => $timeout,
-                CURLOPT_CONNECTTIMEOUT => 15, // Más tiempo para conectar
+                CURLOPT_CONNECTTIMEOUT => 30, // Más tiempo para conectar
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_SSL_VERIFYHOST => false,
                 CURLOPT_FOLLOWLOCATION => true,

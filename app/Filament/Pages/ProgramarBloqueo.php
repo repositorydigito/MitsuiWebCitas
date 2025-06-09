@@ -173,7 +173,7 @@ class ProgramarBloqueo extends Page implements HasForms
     public function cerrarYVolver()
     {
         // Redirigir a la página de programación de citas con parámetro para forzar recarga
-        return redirect()->route('filament.admin.pages.programacion-citas-servicio', ['refresh' => time()]);
+        $this->redirect(route('filament.admin.pages.programacion-citas-servicio', ['refresh' => time()]));
     }
 
     public function updatedData($value, $name)

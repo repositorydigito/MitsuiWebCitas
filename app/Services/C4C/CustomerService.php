@@ -39,6 +39,35 @@ class CustomerService
     }
 
     /**
+     * Find a customer by document type and number.
+     *
+     * @return array|null
+     */
+    public function findByDocument(string $documentType, string $documentNumber): ?array
+    {
+        Log::info("Buscando cliente con {$documentType}: {$documentNumber}");
+
+        $result = match($documentType) {
+            'DNI' => $this->findByDNI($documentNumber),
+            'RUC' => $this->findByRUC($documentNumber),
+            'CE' => $this->findByCE($documentNumber),
+            'PASAPORTE' => $this->findByPassport($documentNumber),
+            default => [
+                'success' => false,
+                'error' => 'Tipo de documento no válido',
+                'data' => null,
+            ],
+        };
+
+        // Si encontró datos, devolver el primer cliente
+        if ($result['success'] && !empty($result['data'])) {
+            return $result['data'][0]; // Retornar primer cliente encontrado
+        }
+
+        return null; // No encontrado
+    }
+
+    /**
      * Find a customer by DNI.
      *
      * @return array

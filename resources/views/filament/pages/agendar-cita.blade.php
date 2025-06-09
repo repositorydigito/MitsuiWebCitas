@@ -34,10 +34,9 @@
             type="text"
             id="nombreCliente"
             wire:model="nombreCliente"
-            value="PABLO"
             placeholder="Nombres"
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50"
-            readonly
+            required
         >
     </div>
     <div>
@@ -45,10 +44,9 @@
             type="text"
             id="apellidoCliente"
             wire:model="apellidoCliente"
-            value="RODRIGUEZ MENDOZA"
             placeholder="Apellidos"
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50"
-            readonly
+            required
         >
     </div>
     <div>
@@ -56,10 +54,9 @@
             type="email"
             id="emailCliente"
             wire:model="emailCliente"
-            value="pablo@mitsui.com.pe"
             placeholder="Email"
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50"
-            readonly
+            required
         >
     </div>
     <div>
@@ -67,10 +64,9 @@
             type="tel"
             id="celularCliente"
             wire:model="celularCliente"
-            value="987654321"
             placeholder="Celular"
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50"
-            readonly
+            required
         >
     </div>
 </div>
