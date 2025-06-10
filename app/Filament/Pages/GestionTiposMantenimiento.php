@@ -20,7 +20,9 @@ class GestionTiposMantenimiento extends Page
 
     protected static string $view = 'filament.pages.gestion-tipos-mantenimiento';
 
-    protected static ?string $navigationGroup = 'Configuración';
+    protected static ?string $navigationGroup = '⚙️ Configuración';
+    
+    protected static ?int $navigationSort = 3;
 
     // Propiedades para la tabla
     public Collection $tiposMantenimiento;

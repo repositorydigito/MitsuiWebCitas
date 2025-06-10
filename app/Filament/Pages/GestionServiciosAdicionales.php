@@ -20,7 +20,9 @@ class GestionServiciosAdicionales extends Page
 
     protected static string $view = 'filament.pages.gestion-servicios-adicionales';
 
-    protected static ?string $navigationGroup = 'Configuración';
+    protected static ?string $navigationGroup = '⚙️ Configuración';
+    
+    protected static ?int $navigationSort = 4;
 
     // Propiedades para la tabla
     public Collection $serviciosAdicionales;

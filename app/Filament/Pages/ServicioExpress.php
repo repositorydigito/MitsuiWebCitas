@@ -20,9 +20,13 @@ class ServicioExpress extends Page
 {
     use WithFileUploads, HasPageShield;
 
-    protected static ?string $navigationIcon = 'heroicon-o-truck';
+    protected static ?string $navigationIcon = 'heroicon-o-bolt';
 
     protected static ?string $navigationLabel = 'Servicio Express';
+    
+    protected static ?string $navigationGroup = '📅 Citas & Servicios';
+    
+    protected static ?int $navigationSort = 4;
 
     protected static ?string $title = 'Gestión servicio express';
 

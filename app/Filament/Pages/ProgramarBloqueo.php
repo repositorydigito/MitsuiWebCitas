@@ -24,6 +24,10 @@ class ProgramarBloqueo extends Page implements HasForms
     protected static ?string $navigationIcon = 'heroicon-o-lock-closed';
 
     protected static ?string $navigationLabel = 'Programar Bloqueo';
+    
+    protected static ?string $navigationGroup = '📅 Citas & Servicios';
+    
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $title = 'Programar bloqueo';
 

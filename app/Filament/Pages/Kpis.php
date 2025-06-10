@@ -14,12 +14,14 @@ class Kpis extends Page
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
 
     protected static ?string $navigationLabel = 'KPIs';
+    
+    protected static ?string $navigationGroup = '📊 Reportes & KPIs';
+    
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $title = 'Indicadores de Desempeño (KPIs)';
 
     protected static string $view = 'filament.pages.kpis';
-
-    protected static ?int $navigationSort = 25;
 
     // Propiedades para filtros
     public string $fechaInicio = '';

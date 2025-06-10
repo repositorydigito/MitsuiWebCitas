@@ -19,7 +19,7 @@ class CargaCampanasPage extends Page
 {
     use WithFileUploads, HasPageShield;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-plus';
+    protected static ?string $navigationIcon = 'heroicon-o-arrow-up-tray';
 
     protected static ?string $navigationLabel = 'Cargar Campañas';
 
@@ -27,9 +27,9 @@ class CargaCampanasPage extends Page
 
     protected static ?string $slug = 'cargar-campanas';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
-    protected static ?string $navigationGroup = 'Campañas';
+    protected static ?string $navigationGroup = '📢 Marketing';
 
     protected static string $view = 'filament.pages.carga-campanas-page';
 

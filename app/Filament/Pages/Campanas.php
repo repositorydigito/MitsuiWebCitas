@@ -21,12 +21,14 @@ class Campanas extends Page
     protected static ?string $navigationIcon = 'heroicon-o-megaphone';
 
     protected static ?string $navigationLabel = 'Campañas';
+    
+    protected static ?string $navigationGroup = '📢 Marketing';
+    
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $title = 'Campañas';
 
     protected static string $view = 'filament.pages.campanas';
-
-    protected static ?int $navigationSort = 20;
 
     // Propiedades para filtros
     public string $ciudadSeleccionada = '';

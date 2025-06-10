@@ -19,6 +19,10 @@ class Vehiculos extends Page
     protected static ?string $navigationIcon = 'heroicon-o-truck';
 
     protected static ?string $navigationLabel = 'Mis Vehículos';
+    
+    protected static ?string $navigationGroup = '🚗 Vehículos';
+    
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $title = 'Cita de servicio';
 

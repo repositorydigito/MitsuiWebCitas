@@ -18,6 +18,10 @@ class AdministrarLocales extends Page implements HasForms
     protected static ?string $navigationIcon = 'heroicon-o-building-office';
 
     protected static ?string $navigationLabel = 'Administrar Locales';
+    
+    protected static ?string $navigationGroup = '⚙️ Configuración';
+    
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $title = 'Administrar Locales';
 

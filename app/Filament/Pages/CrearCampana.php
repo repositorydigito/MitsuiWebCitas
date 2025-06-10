@@ -21,6 +21,10 @@ class CrearCampana extends Page
     protected static ?string $navigationIcon = 'heroicon-o-document-plus';
 
     protected static ?string $navigationLabel = 'Crear Campaña';
+    
+    protected static ?string $navigationGroup = '📢 Marketing';
+    
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $title = 'Gestionar campaña';
 

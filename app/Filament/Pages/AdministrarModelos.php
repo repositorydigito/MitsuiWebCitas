@@ -16,9 +16,13 @@ class AdministrarModelos extends Page implements HasForms
 
     protected static string $view = 'filament.pages.administrar-modelos';
 
-    protected static ?string $navigationIcon = 'heroicon-o-truck';
+    protected static ?string $navigationIcon = 'heroicon-o-cube';
 
     protected static ?string $navigationLabel = 'Administrar Modelos';
+    
+    protected static ?string $navigationGroup = '⚙️ Configuración';
+    
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $title = 'Administrar Modelos';
 

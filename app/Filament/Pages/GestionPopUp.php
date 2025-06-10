@@ -20,6 +20,10 @@ class GestionPopUp extends Page
     protected static ?string $navigationIcon = 'heroicon-o-photo';
 
     protected static ?string $navigationLabel = 'Gestión Pop up';
+    
+    protected static ?string $navigationGroup = '📢 Marketing';
+    
+    protected static ?int $navigationSort = 4;
 
     protected static ?string $title = 'Gestión Pop up';
 

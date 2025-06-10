@@ -27,6 +27,10 @@ class AgendarCita extends Page
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
 
     protected static ?string $navigationLabel = 'Agendar Cita';
+    
+    protected static ?string $navigationGroup = '📅 Citas & Servicios';
+    
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $title = 'Agendar Cita';
 

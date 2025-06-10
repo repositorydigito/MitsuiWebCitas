@@ -17,6 +17,10 @@ class DetalleVehiculo extends Page
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
     protected static ?string $navigationLabel = 'Detalle del Vehículo';
+    
+    protected static ?string $navigationGroup = '🚗 Vehículos';
+    
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $title = 'Detalle del vehículo';
 
