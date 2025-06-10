@@ -3,11 +3,13 @@
 namespace App\Filament\Pages;
 
 use App\Models\Local;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Log;
 
 class DashboardKpi extends Page
 {
+    use HasPageShield;
     protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
 
     protected static ?string $navigationLabel = 'Dashboard KPI';

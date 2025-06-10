@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\Modelo;
 use App\Models\ModeloAno;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
@@ -11,7 +12,7 @@ use Filament\Pages\Page;
 
 class AdministrarModelos extends Page implements HasForms
 {
-    use InteractsWithForms;
+    use InteractsWithForms, HasPageShield;
 
     protected static string $view = 'filament.pages.administrar-modelos';
 

@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\Vehicle;
 use App\Services\VehiculoSoapService;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
@@ -13,7 +14,7 @@ use Livewire\WithPagination;
 
 class Vehiculos extends Page
 {
-    use WithPagination;
+    use WithPagination, HasPageShield;
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';
 

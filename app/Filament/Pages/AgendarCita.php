@@ -11,15 +11,19 @@ use App\Models\MaintenanceType;
 use App\Models\Vehicle;
 use App\Services\VehiculoSoapService;
 use App\Services\C4C\AppointmentService;
+use App\Jobs\EnviarCitaC4CJob;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Carbon\Carbon;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class AgendarCita extends Page
 {
+    use HasPageShield;
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
 
     protected static ?string $navigationLabel = 'Agendar Cita';
@@ -83,6 +87,17 @@ class AgendarCita extends Page
     public int $totalPasos = 3;
 
     public bool $citaAgendada = false;
+
+    // Estados del job de C4C
+    public ?string $citaJobId = null;
+    
+    public string $citaStatus = 'idle'; // idle, processing, completed, failed
+    
+    public int $citaProgress = 0;
+    
+    public string $citaMessage = '';
+    
+    public ?string $appointmentNumber = null;
 
     // Modales de pop-ups
     public bool $mostrarModalPopups = false;
@@ -1109,6 +1124,82 @@ class AgendarCita extends Page
         }
     }
 
+    /**
+     * Verificar el estado del job de C4C (llamado por polling Ajax)
+     */
+    public function checkJobStatus(): void
+    {
+        if (!$this->citaJobId) {
+            return;
+        }
+
+        $jobData = Cache::get("cita_job_{$this->citaJobId}");
+        
+        if ($jobData) {
+            $newStatus = $jobData['status'] ?? 'idle';
+            $newProgress = $jobData['progress'] ?? 0;
+            $newMessage = $jobData['message'] ?? '';
+            
+            // Solo actualizar si hay cambios
+            if ($newStatus !== $this->citaStatus || $newProgress !== $this->citaProgress) {
+                $this->citaStatus = $newStatus;
+                $this->citaProgress = $newProgress;
+                $this->citaMessage = $newMessage;
+                
+                Log::info("[AgendarCita] Job status actualizado", [
+                    'job_id' => $this->citaJobId,
+                    'status' => $this->citaStatus,
+                    'progress' => $this->citaProgress,
+                    'message' => $this->citaMessage
+                ]);
+                
+                // Si se completó exitosamente
+                if ($this->citaStatus === 'completed') {
+                    $this->appointmentNumber = $jobData['appointment_number'] ?? null;
+                    $this->citaAgendada = true;
+                    $this->pasoActual = 3; // Ir al paso de confirmación
+                    
+                    \Filament\Notifications\Notification::make()
+                        ->title('¡Cita Confirmada!')
+                        ->body('Tu cita ha sido agendada exitosamente.')
+                        ->success()
+                        ->send();
+                        
+                    // Detener el polling
+                    $this->dispatch('stop-polling');
+                }
+                
+                // Si falló
+                elseif ($this->citaStatus === 'failed') {
+                    \Filament\Notifications\Notification::make()
+                        ->title('Error al Agendar Cita')
+                        ->body($this->citaMessage)
+                        ->danger()
+                        ->send();
+                        
+                    // Detener el polling
+                    $this->dispatch('stop-polling');
+                    
+                    // NO resetear estado automáticamente para que el usuario vea el error
+                }
+            }
+        }
+    }
+
+    /**
+     * Resetear el estado de la cita para intentar de nuevo
+     */
+    public function resetearEstadoCita(): void
+    {
+        $this->citaStatus = 'idle';
+        $this->citaProgress = 0;
+        $this->citaMessage = '';
+        $this->citaJobId = null;
+        $this->appointmentNumber = null;
+        
+        Log::info("[AgendarCita] Estado de cita reseteado para nuevo intento");
+    }
+
     // Método para guardar la cita
     protected function guardarCita(): void
     {
@@ -1165,76 +1256,13 @@ class AgendarCita extends Page
             // Obtener el usuario autenticado
             $user = Auth::user();
 
-            // **PASO 1: ENVIAR A C4C PRIMERO** 🚀
-            Log::info("[AgendarCita] Enviando cita a C4C...");
+            // 🚀 **NUEVA IMPLEMENTACIÓN CON JOBS - SIN TIMEOUT** 🚀
+            Log::info("[AgendarCita] Iniciando proceso asíncrono de cita...");
             
-            // Aumentar timeout de PHP para permitir operaciones largas con C4C
-            $timeoutOriginal = ini_get('max_execution_time');
-            set_time_limit(300); // 5 minutos para operaciones C4C
-            Log::info("[AgendarCita] Timeout PHP aumentado de {$timeoutOriginal}s a 300s");
+            // Generar ID único para el job
+            $this->citaJobId = (string) Str::uuid();
             
-            $appointmentService = app(AppointmentService::class);
-            
-            // Preparar datos para C4C
-            $fechaHoraInicio = Carbon::createFromFormat('Y-m-d H:i:s', $fechaFormateada . ' ' . $horaFormateada);
-            $fechaHoraFin = $fechaHoraInicio->copy()->addMinutes(45); // 45 minutos por defecto
-            
-            $citaData = [
-                'customer_id' => $user->c4c_internal_id ?? '1270002726', // Cliente de prueba si no tiene C4C ID
-                'employee_id' => '1740', // ID del asesor por defecto
-                'start_date' => $fechaHoraInicio->format('Y-m-d H:i:s'),
-                'end_date' => $fechaHoraFin->format('Y-m-d H:i:s'),
-                'center_id' => $localSeleccionado->code,
-                'vehicle_plate' => $vehicle->license_plate,
-                'customer_name' => $this->nombreCliente . ' ' . $this->apellidoCliente,
-                'notes' => $this->comentarios ?: 'Cita agendada desde la aplicación web',
-                'express' => false,
-            ];
-
-            Log::info("[AgendarCita] Datos C4C:", $citaData);
-
-            // Enviar a C4C
-            try {
-                $resultadoC4C = $appointmentService->create($citaData);
-            } catch (\Exception $e) {
-                Log::error("[AgendarCita] Excepción al enviar cita a C4C: " . $e->getMessage());
-                
-                // Restaurar timeout original de PHP en caso de excepción
-                set_time_limit($timeoutOriginal);
-                Log::info("[AgendarCita] Timeout PHP restaurado a {$timeoutOriginal}s (por excepción)");
-                
-                \Filament\Notifications\Notification::make()
-                    ->title('Error al Agendar Cita')
-                    ->body('Error de conexión con C4C: ' . $e->getMessage())
-                    ->danger()
-                    ->send();
-
-                return;
-            }
-
-            if (!$resultadoC4C['success']) {
-                Log::error("[AgendarCita] Error al enviar cita a C4C: " . ($resultadoC4C['error'] ?? 'Error desconocido'));
-                
-                // Restaurar timeout original de PHP en caso de error
-                set_time_limit($timeoutOriginal);
-                Log::info("[AgendarCita] Timeout PHP restaurado a {$timeoutOriginal}s (por error)");
-                
-                \Filament\Notifications\Notification::make()
-                    ->title('Error al Agendar Cita')
-                    ->body('Error al comunicarse con el sistema C4C: ' . ($resultadoC4C['error'] ?? 'Error desconocido'))
-                    ->danger()
-                    ->send();
-
-                return;
-            }
-
-            Log::info("[AgendarCita] ✅ Cita enviada exitosamente a C4C", $resultadoC4C['data'] ?? []);
-
-            // Restaurar timeout original de PHP
-            set_time_limit($timeoutOriginal);
-            Log::info("[AgendarCita] Timeout PHP restaurado a {$timeoutOriginal}s");
-
-            // **PASO 2: GUARDAR EN BD LOCAL** 💾
+            // **PASO 1: CREAR APPOINTMENT EN BD PRIMERO** 💾
             $appointment = new Appointment;
             $appointment->appointment_number = 'CITA-'.date('Ymd').'-'.strtoupper(Str::random(5));
             $appointment->vehicle_id = $vehicle->id;
@@ -1265,16 +1293,67 @@ class AgendarCita extends Page
             $appointment->service_mode = implode(', ', $serviceModes);
             $appointment->maintenance_type = $this->tipoMantenimiento;
             $appointment->comments = $this->comentarios;
-            $appointment->status = 'confirmed'; // Confirmada porque ya fue enviada a C4C
-            
-            // **CAMPOS C4C** 🎯
-            $appointment->c4c_uuid = $resultadoC4C['data']['uuid'] ?? null;
-            $appointment->is_synced = true;
-            $appointment->synced_at = now();
+            $appointment->status = 'pending'; // Pendiente hasta que C4C confirme
+            $appointment->is_synced = false;
             
             $appointment->save();
 
-            // Guardar los servicios adicionales
+            Log::info("[AgendarCita] Appointment creado en BD con ID: {$appointment->id}");
+
+            // **PASO 2: PREPARAR DATOS PARA C4C** 📋
+            $fechaHoraInicio = Carbon::createFromFormat('Y-m-d H:i:s', $fechaFormateada . ' ' . $horaFormateada);
+            $fechaHoraFin = $fechaHoraInicio->copy()->addMinutes(45); // 45 minutos por defecto
+            
+            $citaData = [
+                'customer_id' => $user->c4c_internal_id ?? '1270002726', // Cliente de prueba si no tiene C4C ID
+                'employee_id' => '1740', // ID del asesor por defecto
+                'start_date' => $fechaHoraInicio->format('Y-m-d H:i:s'),
+                'end_date' => $fechaHoraFin->format('Y-m-d H:i:s'),
+                'center_id' => $localSeleccionado->code,
+                'vehicle_plate' => $vehicle->license_plate,
+                'customer_name' => $this->nombreCliente . ' ' . $this->apellidoCliente,
+                'notes' => $this->comentarios ?: 'Cita agendada desde la aplicación web',
+                'express' => false,
+            ];
+
+            $appointmentData = [
+                'appointment_number' => $appointment->appointment_number,
+                'servicios_adicionales' => $this->serviciosAdicionales,
+                'campanas_disponibles' => $this->campanasDisponibles ?? []
+            ];
+
+            // **PASO 3: INICIALIZAR JOB STATUS** ⏳
+            Cache::put("cita_job_{$this->citaJobId}", [
+                'status' => 'queued',
+                'progress' => 0,
+                'message' => 'Preparando envío a C4C...',
+                'updated_at' => now()
+            ], 600); // 10 minutos
+
+            // **PASO 4: DESPACHAR JOB EN BACKGROUND** 🚀
+            EnviarCitaC4CJob::dispatch($citaData, $appointmentData, $this->citaJobId, $appointment->id);
+
+            // **PASO 5: ACTUALIZAR UI INMEDIATAMENTE** ⚡
+            $this->citaStatus = 'processing';
+            $this->citaProgress = 0;
+            $this->citaMessage = 'Enviando cita a C4C...';
+            
+            Log::info("[AgendarCita] Job despachado exitosamente", [
+                'job_id' => $this->citaJobId,
+                'appointment_id' => $appointment->id
+            ]);
+
+            // **PASO 6: NOTIFICAR AL USUARIO** ✅
+            \Filament\Notifications\Notification::make()
+                ->title('Procesando Cita')
+                ->body('Tu cita está siendo procesada. Por favor espera...')
+                ->info()
+                ->send();
+
+            // **PASO 7: INICIAR POLLING** 🔄
+            $this->dispatch('start-polling', jobId: $this->citaJobId);
+
+            // **GUARDAR SERVICIOS ADICIONALES** (mantenemos esta lógica)
             if (! empty($this->serviciosAdicionales)) {
                 foreach ($this->serviciosAdicionales as $servicioAdicionalKey) {
                     // Verificar si es una campaña
@@ -1320,45 +1399,27 @@ class AgendarCita extends Page
                     } else {
                         // Procesar servicios adicionales tradicionales
                         Log::info("[AgendarCita] Procesando servicio adicional tradicional: {$servicioAdicionalKey}");
-
-                        // Generar un código único para el servicio adicional
-                        $codigoServicio = 'SERV-'.strtoupper(substr(str_replace('_', '-', $servicioAdicionalKey), 0, 10));
-
                         // NOTA: Funcionalidad de servicios adicionales removida
-                        // Las tablas AdditionalService y appointment_additional_service fueron eliminadas
                         Log::info("[AgendarCita] Servicio adicional registrado (sin BD): {$servicioAdicionalKey}");
                     }
                 }
             }
 
-            // Marcar la cita como agendada
-            $this->citaAgendada = true;
-
-            // Registrar en el log
-            Log::info('[AgendarCita] Cita agendada exitosamente:', [
-                'appointment_number' => $appointment->appointment_number,
-                'vehicle' => $vehicle->license_plate,
-                'customer' => $appointment->customer_name.' '.$appointment->customer_last_name,
-                'date' => $appointment->appointment_date,
-                'time' => $appointment->appointment_time,
-            ]);
-
-            // Mostrar notificación de éxito
-            \Filament\Notifications\Notification::make()
-                ->title('Cita Agendada')
-                ->body('Tu cita ha sido agendada exitosamente.')
-                ->success()
-                ->send();
         } catch (\Exception $e) {
             // Registrar el error
-            Log::error('[AgendarCita] Error al guardar la cita: '.$e->getMessage());
+            Log::error('[AgendarCita] Error al iniciar proceso de cita: '.$e->getMessage());
 
             // Mostrar notificación de error
             \Filament\Notifications\Notification::make()
-                ->title('Error al Agendar Cita')
-                ->body('Ocurrió un error al agendar la cita: '.$e->getMessage())
+                ->title('Error al Procesar Cita')
+                ->body('Ocurrió un error al procesar la cita: '.$e->getMessage())
                 ->danger()
                 ->send();
+
+            // Resetear estado
+            $this->citaStatus = 'idle';
+            $this->citaProgress = 0;
+            $this->citaJobId = null;
         }
     }
 

@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Local;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -16,7 +17,7 @@ use Filament\Pages\Page;
 
 class ProgramarBloqueo extends Page implements HasForms
 {
-    use InteractsWithForms;
+    use InteractsWithForms, HasPageShield;
 
     protected static string $view = 'filament.pages.programar-bloqueo';
 

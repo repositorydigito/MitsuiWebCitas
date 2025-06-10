@@ -33,6 +33,7 @@ use App\Filament\Pages\Auth\Login;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Blade;
+use Filament\Navigation\NavigationGroup;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -85,6 +86,11 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+            ])
+            ->navigationGroups([
+                NavigationGroup::make()
+                    ->label('Administración')
+                    ->collapsed(false),
             ])
             ->plugins([
                 FilamentShieldPlugin::make(),

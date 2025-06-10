@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\AdditionalService;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
@@ -10,6 +11,7 @@ use Illuminate\Support\Collection;
 
 class GestionServiciosAdicionales extends Page
 {
+    use HasPageShield;
     protected static ?string $navigationIcon = 'heroicon-o-plus-circle';
 
     protected static ?string $navigationLabel = 'Servicios Adicionales';

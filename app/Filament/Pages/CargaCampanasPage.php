@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\Campana;
 use App\Models\CampanaImagen;
 use App\Models\Local;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -16,7 +17,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class CargaCampanasPage extends Page
 {
-    use WithFileUploads;
+    use WithFileUploads, HasPageShield;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-plus';
 

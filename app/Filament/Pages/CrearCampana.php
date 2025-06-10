@@ -7,6 +7,7 @@ use App\Models\CampanaImagen;
 use App\Models\Local;
 use App\Models\Modelo;
 use App\Models\ModeloAno;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -15,7 +16,7 @@ use Livewire\WithFileUploads;
 
 class CrearCampana extends Page
 {
-    use WithFileUploads;
+    use WithFileUploads, HasPageShield;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-plus';
 

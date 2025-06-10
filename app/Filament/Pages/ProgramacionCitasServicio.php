@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Local;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -13,7 +14,7 @@ use Filament\Pages\Page;
 
 class ProgramacionCitasServicio extends Page implements HasForms
 {
-    use InteractsWithForms;
+    use InteractsWithForms, HasPageShield;
 
     protected static string $view = 'filament.pages.programacion-citas-servicio';
 
