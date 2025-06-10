@@ -90,9 +90,10 @@
         }
         
         .brand-logo {
-            width: 200px;
+            width: 300px;
             height: auto;
-            margin-bottom: 2rem;
+            padding-bottom: 3rem;
+            margin: 0 auto;
         }
         
         .brand-title {
@@ -247,17 +248,10 @@
         <!-- Panel izquierdo - Formulario -->
         <div class="left-panel">
             <div class="form-container">
-                <!-- Back to dashboard link -->
-                <a href="/" class="back-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                    </svg>
-                    Volver al inicio
-                </a>
-
                 <!-- Título -->
-                <h1 class="form-title">Iniciar Sesión</h1>
-                <p class="form-subtitle">Ingresa tus credenciales para acceder al sistema</p>
+                <img src="{{ asset('images/logoMitsui.svg') }}" alt="Mitsui Logo" class="brand-logo">
+                <h1 class="form-title text-center">Iniciar Sesión</h1>
+                <p class="form-subtitle text-center">Ingresa tus credenciales para acceder al sistema</p>
 
                 <!-- Formulario -->
                 <x-filament-panels::form wire:submit="authenticate">
@@ -275,8 +269,7 @@
 
         <!-- Panel derecho - Branding -->
         <div class="right-panel">
-            <div class="right-panel-overlay">
-                <img src="{{ asset('images/logoMitsui.svg') }}" alt="Mitsui Logo" class="brand-logo">
+            <div class="right-panel-overlay">                
                 <h2 class="brand-title">Sistema de Gestión Mitsui</h2>
                 <p class="brand-subtitle">Plataforma integral para la administración de citas y servicios automotrices</p>
             </div>
