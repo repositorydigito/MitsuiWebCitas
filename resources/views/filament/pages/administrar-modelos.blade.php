@@ -35,7 +35,7 @@
                             <td class="py-3 px-4 text-sm text-gray-700">{{ $modelo->brand }}</td>
                             <td class="py-3 px-4 text-sm text-gray-700">{{ $modelo->description ?: '-' }}</td>
                             <td class="py-3 px-4 text-sm">
-                                <span class="px-2 py-1 rounded-full text-xs {{ $modelo->activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                <span class="px-2 py-1 rounded-full text-xs {{ $modelo->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                                     {{ $modelo->is_active ? 'Activo' : 'Inactivo' }}
                                 </span>
                             </td>
@@ -61,8 +61,8 @@
                                     </button>
                                     <button
                                         wire:click="toggleEstado({{ $modelo->id }})"
-                                        class="{{ $modelo->activo ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800' }}"
-                                        title="{{ $modelo->activo ? 'Desactivar' : 'Activar' }}"
+                                        class="{{ $modelo->is_active ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800' }}"
+                                        title="{{ $modelo->is_active ? 'Desactivar' : 'Activar' }}"
                                     >
                                         @if($modelo->is_active)
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -124,9 +124,9 @@
                                 <label for="codigo" class="block text-sm font-medium text-gray-700 mb-1">Código *</label>
                                 <input
                                     type="text"
-                                    wire:model="formData.codigo"
+                                    wire:model="formData.code"
                                     id="codigo"
-                                    class="w-full rounded-lg border {{ $errors['codigo'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3"
+                                    class="w-full rounded-lg border {{ $errors['code'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3"
                                     placeholder="Ej: COROLLA_CROSS"
                                     {{ $editMode ? 'disabled' : '' }}
                                 >
@@ -153,7 +153,7 @@
                             <div>
                                 <label for="marca" class="block text-sm font-medium text-gray-700 mb-1">Marca</label>
                                 <select
-                                    wire:model="formData.marca"
+                                    wire:model="formData.brand"
                                     id="marca"
                                     class="w-full rounded-lg border border-primary-500 text-gray-700 py-2 px-3"
                                 >
@@ -168,7 +168,7 @@
                                     <label class="inline-flex items-center gap-2">
                                         <input
                                             type="checkbox"
-                                            wire:model="formData.activo"
+                                            wire:model="formData.is_active"
                                             class="rounded border-primary-500 text-primary-600 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50"
                                         >
                                         <span class="ml-2 text-sm text-gray-700">Activo</span>
@@ -180,7 +180,7 @@
                         <div class="mb-4">
                             <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
                             <textarea
-                                wire:model="formData.descripcion"
+                                wire:model="formData.description"
                                 id="descripcion"
                                 class="w-full rounded-lg border border-primary-500 text-gray-700 py-2 px-3"
                                 rows="3"
@@ -274,18 +274,18 @@
                                         <tr class="hover:bg-gray-50">
                                             <td class="py-3 px-4 text-sm text-gray-700">{{ $modeloAno['year'] }}</td>
                                             <td class="py-3 px-4 text-sm">
-                                                <span class="px-2 py-1 rounded-full text-xs {{ $modeloAno['activo'] ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                                    {{ $modeloAno['activo'] ? 'Activo' : 'Inactivo' }}
+                                                <span class="px-2 py-1 rounded-full text-xs {{ $modeloAno['is_active'] ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                                    {{ $modeloAno['is_active'] ? 'Activo' : 'Inactivo' }}
                                                 </span>
                                             </td>
                                             <td class="py-3 px-4 text-sm text-gray-700">
                                                 <div class="flex justify-center space-x-4">
                                                     <button
                                                         wire:click="toggleEstadoAno({{ $modeloAno['id'] }})"
-                                                        class="{{ $modeloAno['activo'] ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800' }}"
-                                                        title="{{ $modeloAno['activo'] ? 'Desactivar' : 'Activar' }}"
+                                                        class="{{ $modeloAno['is_active'] ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800' }}"
+                                                        title="{{ $modeloAno['is_active'] ? 'Desactivar' : 'Activar' }}"
                                                     >
-                                                        @if($modeloAno['activo'])
+                                                        @if($modeloAno['is_active'])
                                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                                                 <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd" />
                                                             </svg>

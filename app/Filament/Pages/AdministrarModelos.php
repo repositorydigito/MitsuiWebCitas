@@ -184,12 +184,12 @@ class AdministrarModelos extends Page implements HasForms
                 ]);
 
                 // Crear años por defecto para el nuevo modelo
-                $anos = ['2018', '2019', '2020', '2021', '2022', '2023', '2024'];
+                $anos = ['2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025'];
                 foreach ($anos as $ano) {
                     ModeloAno::create([
                         'model_id' => $modelo->id,
                         'year' => $ano,
-                        'activo' => true,
+                        'is_active' => true,
                     ]);
                 }
 
@@ -306,7 +306,7 @@ class AdministrarModelos extends Page implements HasForms
             ModeloAno::create([
                 'model_id' => $this->currentModeloId,
                 'year' => $this->nuevoAno,
-                'activo' => true,
+                'is_active' => true,
             ]);
 
             // Recargar años
@@ -333,7 +333,7 @@ class AdministrarModelos extends Page implements HasForms
         try {
             $modeloAno = ModeloAno::findOrFail($id);
             $modeloAno->update([
-                'activo' => ! $modeloAno->activo,
+                'is_active' => ! $modeloAno->is_active,
             ]);
 
             // Recargar años

@@ -38,18 +38,9 @@ class CrearCampana extends Page
     // Ocultar de la navegación principal ya que se accederá desde la página de campañas
     protected static bool $shouldRegisterNavigation = false;
 
-    // Definir los parámetros de URL que puede recibir esta página
-    public static function getRouteParameters(): array
-    {
-        return [
-            'campana_id',
-        ];
-    }
-
     // Listeners para eventos
     protected $listeners = [
         'refresh' => '$refresh',
-        'imagenError' => 'handleImagenError',
     ];
 
     // Propiedades para los pasos
@@ -154,8 +145,8 @@ class CrearCampana extends Page
             if ($campana) {
                 Log::info('[CrearCampana] Campaña encontrada: '.json_encode([
                     'id' => $campana->id,
-                    'codigo' => $campana->codigo,
-                    'titulo' => $campana->titulo,
+                    'code' => $campana->code,
+                    'title' => $campana->title,
                 ]));
             } else {
                 Log::warning("[CrearCampana] No se encontró ninguna campaña con ID: {$this->campana_id}");
@@ -176,17 +167,17 @@ class CrearCampana extends Page
             }
 
             // Cargar datos básicos
-            $this->codigoCampana = $campana->codigo;
-            $this->tituloCampana = $campana->titulo;
+            $this->codigoCampana = $campana->code;
+            $this->tituloCampana = $campana->title;
             $this->fechaInicio = $campana->start_date->format('d/m/Y');
             $this->fechaFin = $campana->end_date->format('d/m/Y');
-            $this->todoElDia = $campana->all_day;
+            $this->todoElDia = $campana->all_day ?? true;
             $this->horaInicio = $campana->start_time ?? '08:00';
             $this->horaFin = $campana->end_time ?? '18:00';
-            $this->estadoCampana = $campana->estado;
+            $this->estadoCampana = $campana->status; // Ya viene como 'Activo' o 'Inactivo' desde la BD
 
             // Cargar modelos seleccionados
-            $this->modelosSeleccionados = $campana->modelos->pluck('nombre')->toArray();
+            $this->modelosSeleccionados = $campana->modelos->pluck('name')->toArray();
 
             // Cargar años seleccionados directamente de la tabla pivote
             $anos = \DB::table('campaign_years')
@@ -215,12 +206,12 @@ class CrearCampana extends Page
                 Log::info('[CrearCampana] Cargada imagen de campaña: '.$this->imagenPreview);
             }
 
-            Log::info("[CrearCampana] Cargados datos de campaña para edición: {$campana->codigo}");
+            Log::info("[CrearCampana] Cargados datos de campaña para edición: {$campana->code}");
 
             // Mostrar notificación
             \Filament\Notifications\Notification::make()
                 ->title('Editando campaña')
-                ->body("Está editando la campaña: {$campana->titulo}")
+                ->body("Está editando la campaña: {$campana->title}")
                 ->success()
                 ->send();
 
@@ -282,15 +273,24 @@ class CrearCampana extends Page
     {
         try {
             // Obtener los años activos
-            $anosActivos = ModeloAno::where('activo', true)
+            $anosActivos = ModeloAno::where('is_active', true)
                 ->orderBy('year', 'desc')
                 ->get();
 
             // Convertir a array de años únicos
-            $this->anos = $anosActivos->pluck('year')->unique()->toArray();
+            $this->anos = $anosActivos->pluck('year')->unique()->values()->toArray();
+
+            // Si no hay años, crear algunos por defecto
+            if (empty($this->anos)) {
+                Log::warning('[CrearCampana] No se encontraron años activos, usando años por defecto');
+                $this->anos = ['2024', '2023', '2022', '2021', '2020', '2019', '2018'];
+            }
+
+            Log::info('[CrearCampana] Años cargados: ' . json_encode($this->anos));
         } catch (\Exception $e) {
             Log::error('[CrearCampana] Error al cargar años: '.$e->getMessage());
-            $this->anos = [];
+            // Años por defecto en caso de error
+            $this->anos = ['2024', '2023', '2022', '2021', '2020', '2019', '2018'];
         }
     }
 
@@ -343,14 +343,14 @@ class CrearCampana extends Page
 
             // Datos comunes para crear o actualizar
             $datosCampana = [
-                'codigo' => $this->codigoCampana,
-                'titulo' => $this->tituloCampana,
+                'code' => $this->codigoCampana,
+                'title' => $this->tituloCampana,
                 'start_date' => $fechaInicio,
                 'end_date' => $fechaFin,
                 'start_time' => $this->todoElDia ? null : $this->horaInicio,
                 'end_time' => $this->todoElDia ? null : $this->horaFin,
                 'all_day' => $this->todoElDia,
-                'estado' => $this->estadoCampana,
+                'status' => $this->estadoCampana, // Ya viene como 'Activo' o 'Inactivo' que son los valores del ENUM
             ];
 
             if ($this->modoEdicion) {
@@ -467,35 +467,22 @@ class CrearCampana extends Page
 
                     // Si estamos en modo edición y ya existe una imagen, eliminarla
                     if ($this->modoEdicion) {
-                        $imagenExistente = CampanaImagen::where('campana_id', $campana->id)->first();
+                        $imagenExistente = CampanaImagen::where('campaign_id', $campana->id)->first();
                         if ($imagenExistente) {
                             Log::info("[CrearCampana] Encontrada imagen existente para campaña ID: {$campana->id}");
 
-                            // Intentar eliminar el archivo físico desde diferentes ubicaciones posibles
-                            $rutasAVerificar = [
-                                storage_path('app/'.$imagenExistente->ruta),
-                                storage_path('app/private/'.$imagenExistente->ruta),
-                                storage_path('app/private/public/images/campanas/'.basename($imagenExistente->ruta)),
-                                public_path($imagenExistente->ruta),
-                            ];
-
-                            $eliminado = false;
-                            foreach ($rutasAVerificar as $ruta) {
-                                Log::info("[CrearCampana] Verificando existencia de archivo en: {$ruta}");
-                                if (file_exists($ruta)) {
-                                    try {
-                                        unlink($ruta);
-                                        Log::info("[CrearCampana] Archivo eliminado: {$ruta}");
-                                        $eliminado = true;
-                                        break;
-                                    } catch (\Exception $e) {
-                                        Log::warning("[CrearCampana] Error al eliminar archivo: {$ruta} - ".$e->getMessage());
-                                    }
+                            // Intentar eliminar el archivo físico usando Storage
+                            try {
+                                // Limpiar la ruta para Storage
+                                $rutaLimpia = str_replace('public/', '', $imagenExistente->route);
+                                if (Storage::exists($rutaLimpia)) {
+                                    Storage::delete($rutaLimpia);
+                                    Log::info("[CrearCampana] Archivo eliminado: {$rutaLimpia}");
+                                } else {
+                                    Log::warning("[CrearCampana] El archivo no existe: {$rutaLimpia}");
                                 }
-                            }
-
-                            if (! $eliminado) {
-                                Log::warning('[CrearCampana] No se pudo eliminar el archivo porque no existe en ninguna ubicación conocida');
+                            } catch (\Exception $e) {
+                                Log::warning("[CrearCampana] Error al eliminar archivo: {$imagenExistente->route} - ".$e->getMessage());
                             }
 
                             // Eliminar el registro
@@ -508,106 +495,22 @@ class CrearCampana extends Page
                     $nombreArchivo = Str::slug($this->codigoCampana).'-'.time().'.'.$this->imagen->getClientOriginalExtension();
                     Log::info("[CrearCampana] Nombre de archivo generado: {$nombreArchivo}");
 
-                    // Ruta para guardar la imagen en storage/app/private/public/images/campanas
-                    $rutaStorage = 'private'.DIRECTORY_SEPARATOR.'public'.DIRECTORY_SEPARATOR.'images'.DIRECTORY_SEPARATOR.'campanas';
+                    // Guardar en el disco público de Laravel
+                    $rutaArchivo = $this->imagen->storeAs('images/campanas', $nombreArchivo, 'public');
 
-                    // Asegurar que el directorio exista
-                    $directorioCompleto = storage_path('app'.DIRECTORY_SEPARATOR.$rutaStorage);
-                    Log::info("[CrearCampana] Directorio para guardar imagen: {$directorioCompleto}");
-
-                    if (! file_exists($directorioCompleto)) {
-                        Log::info("[CrearCampana] Creando directorio: {$directorioCompleto}");
-                        if (! mkdir($directorioCompleto, 0755, true)) {
-                            throw new \Exception("No se pudo crear el directorio para guardar la imagen: {$directorioCompleto}");
-                        }
+                    if (!$rutaArchivo) {
+                        throw new \Exception('No se pudo guardar la imagen');
                     }
 
-                    // Verificar permisos del directorio
-                    if (! is_writable($directorioCompleto)) {
-                        Log::warning("[CrearCampana] El directorio no tiene permisos de escritura: {$directorioCompleto}");
-                        chmod($directorioCompleto, 0755);
-                        if (! is_writable($directorioCompleto)) {
-                            throw new \Exception("El directorio no tiene permisos de escritura: {$directorioCompleto}");
-                        }
-                    }
-
-                    // Intentar guardar la imagen directamente en el sistema de archivos
-                    try {
-                        Log::info("[CrearCampana] Intentando guardar imagen directamente en: {$directorioCompleto}/{$nombreArchivo}");
-                        $rutaArchivoCompleta = $directorioCompleto.DIRECTORY_SEPARATOR.$nombreArchivo;
-
-                        // Obtener el contenido del archivo
-                        $contenido = file_get_contents($this->imagen->getRealPath());
-
-                        // Guardar el archivo
-                        if (file_put_contents($rutaArchivoCompleta, $contenido) === false) {
-                            throw new \Exception('No se pudo escribir el archivo directamente');
-                        }
-
-                        // Establecer la ruta relativa para la base de datos
-                        $rutaArchivo = $rutaStorage.DIRECTORY_SEPARATOR.$nombreArchivo;
-                        Log::info("[CrearCampana] Imagen guardada directamente en: {$rutaArchivoCompleta}");
-                    } catch (\Exception $e) {
-                        // Si falla, intentar con el método Storage
-                        Log::warning('[CrearCampana] Error al guardar directamente: '.$e->getMessage().'. Intentando con Storage::disk');
-
-                        // Convertir separadores para Storage
-                        $rutaStorageNormalizada = str_replace(DIRECTORY_SEPARATOR, '/', $rutaStorage);
-                        Log::info("[CrearCampana] Intentando guardar imagen con Storage en: {$rutaStorageNormalizada}/{$nombreArchivo}");
-
-                        $rutaArchivo = $this->imagen->storeAs($rutaStorageNormalizada, $nombreArchivo);
-                        if (! $rutaArchivo) {
-                            throw new \Exception('No se pudo guardar la imagen usando Storage');
-                        }
-                    }
-
-                    if (! $rutaArchivo) {
-                        throw new \Exception('No se pudo guardar la imagen en el almacenamiento');
-                    }
-
-                    // La ruta que guardaremos en la base de datos
-                    $rutaRelativa = $rutaArchivo;
-
-                    // Normalizar la ruta para evitar mezcla de separadores
-                    $rutaArchivo = str_replace('/', DIRECTORY_SEPARATOR, $rutaArchivo);
-
-                    // Verificar que el archivo se haya guardado correctamente
-                    $rutaCompleta = storage_path('app'.DIRECTORY_SEPARATOR.$rutaArchivo);
-                    Log::info("[CrearCampana] Verificando existencia del archivo en: {$rutaCompleta}");
-
-                    // Esperar un momento para asegurarse de que el archivo se haya escrito completamente
-                    usleep(500000); // Esperar 0.5 segundos
-
-                    if (! file_exists($rutaCompleta)) {
-                        // Intentar buscar el archivo con una ruta alternativa
-                        $rutaAlternativa = storage_path('app/private/public/images/campanas/'.basename($nombreArchivo));
-                        Log::info("[CrearCampana] Intentando ruta alternativa: {$rutaAlternativa}");
-
-                        if (file_exists($rutaAlternativa)) {
-                            Log::info('[CrearCampana] Archivo encontrado en ruta alternativa');
-                            $rutaCompleta = $rutaAlternativa;
-                        } else {
-                            throw new \Exception("El archivo no se guardó correctamente. Verificadas las rutas: {$rutaCompleta} y {$rutaAlternativa}");
-                        }
-                    }
-
-                    // Registrar información detallada para depuración
-                    Log::info('[CrearCampana] Rutas de imagen: '.json_encode([
-                        'rutaStorage' => $rutaStorage,
-                        'nombreArchivo' => $nombreArchivo,
-                        'rutaArchivo' => $rutaArchivo,
-                        'rutaCompleta' => $rutaCompleta,
-                        'existe' => file_exists($rutaCompleta) ? 'Sí' : 'No',
-                        'tamaño' => file_exists($rutaCompleta) ? filesize($rutaCompleta) : 'N/A',
-                    ]));
+                    Log::info("[CrearCampana] Imagen guardada en: {$rutaArchivo}");
 
                     // Registrar la imagen en la base de datos
                     $imagenDB = CampanaImagen::create([
-                        'campana_id' => $campana->id,
-                        'ruta' => $rutaRelativa,
-                        'nombre_original' => $this->imagen->getClientOriginalName(),
+                        'campaign_id' => $campana->id,
+                        'route' => $rutaArchivo,
+                        'original_name' => $this->imagen->getClientOriginalName(),
                         'mime_type' => $this->imagen->getMimeType(),
-                        'tamano' => $this->imagen->getSize(),
+                        'size' => $this->imagen->getSize(),
                     ]);
 
                     Log::info("[CrearCampana] Imagen guardada en base de datos con ID: {$imagenDB->id}");
@@ -662,39 +565,7 @@ class CrearCampana extends Page
         $this->redirect(Campanas::getUrl());
     }
 
-    /**
-     * Maneja los errores de carga de imágenes reportados desde JavaScript
-     */
-    public function handleImagenError($data)
-    {
-        Log::warning('[CrearCampana] Error de imagen reportado desde JavaScript: '.json_encode($data));
 
-        // Intentar recuperar la imagen si es posible
-        if ($this->imagen) {
-            try {
-                // Intentar un enfoque alternativo para la vista previa
-                $tempPath = $this->imagen->store('temp/previews');
-                $this->imagenPreview = Storage::url($tempPath);
-                Log::info("[CrearCampana] URL alternativa generada después de error: {$this->imagenPreview}");
-
-                // Notificar al usuario
-                \Filament\Notifications\Notification::make()
-                    ->title('Recuperación de imagen')
-                    ->body('Se ha intentado recuperar la vista previa de la imagen.')
-                    ->success()
-                    ->send();
-            } catch (\Exception $e) {
-                Log::error('[CrearCampana] Error al intentar recuperar imagen: '.$e->getMessage());
-
-                // Si no se puede recuperar, notificar al usuario
-                \Filament\Notifications\Notification::make()
-                    ->title('Error con la imagen')
-                    ->body('No se pudo mostrar la vista previa, pero la imagen se guardará correctamente al confirmar.')
-                    ->warning()
-                    ->send();
-            }
-        }
-    }
 
     /**
      * Genera la URL correcta para una imagen de campaña
@@ -702,50 +573,26 @@ class CrearCampana extends Page
     private function getImageUrl($imagen): string
     {
         // Registrar la ruta original para depuración
-        Log::info('[CrearCampana] Ruta de imagen original: '.$imagen->ruta);
+        Log::info('[CrearCampana] Ruta de imagen original: '.$imagen->route);
 
-        // Normalizar la ruta para evitar problemas con separadores
-        $rutaNormalizada = str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $imagen->ruta);
-        Log::info('[CrearCampana] Ruta normalizada: '.$rutaNormalizada);
+        $rutaOriginal = $imagen->route;
 
-        // Usar la ruta de imagen.campana para generar la URL
-        $url = route('imagen.campana', ['id' => $imagen->campaign_id]);
+        // Verificar si la imagen está en la carpeta private (imágenes antiguas)
+        if (str_contains($rutaOriginal, 'private/public/')) {
+            // Para imágenes en private, crear una ruta especial
+            $nombreArchivo = basename($rutaOriginal);
+            $url = route('imagen.campana', ['idOrFilename' => $nombreArchivo]);
+            Log::info("[CrearCampana] Imagen en carpeta private, usando ruta especial: {$url}");
+            return $url;
+        }
+
+        // Para imágenes nuevas en public
+        $rutaLimpia = str_replace('public/', '', $rutaOriginal);
+        $url = asset('storage/' . $rutaLimpia);
 
         // Registrar la URL generada para depuración
         Log::info('[CrearCampana] URL generada para imagen: '.$url);
 
-        // Verificar si el archivo existe en diferentes ubicaciones
-        $rutasAVerificar = [
-            storage_path('app'.DIRECTORY_SEPARATOR.$rutaNormalizada),
-            storage_path('app'.DIRECTORY_SEPARATOR.'private'.DIRECTORY_SEPARATOR.'public'.DIRECTORY_SEPARATOR.'images'.DIRECTORY_SEPARATOR.'campanas'.DIRECTORY_SEPARATOR.basename($rutaNormalizada)),
-            storage_path('app'.DIRECTORY_SEPARATOR.'private'.DIRECTORY_SEPARATOR.$rutaNormalizada),
-            public_path($rutaNormalizada),
-        ];
-
-        $existe = false;
-        $rutaEncontrada = '';
-
-        foreach ($rutasAVerificar as $ruta) {
-            Log::info('[CrearCampana] Verificando existencia de archivo en: '.$ruta);
-            if (file_exists($ruta)) {
-                $existe = true;
-                $rutaEncontrada = $ruta;
-                Log::info('[CrearCampana] Archivo encontrado en: '.$ruta);
-                break;
-            }
-        }
-
-        if (! $existe) {
-            Log::warning('[CrearCampana] No se encontró el archivo de imagen en ninguna ubicación conocida');
-        }
-
-        Log::info('[CrearCampana] Verificación de archivo: '.json_encode([
-            'rutasVerificadas' => $rutasAVerificar,
-            'rutaEncontrada' => $rutaEncontrada,
-            'existe' => $existe ? 'Sí' : 'No',
-        ]));
-
-        // Devolver la URL
         return $url;
     }
 

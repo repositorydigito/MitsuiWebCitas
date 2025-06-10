@@ -395,11 +395,12 @@ class CargaCampanasPage extends Page
 
                 // Crear la campaña en la base de datos
                 $nuevaCampana = new Campana;
-                $nuevaCampana->codigo = $campana['codigo']; // Usar el código proporcionado en el Excel
-                $nuevaCampana->titulo = $campana['nombre'];
+                $nuevaCampana->code = $campana['codigo']; // Usar el código proporcionado en el Excel
+                $nuevaCampana->title = $campana['nombre'];
                 $nuevaCampana->start_date = date('Y-m-d', strtotime($campana['fecha_inicio']));
                 $nuevaCampana->end_date = date('Y-m-d', strtotime($campana['fecha_fin']));
-                $nuevaCampana->estado = $campana['estado'] ? 'Activo' : 'Inactivo';
+                $nuevaCampana->status = $campana['estado'] ? 'Activo' : 'Inactivo';
+                $nuevaCampana->all_day = true;
                 $nuevaCampana->save();
 
                 // Guardar la relación con el local
@@ -420,16 +421,16 @@ class CargaCampanasPage extends Page
                     // Generar un nombre único para la imagen
                     $nombreImagen = 'campana_'.$nuevaCampana->id.'_'.time().'.'.$imagen->getClientOriginalExtension();
 
-                    // Guardar la imagen en el almacenamiento
-                    $rutaImagen = $imagen->storeAs('private/public/images/campanas', $nombreImagen);
+                    // Guardar la imagen en el almacenamiento usando la ruta estándar
+                    $rutaImagen = $imagen->storeAs('images/campanas', $nombreImagen, 'public');
 
                     // Crear el registro de la imagen en la base de datos
                     $campanaImagen = new CampanaImagen;
-                    $campanaImagen->campana_id = $nuevaCampana->id;
-                    $campanaImagen->ruta = $rutaImagen;
-                    $campanaImagen->nombre_original = $imagen->getClientOriginalName();
+                    $campanaImagen->campaign_id = $nuevaCampana->id;
+                    $campanaImagen->route = $rutaImagen;
+                    $campanaImagen->original_name = $imagen->getClientOriginalName();
                     $campanaImagen->mime_type = $imagen->getMimeType();
-                    $campanaImagen->tamano = $imagen->getSize();
+                    $campanaImagen->size = $imagen->getSize();
                     $campanaImagen->save();
 
                     Log::info("[CargaCampanas] Imagen guardada para la campaña {$nuevaCampana->id}: {$rutaImagen}");

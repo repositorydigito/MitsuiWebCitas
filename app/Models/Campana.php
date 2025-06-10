@@ -12,19 +12,23 @@ class Campana extends Model
     protected $table = 'campaigns';
 
     protected $fillable = [
+        'code',
         'title',
         'description',
         'city',
         'status',
         'start_date',
         'end_date',
-        'is_active',
+        'start_time',
+        'end_time',
+        'all_day',
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
-        'is_active' => 'boolean',
+        'all_day' => 'boolean',
+        'status' => 'string',
     ];
 
     /**

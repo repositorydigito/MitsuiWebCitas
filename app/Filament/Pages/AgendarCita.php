@@ -779,7 +779,7 @@ class AgendarCita extends Page
                 // Verificar si tiene imagen
                 try {
                     $imagen = DB::table('campaign_images')->where('campaign_id', $campana->id)->first();
-                    $tieneImagen = $imagen ? "Sí (ID: {$imagen->id}, Ruta: {$imagen->image_path})" : 'No';
+                    $tieneImagen = $imagen ? "Sí (ID: {$imagen->id}, Ruta: {$imagen->route})" : 'No';
                     Log::info("[AgendarCita] Campaña #{$index} tiene imagen: {$tieneImagen}");
                 } catch (\Exception $e) {
                     Log::error("[AgendarCita] Error al verificar imagen de campaña #{$index}: ".$e->getMessage());
@@ -836,10 +836,10 @@ class AgendarCita extends Page
                     $imagenObj = DB::table('campaign_images')->where('campaign_id', $campana->id)->first();
 
                     // Construir la URL correcta para la imagen
-                    if ($imagenObj && $imagenObj->image_path) {
+                    if ($imagenObj && $imagenObj->route) {
                         try {
                             // Intentar diferentes enfoques para obtener la URL de la imagen
-                            $rutaCompleta = $imagenObj->image_path;
+                            $rutaCompleta = $imagenObj->route;
                             Log::info("[AgendarCita] Ruta completa de la imagen: {$rutaCompleta}");
 
                             // Método 1: Usar route('imagen.campana', ['id' => $campana->id])
@@ -1529,6 +1529,38 @@ class AgendarCita extends Page
         } else {
             Log::info('[AgendarCita] No hay pop-ups disponibles para mostrar');
             // Si no hay pop-ups disponibles, redirigir a la página de vehículos
+            $this->redirect(Vehiculos::getUrl());
+        }
+    }
+
+    // Método para cancelar desde el modal de éxito y volver a vehículos con pestañas
+    public function cancelarYVolverAVehiculos(): void
+    {
+        Log::info('[AgendarCita] Cancelando desde modal de éxito y volviendo a vehículos con pestañas');
+
+        // Resetear el estado de la cita
+        $this->citaStatus = 'idle';
+        $this->citaProgress = 0;
+        $this->citaMessage = '';
+        $this->citaJobId = null;
+        $this->appointmentNumber = null;
+
+        // Redirigir específicamente a la página de vehículos con pestañas
+        $this->redirect(Vehiculos::getUrl());
+    }
+
+    // Método para continuar después del éxito (mostrar pop-ups o ir a vehículos)
+    public function continuarDespuesDeExito(): void
+    {
+        Log::info('[AgendarCita] Continuando después del éxito del modal');
+
+        // Mostrar el modal de pop-ups si hay pop-ups disponibles
+        if (! empty($this->popupsDisponibles)) {
+            $this->mostrarModalPopups = true;
+            Log::info('[AgendarCita] Mostrando modal de pop-ups con '.count($this->popupsDisponibles).' opciones');
+        } else {
+            Log::info('[AgendarCita] No hay pop-ups disponibles para mostrar, redirigiendo a vehículos');
+            // Si no hay pop-ups disponibles, redirigir a la página de vehículos con pestañas
             $this->redirect(Vehiculos::getUrl());
         }
     }

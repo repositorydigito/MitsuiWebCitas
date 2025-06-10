@@ -888,70 +888,70 @@
     </div>
 
     <!-- Modal de Pop-ups -->
-    <div x-data="{ show: @entangle('mostrarModalPopups') }" x-show="show" x-cloak class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
-        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <!-- Fondo oscuro -->
-            <div x-show="show" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 transition-opacity">
-                <div class="absolute inset-0 bg-black/50"></div>
+    <div x-data="{ show: @entangle('mostrarModalPopups') }" x-show="show" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display: none;">
+        <!-- Fondo oscuro -->
+        <div x-show="show" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black/50"></div>
+
+        <!-- Modal centrado con tamaño fijo -->
+        <div x-show="show" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 scale-95" x-transition:enter-end="opacity-100 translate-y-0 scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 scale-100" x-transition:leave-end="opacity-0 translate-y-4 scale-95" class="bg-white rounded-lg shadow-xl w-full max-w-lg h-auto transform transition-all flex flex-col relative">
+            <!-- Botón de cerrar -->
+            <div class="absolute top-0 right-0 p-4 z-10">
+                <button @click="show = false" wire:click="cancelarYVolverAVehiculos" type="button" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
             </div>
 
-            <!-- Modal -->
-            <div x-show="show" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <!-- Botón de cerrar -->
-                <div class="absolute top-0 right-0 p-4">
-                    <button @click="show = false" wire:click="$refresh; $redirect('{{ \App\Filament\Pages\Vehiculos::getUrl() }}')" type="button" class="text-gray-400 hover:text-gray-500 focus:outline-none">
-                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
+            <!-- Contenido con altura fija -->
+            <div class="px-6 pt-6 pb-4">
+                <div class="text-center">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                        ¿Deseas conocer nuestros servicios?
+                    </h3>
+                    <p class="text-sm text-gray-500 mb-2">
+                        Recibe información sobre nuestros servicios. Elige uno y
+                    </p>
+                    <p class="text-sm text-gray-500 mb-6">
+                        recibirás un mensaje por whatsapp.
+                    </p>
 
-                <!-- Contenido del modal -->
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start">
-                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                                ¿Deseas conocer nuestros servicios?
-                            </h3>
-                            <p class="text-sm text-gray-500 mb-4">
-                                Recibe información sobre nuestros servicios. Elige uno y
-                            </p>
-                            <p class="text-sm text-gray-500 mb-4">
-                                recibirás un mensaje por whatsapp.
-                            </p>
-
-                            <!-- Lista de pop-ups -->
-                            <div class="mt-4 space-y-4">
-                                @foreach($popupsDisponibles as $popup)
-                                    <div class="flex items-center border rounded-lg p-2 {{ in_array($popup['id'], $popupsSeleccionados) ? 'border-primary-500 bg-primary-50' : 'border-gray-300' }}">
-                                        <div class="flex items-center h-5">
-                                            <input
-                                                type="checkbox"
-                                                id="popup-{{ $popup['id'] }}"
-                                                wire:click="togglePopup({{ $popup['id'] }})"
-                                                {{ in_array($popup['id'], $popupsSeleccionados) ? 'checked' : '' }}
-                                                class="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                                            >
-                                        </div>
-                                        <div class="ml-3 text-sm flex-grow">
-                                            <label for="popup-{{ $popup['id'] }}" class="font-medium text-gray-700">{{ $popup['nombre'] }}</label>
-                                        </div>
-                                        <div>
-                                            <img src="{{ $popup['imagen'] }}" alt="{{ $popup['nombre'] }}" class="h-24 w-32 object-contain">
-                                        </div>
-                                    </div>
-                                @endforeach
+                    <!-- Lista de pop-ups con altura para exactamente 3 cards -->
+                    <div style="height: 360px;" class="overflow-y-auto space-y-4 pr-2">
+                        @foreach($popupsDisponibles as $popup)
+                            <div class="flex items-center border rounded-lg p-2 {{ in_array($popup['id'], $popupsSeleccionados) ? 'border-primary-500 bg-primary-50' : 'border-gray-300' }}">
+                                <div class="flex items-center h-5">
+                                    <input
+                                        type="checkbox"
+                                        id="popup-{{ $popup['id'] }}"
+                                        wire:click="togglePopup({{ $popup['id'] }})"
+                                        {{ in_array($popup['id'], $popupsSeleccionados) ? 'checked' : '' }}
+                                        class="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                                    >
+                                </div>
+                                <div class="ml-3 text-sm flex-grow">
+                                    <label for="popup-{{ $popup['id'] }}" class="font-medium text-gray-700">{{ $popup['nombre'] }}</label>
+                                </div>
+                                <div>
+                                    <img src="{{ $popup['imagen'] }}" alt="{{ $popup['nombre'] }}" class="h-24 w-32 object-contain">
+                                </div>
                             </div>
-                        </div>
+                        @endforeach
                     </div>
                 </div>
+            </div>
 
-                <!-- Botones del modal -->
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button wire:click="solicitarInformacion" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Solicitar información
-                    </button>
-                </div>
+            <!-- Botones fijos en la parte inferior -->
+            <div class="border-t border-gray-200 px-6 py-4 flex gap-3">
+                <!-- Botón Cancelar -->
+                <button wire:click="cancelarYVolverAVehiculos" type="button" class="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    Cancelar
+                </button>
+
+                <!-- Botón Solicitar -->
+                <button wire:click="solicitarInformacion" type="button" class="flex-1 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    Solicitar información
+                </button>
             </div>
         </div>
     </div>
@@ -1198,73 +1198,84 @@
 
     <!-- Modal de éxito -->
     @if($citaStatus === 'completed')
-        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4 animate-fadeIn">
-            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full transform transition-all duration-300 scale-100 animate-slideUp">
-                <div class="text-center">
-                    <!-- Icono de éxito elegante -->
-                    <div class="mb-6 relative">
-                        <div class="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center animate-bounce-gentle">
-                            <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center shadow-lg glow-blue">
-                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-                                </svg>
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+            <!-- Modal centrado con altura máxima y scroll interno -->
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] transform transition-all duration-300 scale-100 animate-slideUp flex flex-col">
+                <!-- Contenido con scroll interno -->
+                <div class="overflow-y-auto flex-1 p-8">
+                    <div class="text-center">
+                        <!-- Icono de éxito elegante -->
+                        <div class="mb-6 relative">
+                            <div class="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center animate-bounce-gentle">
+                                <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center shadow-lg glow-blue">
+                                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <!-- Confetti effect -->
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="text-2xl animate-bounce">🎉</div>
                             </div>
                         </div>
-                        <!-- Confetti effect -->
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <div class="text-2xl animate-bounce">🎉</div>
+
+                        <!-- Título celebratorio -->
+                        <h3 class="text-2xl font-bold text-gray-900 mb-3">🎉 ¡Cita confirmada exitosamente!</h3>
+
+                        <!-- Información de la cita -->
+                        <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6 rounded-r-lg">
+                            <p class="text-sm text-green-800 leading-relaxed font-medium">
+                                Tu cita ha sido registrada en nuestro sistema
+                            </p>
+                            @if($appointmentNumber)
+                                <p class="text-xs text-green-600 mt-2">
+                                    📋 Número de cita: <span class="font-mono bg-green-100 px-2 py-1 rounded">{{ $appointmentNumber }}</span>
+                                </p>
+                            @endif
+                        </div>
+
+                        <!-- Próximos pasos -->
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                            <h4 class="text-sm font-semibold text-blue-900 mb-2">📱 Próximos pasos:</h4>
+                            <ul class="text-xs text-blue-700 space-y-1 text-left">
+                                <li class="flex items-center">
+                                    <svg class="w-3 h-3 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Recibirás una confirmación por WhatsApp
+                                </li>
+                                <li class="flex items-center">
+                                    <svg class="w-3 h-3 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Te recordaremos 1 día antes de tu cita
+                                </li>
+                                <li class="flex items-center">
+                                    <svg class="w-3 h-3 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Lleva tu vehículo en la fecha programada
+                                </li>
+                            </ul>
                         </div>
                     </div>
-                    
-                    <!-- Título celebratorio -->
-                    <h3 class="text-2xl font-bold text-gray-900 mb-3">🎉 ¡Cita confirmada exitosamente!</h3>
-                    
-                    <!-- Información de la cita -->
-                    <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6 rounded-r-lg">
-                        <p class="text-sm text-green-800 leading-relaxed font-medium">
-                            Tu cita ha sido registrada en nuestro sistema
-                        </p>
-                        @if($appointmentNumber)
-                            <p class="text-xs text-green-600 mt-2">
-                                📋 Número de cita: <span class="font-mono bg-green-100 px-2 py-1 rounded">{{ $appointmentNumber }}</span>
-                            </p>
-                        @endif
-                    </div>
-                    
-                    <!-- Próximos pasos -->
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                        <h4 class="text-sm font-semibold text-blue-900 mb-2">📱 Próximos pasos:</h4>
-                        <ul class="text-xs text-blue-700 space-y-1 text-left">
-                            <li class="flex items-center">
-                                <svg class="w-3 h-3 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                                </svg>
-                                Recibirás una confirmación por WhatsApp
-                            </li>
-                            <li class="flex items-center">
-                                <svg class="w-3 h-3 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                                </svg>
-                                Te recordaremos 1 día antes de tu cita
-                            </li>
-                            <li class="flex items-center">
-                                <svg class="w-3 h-3 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                                </svg>
-                                Lleva tu vehículo en la fecha programada
-                            </li>
-                        </ul>
-                    </div>
-                    
-                    <!-- Botón de finalizar con estilos inline -->
-                    <button wire:click="finalizarAgendamiento" 
-                            style="width: 100%; display: flex; align-items: center; justify-content: center; padding: 12px 16px; background-color: #10B981; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease;"
-                            onmouseover="this.style.backgroundColor='#059669'"
-                            onmouseout="this.style.backgroundColor='#10B981'">
-                        <svg style="width: 20px; height: 20px; margin-right: 8px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                </div>
+
+                <!-- Botones fijos en la parte inferior -->
+                <div class="border-t border-gray-200 p-6 flex gap-3">
+                    <!-- Botón Cancelar -->
+                    <button wire:click="cancelarYVolverAVehiculos"
+                            class="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        Cancelar
+                    </button>
+
+                    <!-- Botón Continuar -->
+                    <button wire:click="continuarDespuesDeExito"
+                            class="flex-1 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        ✅ ¡Perfecto! Continuar
+                        ✅ Continuar
                     </button>
                 </div>
             </div>

@@ -28,7 +28,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Joaopaulolndev\FilamentEditProfile\FilamentEditProfilePlugin;
+
 use App\Filament\Pages\Auth\Login;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
@@ -48,6 +48,7 @@ class AdminPanelProvider extends PanelProvider
             ->login(Login::class)
             ->darkMode(false)
             ->sidebarFullyCollapsibleOnDesktop()
+            ->brandLogo(asset('images/logoMitsui.svg'))
             ->colors([
                 'primary' => '#0075BF',
                 'secondary' => '#073568',
@@ -112,12 +113,6 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugins([
                 FilamentShieldPlugin::make(),
-                FilamentEditProfilePlugin::make()
-                    ->setTitle('Editar Perfil')
-                    ->setNavigationLabel('Perfil')
-                    ->setIcon('heroicon-o-user-circle')
-                    ->setNavigationGroup('👥 Administración')
-                    ->shouldRegisterNavigation(),
             ])
             ->renderHook(
                 PanelsRenderHook::BODY_START,

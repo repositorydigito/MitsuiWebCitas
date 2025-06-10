@@ -380,6 +380,49 @@ class GestionPopUp extends Page
             ->send();
     }
 
+    public function eliminarPopup(int $id): void
+    {
+        try {
+            // Buscar el popup en la base de datos
+            $popup = PopUp::findOrFail($id);
+
+            // Eliminar la imagen del almacenamiento si existe
+            if (!empty($popup->image_path)) {
+                try {
+                    // Intentar eliminar el archivo físico
+                    $rutaImagen = str_replace('storage/', '', $popup->image_path);
+                    if (Storage::disk('public')->exists($rutaImagen)) {
+                        Storage::disk('public')->delete($rutaImagen);
+                    }
+                } catch (\Exception $e) {
+                    // Log del error pero continuar con la eliminación del registro
+                    \Illuminate\Support\Facades\Log::warning("Error al eliminar imagen del popup {$id}: " . $e->getMessage());
+                }
+            }
+
+            // Eliminar el popup de la base de datos
+            $popup->delete();
+
+            // Mostrar notificación de éxito
+            \Filament\Notifications\Notification::make()
+                ->title('Popup eliminado')
+                ->body('El popup ha sido eliminado correctamente')
+                ->success()
+                ->send();
+
+            // Recargar los popups
+            $this->cargarPopups();
+
+        } catch (\Exception $e) {
+            // Mostrar notificación de error
+            \Filament\Notifications\Notification::make()
+                ->title('Error al eliminar popup')
+                ->body('Ha ocurrido un error al eliminar el popup: ' . $e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
     public function updatedBusqueda(): void
     {
         $this->currentPage = 1;

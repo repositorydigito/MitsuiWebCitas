@@ -12,60 +12,16 @@ class ImagenController extends Controller
     /**
      * Muestra la imagen de una campaña
      */
-    public function mostrarImagenCampana($id)
+    public function mostrarImagenCampana($idOrFilename)
     {
         try {
-            // Buscar la imagen en la base de datos
-            $imagen = DB::table('campaign_images')->where('campaign_id', $id)->first();
-
-            if (! $imagen || empty($imagen->image_path)) {
-                Log::warning("[ImagenController] No se encontró imagen para la campaña ID: {$id}");
-
-                return $this->imagenPorDefecto();
+            // Si el parámetro contiene una extensión, es un filename
+            if (str_contains($idOrFilename, '.')) {
+                return $this->mostrarImagenPorNombre($idOrFilename);
             }
 
-            $rutaCompleta = $imagen->image_path;
-            Log::info("[ImagenController] Ruta completa de la imagen: {$rutaCompleta}");
-
-            // Normalizar la ruta para evitar problemas con separadores
-            $rutaNormalizada = str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $rutaCompleta);
-            Log::info("[ImagenController] Ruta normalizada: {$rutaNormalizada}");
-
-            // Obtener el nombre del archivo
-            $nombreArchivo = basename($rutaNormalizada);
-            Log::info("[ImagenController] Nombre del archivo: {$nombreArchivo}");
-
-            // Verificar en múltiples ubicaciones posibles
-            $rutasAVerificar = [
-                // Ruta específica para las imágenes de campañas (con separadores correctos)
-                storage_path('app'.DIRECTORY_SEPARATOR.'private'.DIRECTORY_SEPARATOR.'public'.DIRECTORY_SEPARATOR.'images'.DIRECTORY_SEPARATOR.'campanas'.DIRECTORY_SEPARATOR.$nombreArchivo),
-                // Ruta completa en storage (con separadores correctos)
-                storage_path('app'.DIRECTORY_SEPARATOR.$rutaNormalizada),
-                // Ruta en storage/private (con separadores correctos)
-                storage_path('app'.DIRECTORY_SEPARATOR.'private'.DIRECTORY_SEPARATOR.$rutaNormalizada),
-                // Ruta en storage/private/public/images/campanas (con nombre de archivo)
-                storage_path('app'.DIRECTORY_SEPARATOR.'private'.DIRECTORY_SEPARATOR.'public'.DIRECTORY_SEPARATOR.'images'.DIRECTORY_SEPARATOR.'campanas'.DIRECTORY_SEPARATOR.$nombreArchivo),
-                // Ruta en public
-                public_path($rutaNormalizada),
-                // Ruta directa
-                $rutaNormalizada,
-            ];
-
-            foreach ($rutasAVerificar as $ruta) {
-                Log::info("[ImagenController] Intentando acceder a la imagen en: {$ruta}");
-
-                if (file_exists($ruta)) {
-                    Log::info("[ImagenController] Imagen encontrada en: {$ruta}");
-
-                    return Response::file($ruta);
-                }
-            }
-
-            // Si llegamos aquí, la imagen no se encontró en ninguna ubicación
-            Log::warning('[ImagenController] No se pudo encontrar la imagen en ninguna ubicación');
-            Log::warning('[ImagenController] Rutas verificadas: '.json_encode($rutasAVerificar));
-
-            return $this->imagenPorDefecto();
+            // Si no, es un ID de campaña
+            return $this->mostrarImagenPorId($idOrFilename);
 
         } catch (\Exception $e) {
             Log::error('[ImagenController] Error al mostrar imagen de campaña: '.$e->getMessage());
@@ -73,6 +29,63 @@ class ImagenController extends Controller
 
             return $this->imagenPorDefecto();
         }
+    }
+
+    /**
+     * Muestra imagen por ID de campaña
+     */
+    private function mostrarImagenPorId($id)
+    {
+        // Buscar la imagen en la base de datos
+        $imagen = DB::table('campaign_images')->where('campaign_id', $id)->first();
+
+        if (! $imagen || empty($imagen->route)) {
+            Log::warning("[ImagenController] No se encontró imagen para la campaña ID: {$id}");
+            return $this->imagenPorDefecto();
+        }
+
+        return $this->servirArchivo($imagen->route);
+    }
+
+    /**
+     * Muestra imagen por nombre de archivo (para imágenes en private)
+     */
+    private function mostrarImagenPorNombre($filename)
+    {
+        // Buscar en la carpeta private
+        $rutaPrivate = 'private/public/images/campanas/' . $filename;
+
+        if (Storage::exists($rutaPrivate)) {
+            Log::info("[ImagenController] Imagen encontrada en private: {$rutaPrivate}");
+            return $this->servirArchivo($rutaPrivate);
+        }
+
+        // Buscar en la carpeta public
+        $rutaPublic = 'public/images/campanas/' . $filename;
+
+        if (Storage::exists($rutaPublic)) {
+            Log::info("[ImagenController] Imagen encontrada en public: {$rutaPublic}");
+            return $this->servirArchivo($rutaPublic);
+        }
+
+        Log::warning("[ImagenController] No se encontró imagen con nombre: {$filename}");
+        return $this->imagenPorDefecto();
+    }
+
+    /**
+     * Sirve un archivo desde storage
+     */
+    private function servirArchivo($ruta)
+    {
+        $rutaCompleta = storage_path('app/' . $ruta);
+        Log::info("[ImagenController] Sirviendo archivo: {$rutaCompleta}");
+
+        if (file_exists($rutaCompleta)) {
+            return Response::file($rutaCompleta);
+        }
+
+        Log::warning("[ImagenController] Archivo no existe: {$rutaCompleta}");
+        return $this->imagenPorDefecto();
     }
 
     /**

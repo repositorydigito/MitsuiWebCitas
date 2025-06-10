@@ -14,11 +14,11 @@ class ModeloAno extends Model
     protected $fillable = [
         'model_id',
         'year',
-        'activo',
+        'is_active',
     ];
 
     protected $casts = [
-        'activo' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     /**
@@ -35,7 +35,7 @@ class ModeloAno extends Model
     public static function getAnosActivosParaModelo($modeloId)
     {
         return self::where('model_id', $modeloId)
-            ->where('activo', true)
+            ->where('is_active', true)
             ->orderBy('year', 'desc')
             ->pluck('year')
             ->toArray();
@@ -51,5 +51,30 @@ class ModeloAno extends Model
             ->pluck('year')
             ->unique()
             ->toArray();
+    }
+
+    /**
+     * Crear años por defecto para todos los modelos que no tengan años
+     */
+    public static function crearAnosPorDefecto()
+    {
+        $modelos = \App\Models\Modelo::where('is_active', true)->get();
+        $anosDefecto = ['2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025'];
+
+        foreach ($modelos as $modelo) {
+            // Verificar si el modelo ya tiene años
+            $tieneAnos = self::where('model_id', $modelo->id)->exists();
+
+            if (!$tieneAnos) {
+                // Crear años por defecto para este modelo
+                foreach ($anosDefecto as $ano) {
+                    self::create([
+                        'model_id' => $modelo->id,
+                        'year' => $ano,
+                        'is_active' => true,
+                    ]);
+                }
+            }
+        }
     }
 }
