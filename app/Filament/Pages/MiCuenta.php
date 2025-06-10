@@ -2,19 +2,23 @@
 
 namespace App\Filament\Pages;
 
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
 class MiCuenta extends Page
 {
+    use HasPageShield;
     protected static ?string $navigationIcon = 'heroicon-o-user-circle';
 
     protected static ?string $navigationLabel = 'Mi cuenta';
+    
+    protected static ?string $navigationGroup = '👥 Administración';
+    
+    protected static ?int $navigationSort = 5;
 
     protected static ?string $title = 'Mi cuenta';
-
-    protected static ?int $navigationSort = 90;
 
     protected static string $view = 'filament.pages.mi-cuenta';
 

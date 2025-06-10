@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\Local;
 use App\Models\VehiculoExpress;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
@@ -17,11 +18,15 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class ServicioExpress extends Page
 {
-    use WithFileUploads;
+    use WithFileUploads, HasPageShield;
 
-    protected static ?string $navigationIcon = 'heroicon-o-truck';
+    protected static ?string $navigationIcon = 'heroicon-o-bolt';
 
     protected static ?string $navigationLabel = 'Servicio Express';
+    
+    protected static ?string $navigationGroup = '📅 Citas & Servicios';
+    
+    protected static ?int $navigationSort = 4;
 
     protected static ?string $title = 'Gestión servicio express';
 

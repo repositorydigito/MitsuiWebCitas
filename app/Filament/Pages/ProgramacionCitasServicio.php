@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Local;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -13,13 +14,17 @@ use Filament\Pages\Page;
 
 class ProgramacionCitasServicio extends Page implements HasForms
 {
-    use InteractsWithForms;
+    use InteractsWithForms, HasPageShield;
 
     protected static string $view = 'filament.pages.programacion-citas-servicio';
 
-    protected static ?string $navigationIcon = 'heroicon-o-calendar';
+    protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
-    protected static ?string $navigationLabel = 'Programación Citas Servicio';
+    protected static ?string $navigationLabel = 'Programación Citas';
+    
+    protected static ?string $navigationGroup = '📅 Citas & Servicios';
+    
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $title = 'Programación citas de servicio';
 

@@ -3,15 +3,21 @@
 namespace App\Filament\Pages;
 
 use App\Models\Vehicle;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class AgregarVehiculo extends Page
 {
+    use HasPageShield;
     protected static ?string $navigationIcon = 'heroicon-o-plus-circle';
 
     protected static ?string $navigationLabel = 'Agregar Vehículo';
+    
+    protected static ?string $navigationGroup = '🚗 Vehículos';
+    
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $title = 'Agregar vehículo';
 

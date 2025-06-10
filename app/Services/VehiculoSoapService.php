@@ -288,37 +288,39 @@ class VehiculoSoapService
                 return $vehiculosSAP;
             }
         } else {
-            Log::warning('[VehiculoSoapService] NIVEL 1: SAP deshabilitado debido a problemas de timeout. Saltando a NIVEL 2.');
+            Log::warning('[VehiculoSoapService] NIVEL 1: SAP deshabilitado debido a problemas de timeout. Saltando a NIVEL 2 (BD Local).');
         }
 
-        // NIVEL 2: C4C WSCitas - Citas Pendientes (INTERMEDIO)
-        if (config('vehiculos_webservice.enabled', true)) {
-            Log::info('[VehiculoSoapService] NIVEL 2: Intentando obtener vehículos desde C4C WSCitas - Citas Pendientes');
-            
-            $vehiculosC4C = $this->getVehiculosDesdeC4C($documentoCliente, $marcas);
-            if (! $vehiculosC4C->isEmpty()) {
-                Log::info('[VehiculoSoapService] NIVEL 2: Vehículos obtenidos exitosamente desde C4C WSCitas - Citas Pendientes');
-                
-                // **NUEVA FUNCIONALIDAD: Persistir vehículos en BD**
-                $this->persistirVehiculosEnBD($vehiculosC4C, $documentoCliente);
-                
-                return $vehiculosC4C;
-            }
-        }
+        // NIVEL 2: C4C WSCitas - Citas Pendientes (INTERMEDIO) - **DESACTIVADO**
+        // if (config('vehiculos_webservice.enabled', true)) {
+        //     Log::info('[VehiculoSoapService] NIVEL 2: Intentando obtener vehículos desde C4C WSCitas - Citas Pendientes');
+        //     
+        //     $vehiculosC4C = $this->getVehiculosDesdeC4C($documentoCliente, $marcas);
+        //     if (! $vehiculosC4C->isEmpty()) {
+        //         Log::info('[VehiculoSoapService] NIVEL 2: Vehículos obtenidos exitosamente desde C4C WSCitas - Citas Pendientes');
+        //         
+        //         // **NUEVA FUNCIONALIDAD: Persistir vehículos en BD**
+        //         $this->persistirVehiculosEnBD($vehiculosC4C, $documentoCliente);
+        //         
+        //         return $vehiculosC4C;
+        //     }
+        // }
+        
+        Log::info('[VehiculoSoapService] NIVEL 2: C4C WSCitas desactivado. Saltando directamente a Base de Datos Local.');
 
-        // NIVEL 3: Base de datos local (ÚLTIMO RECURSO)
+        // NIVEL 2: Base de datos local (FALLBACK DIRECTO DESDE SAP)
         if (config('vehiculos_webservice.enabled', true)) {
-            Log::info('[VehiculoSoapService] NIVEL 3: Intentando obtener vehículos desde base de datos local');
+            Log::info('[VehiculoSoapService] NIVEL 2: Intentando obtener vehículos desde base de datos local');
             
             $vehiculosLocal = $this->getVehiculosLocal($documentoCliente, $marcas);
             if (! $vehiculosLocal->isEmpty()) {
-                Log::info('[VehiculoSoapService] NIVEL 3: Vehículos obtenidos exitosamente desde base de datos local');
+                Log::info('[VehiculoSoapService] NIVEL 2: Vehículos obtenidos exitosamente desde base de datos local');
                 return $vehiculosLocal;
             }
         }
 
         // Si no se obtuvieron vehículos en ningún nivel, usar datos simulados
-        Log::warning('[VehiculoSoapService] No se encontraron vehículos en los niveles 1, 2 o 3. Usando datos simulados.');
+        Log::warning('[VehiculoSoapService] No se encontraron vehículos en los niveles 1 y 2 (SAP y BD Local). Usando datos simulados.');
         $vehiculosMock = $this->mockService->getVehiculosCliente($documentoCliente, $marcas);
         
         // **NUEVA FUNCIONALIDAD: Persistir datos mock también para testing**
@@ -415,7 +417,7 @@ class VehiculoSoapService
                     
                     // Si hay 2 errores consecutivos, abortar SAP inmediatamente
                     if ($erroresConsecutivos >= 2) {
-                        Log::warning("[VehiculoSoapService] Abortando SAP debido a {$erroresConsecutivos} errores consecutivos. Pasando a NIVEL 2.");
+                        Log::warning("[VehiculoSoapService] Abortando SAP debido a {$erroresConsecutivos} errores consecutivos. Pasando a NIVEL 2 (BD Local).");
                         break; // Salir del foreach para pasar al siguiente nivel
                     }
                     continue; // Saltar a la siguiente marca sin procesar
@@ -459,7 +461,7 @@ class VehiculoSoapService
                 
                 // Si hay 2 errores consecutivos, abortar SAP inmediatamente
                 if ($erroresConsecutivos >= 2) {
-                    Log::warning("[VehiculoSoapService] Abortando SAP debido a {$erroresConsecutivos} errores consecutivos. Pasando a NIVEL 2.");
+                    Log::warning("[VehiculoSoapService] Abortando SAP debido a {$erroresConsecutivos} errores consecutivos. Pasando a NIVEL 2 (BD Local).");
                     break; // Salir del foreach para pasar al siguiente nivel
                 }
             }

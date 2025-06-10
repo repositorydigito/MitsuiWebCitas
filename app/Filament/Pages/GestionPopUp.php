@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\PopUp;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
@@ -14,11 +15,15 @@ use Livewire\WithFileUploads;
 
 class GestionPopUp extends Page
 {
-    use WithFileUploads;
+    use WithFileUploads, HasPageShield;
 
     protected static ?string $navigationIcon = 'heroicon-o-photo';
 
     protected static ?string $navigationLabel = 'Gestión Pop up';
+    
+    protected static ?string $navigationGroup = '📢 Marketing';
+    
+    protected static ?int $navigationSort = 4;
 
     protected static ?string $title = 'Gestión Pop up';
 

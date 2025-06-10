@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\Campana;
 use App\Models\Local;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
@@ -13,19 +14,21 @@ use Livewire\WithPagination;
 
 class Campanas extends Page
 {
-    use WithPagination;
+    use WithPagination, HasPageShield;
 
     public int $page = 1;
 
     protected static ?string $navigationIcon = 'heroicon-o-megaphone';
 
     protected static ?string $navigationLabel = 'Campañas';
+    
+    protected static ?string $navigationGroup = '📢 Marketing';
+    
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $title = 'Campañas';
 
     protected static string $view = 'filament.pages.campanas';
-
-    protected static ?int $navigationSort = 20;
 
     // Propiedades para filtros
     public string $ciudadSeleccionada = '';

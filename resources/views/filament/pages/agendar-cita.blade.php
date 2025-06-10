@@ -728,8 +728,15 @@
                         Volver
                     </div>
                 </button>
-                <button type="button" wire:click="continuar" class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success-500">
-                    Confirmar cita
+                <button type="button" wire:click="continuar" class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success-500" wire:loading.attr="disabled">
+                    <span wire:loading.remove wire:target="continuar">Confirmar cita</span>
+                    <span wire:loading wire:target="continuar" class="flex items-center">
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Procesando...
+                    </span>
                 </button>
             </div>
         </div>
@@ -1025,7 +1032,377 @@
             </div>
         </div>
     </div>
+
+    <!-- Loader de progreso para C4C -->
+    @if($citaStatus === 'processing')
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full transform transition-all duration-300 scale-100">
+                <div class="text-center">
+                    <!-- Spinner animado más elegante -->
+                    <div class="mb-6 relative">
+                        <div class="mx-auto h-16 w-16 relative">
+                            <!-- Círculo exterior -->
+                            <div class="absolute inset-0 rounded-full border-4 border-blue-100"></div>
+                            <!-- Círculo animado -->
+                            <div class="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 animate-spin"></div>
+                            <!-- Punto central -->
+                            <div class="absolute inset-4 bg-blue-500 rounded-full animate-pulse"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Título más atractivo -->
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">🚗 Confirmando tu cita</h3>
+                    <p class="text-sm text-gray-600 mb-6 leading-relaxed">{{ $citaMessage }}</p>
+                    
+                    <!-- Barra de progreso moderna -->
+                    <div class="w-full bg-gray-200 rounded-full h-3 mb-4 shadow-inner">
+                        <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-1000 ease-out shadow-sm" 
+                             style="width: {{ $citaProgress }}%"></div>
+                    </div>
+                    
+                    <!-- Info de progreso -->
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-sm font-medium text-blue-600">{{ $citaProgress }}% completado</span>
+                        <span class="text-xs text-gray-500">⏱️ Tiempo estimado: 30s</span>
+                    </div>
+                    
+                    <!-- Advertencia elegante -->
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                        <p class="text-xs text-amber-700 flex items-center justify-center">
+                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                            </svg>
+                            Por favor no cierres esta ventana
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Modal de error -->
+    @if($citaStatus === 'failed')
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4 animate-fadeIn">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full transform transition-all duration-300 scale-100 animate-slideUp">
+                <div class="text-center">
+                    <!-- Icono de error mejorado -->
+                    <div class="mb-6 relative">
+                        <div class="mx-auto w-20 h-20 bg-red-100 rounded-full flex items-center justify-center animate-bounce">
+                            <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center shadow-lg">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Título más impactante -->
+                    <h3 class="text-2xl font-bold text-gray-900 mb-3">❌ Oops! Algo salió mal</h3>
+                    
+                    <!-- Mensaje de error en card -->
+                    <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-6 rounded-r-lg">
+                        <p class="text-sm text-red-800 leading-relaxed">{{ $citaMessage }}</p>
+                    </div>
+                    
+                    <!-- Sugerencia amigable -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
+                        <p class="text-xs text-blue-700 flex items-center justify-center">
+                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                            </svg>
+                            💡 Intenta seleccionar otra fecha u horario disponible
+                        </p>
+                    </div>
+                    
+                    <!-- Botones con estilos inline garantizados -->
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 24px;">
+                        <button wire:click="resetearEstadoCita" 
+                                style="display: flex; align-items: center; justify-content: center; padding: 12px 16px; background-color: #6B7280; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background-color 0.2s ease;"
+                                onmouseover="this.style.backgroundColor='#374151'"
+                                onmouseout="this.style.backgroundColor='#6B7280'">
+                            <svg style="width: 16px; height: 16px; margin-right: 8px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            🔄 Intentar de nuevo
+                        </button>
+                        <button wire:click="volverAVehiculos" 
+                                style="display: flex; align-items: center; justify-content: center; padding: 12px 16px; background-color: #2563EB; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background-color 0.2s ease;"
+                                onmouseover="this.style.backgroundColor='#1D4ED8'"
+                                onmouseout="this.style.backgroundColor='#2563EB'">
+                            <svg style="width: 16px; height: 16px; margin-right: 8px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                            </svg>
+                            🏠 Volver al inicio
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Modal de reintentando -->
+    @if($citaStatus === 'retrying')
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4 animate-fadeIn">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full transform transition-all duration-300 scale-100">
+                <div class="text-center">
+                    <!-- Icono de reintentando mejorado -->
+                    <div class="mb-6 relative">
+                        <div class="mx-auto w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <div class="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+                                <svg class="w-8 h-8 text-white animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Título más dinámico -->
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">🔄 Reintentando conexión</h3>
+                    
+                    <!-- Mensaje en card -->
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-lg">
+                        <p class="text-sm text-yellow-800 leading-relaxed">{{ $citaMessage }}</p>
+                    </div>
+                    
+                    <!-- Barra de progreso animada más atractiva -->
+                    <div class="w-full bg-gray-200 rounded-full h-3 mb-6 shadow-inner overflow-hidden">
+                        <div class="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 h-3 rounded-full animate-pulse shadow-sm">
+                            <div class="h-full bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-shimmer"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Info con iconos -->
+                    <div class="space-y-3">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <p class="text-xs text-blue-700 flex items-center justify-center">
+                                <svg class="w-4 h-4 mr-2 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L9.414 11H13a1 1 0 100-2H9.414l1.293-1.293z" clip-rule="evenodd"></path>
+                                </svg>
+                                Detectamos un problema temporal
+                            </p>
+                        </div>
+                        
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                            <p class="text-xs text-green-700 flex items-center justify-center">
+                                <svg class="w-4 h-4 mr-2 animate-spin" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
+                                </svg>
+                                ⚡ Reintentando automáticamente...
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Modal de éxito -->
+    @if($citaStatus === 'completed')
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4 animate-fadeIn">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full transform transition-all duration-300 scale-100 animate-slideUp">
+                <div class="text-center">
+                    <!-- Icono de éxito elegante -->
+                    <div class="mb-6 relative">
+                        <div class="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center animate-bounce-gentle">
+                            <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center shadow-lg glow-blue">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <!-- Confetti effect -->
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="text-2xl animate-bounce">🎉</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Título celebratorio -->
+                    <h3 class="text-2xl font-bold text-gray-900 mb-3">🎉 ¡Cita confirmada exitosamente!</h3>
+                    
+                    <!-- Información de la cita -->
+                    <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6 rounded-r-lg">
+                        <p class="text-sm text-green-800 leading-relaxed font-medium">
+                            Tu cita ha sido registrada en nuestro sistema
+                        </p>
+                        @if($appointmentNumber)
+                            <p class="text-xs text-green-600 mt-2">
+                                📋 Número de cita: <span class="font-mono bg-green-100 px-2 py-1 rounded">{{ $appointmentNumber }}</span>
+                            </p>
+                        @endif
+                    </div>
+                    
+                    <!-- Próximos pasos -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <h4 class="text-sm font-semibold text-blue-900 mb-2">📱 Próximos pasos:</h4>
+                        <ul class="text-xs text-blue-700 space-y-1 text-left">
+                            <li class="flex items-center">
+                                <svg class="w-3 h-3 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                Recibirás una confirmación por WhatsApp
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-3 h-3 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                Te recordaremos 1 día antes de tu cita
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-3 h-3 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                Lleva tu vehículo en la fecha programada
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Botón de finalizar con estilos inline -->
+                    <button wire:click="finalizarAgendamiento" 
+                            style="width: 100%; display: flex; align-items: center; justify-content: center; padding: 12px 16px; background-color: #10B981; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease;"
+                            onmouseover="this.style.backgroundColor='#059669'"
+                            onmouseout="this.style.backgroundColor='#10B981'">
+                        <svg style="width: 20px; height: 20px; margin-right: 8px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        ✅ ¡Perfecto! Continuar
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- JavaScript para polling -->
+    <script>
+        let pollingInterval = null;
+        
+        // Escuchar el evento para iniciar polling
+        document.addEventListener('livewire:initialized', () => {
+            Livewire.on('start-polling', (data) => {
+                console.log('🔄 Iniciando polling para job:', data.jobId);
+                
+                // Limpiar polling anterior si existe
+                if (pollingInterval) {
+                    clearInterval(pollingInterval);
+                }
+                
+                // Iniciar polling cada 2 segundos
+                pollingInterval = setInterval(() => {
+                    console.log('📡 Verificando status del job...');
+                    @this.call('checkJobStatus');
+                }, 2000);
+            });
+            
+            // Escuchar el evento para detener polling
+            Livewire.on('stop-polling', () => {
+                console.log('⏹️ Deteniendo polling');
+                if (pollingInterval) {
+                    clearInterval(pollingInterval);
+                    pollingInterval = null;
+                }
+            });
+        });
+        
+        // Limpiar polling al salir de la página
+        window.addEventListener('beforeunload', () => {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+            }
+        });
+    </script>
 </x-filament-panels::page>
+
+@push('styles')
+<style>
+    /* Animaciones personalizadas para los modales */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    @keyframes slideUp {
+        from { 
+            opacity: 0;
+            transform: translateY(20px) scale(0.95); 
+        }
+        to { 
+            opacity: 1;
+            transform: translateY(0) scale(1); 
+        }
+    }
+    
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    
+    @keyframes pulse-gentle {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+    
+    @keyframes bounce-gentle {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+    }
+    
+    .animate-fadeIn {
+        animation: fadeIn 0.3s ease-out;
+    }
+    
+    .animate-slideUp {
+        animation: slideUp 0.3s ease-out;
+    }
+    
+    .animate-shimmer {
+        animation: shimmer 2s infinite linear;
+    }
+    
+    .animate-pulse-gentle {
+        animation: pulse-gentle 2s infinite;
+    }
+    
+    .animate-bounce-gentle {
+        animation: bounce-gentle 1s infinite;
+    }
+    
+    /* Efectos de glassmorphism */
+    .backdrop-blur-sm {
+        backdrop-filter: blur(4px);
+    }
+    
+    /* Hover effects mejorados */
+    .hover-lift:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Gradientes personalizados */
+    .bg-gradient-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+    
+    .bg-gradient-error {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    }
+    
+    .bg-gradient-warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+    
+    /* Efectos de resplandor */
+    .glow-blue {
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    }
+    
+    .glow-red {
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+    }
+    
+    .glow-yellow {
+        box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+    }
+</style>
+@endpush
 
 @push('scripts')
 <script>

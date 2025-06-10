@@ -33,6 +33,7 @@ use App\Filament\Pages\Auth\Login;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Blade;
+use Filament\Navigation\NavigationGroup;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -86,12 +87,36 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
+            ->navigationGroups([
+                NavigationGroup::make()
+                    ->label('🏠 Principal')
+                    ->collapsed(false),
+                NavigationGroup::make()
+                    ->label('🚗 Vehículos')
+                    ->collapsed(false),
+                NavigationGroup::make()
+                    ->label('📅 Citas & Servicios')
+                    ->collapsed(false),
+                NavigationGroup::make()
+                    ->label('📢 Marketing')
+                    ->collapsed(true),
+                NavigationGroup::make()
+                    ->label('📊 Reportes & KPIs')
+                    ->collapsed(true),
+                NavigationGroup::make()
+                    ->label('⚙️ Configuración')
+                    ->collapsed(true),
+                NavigationGroup::make()
+                    ->label('👥 Administración')
+                    ->collapsed(true),
+            ])
             ->plugins([
                 FilamentShieldPlugin::make(),
                 FilamentEditProfilePlugin::make()
                     ->setTitle('Editar Perfil')
                     ->setNavigationLabel('Perfil')
                     ->setIcon('heroicon-o-user-circle')
+                    ->setNavigationGroup('👥 Administración')
                     ->shouldRegisterNavigation(),
             ])
             ->renderHook(
@@ -100,7 +125,7 @@ class AdminPanelProvider extends PanelProvider
             )
             ->renderHook(
                 PanelsRenderHook::BODY_END,
-                fn () => auth()->check() ? view('customFooter') : '',
+                fn () => \Illuminate\Support\Facades\Auth::check() ? view('customFooter') : '',
             )
             ->renderHook(
                 PanelsRenderHook::BODY_START,
@@ -108,7 +133,7 @@ class AdminPanelProvider extends PanelProvider
             )
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
-                fn () => auth()->check() ? view('customHeader') : '',
+                fn () => \Illuminate\Support\Facades\Auth::check() ? view('customHeader') : '',
             );
     }
 }

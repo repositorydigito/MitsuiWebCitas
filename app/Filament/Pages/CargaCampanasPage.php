@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\Campana;
 use App\Models\CampanaImagen;
 use App\Models\Local;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -16,9 +17,9 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class CargaCampanasPage extends Page
 {
-    use WithFileUploads;
+    use WithFileUploads, HasPageShield;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-plus';
+    protected static ?string $navigationIcon = 'heroicon-o-arrow-up-tray';
 
     protected static ?string $navigationLabel = 'Cargar Campañas';
 
@@ -26,9 +27,9 @@ class CargaCampanasPage extends Page
 
     protected static ?string $slug = 'cargar-campanas';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
-    protected static ?string $navigationGroup = 'Campañas';
+    protected static ?string $navigationGroup = '📢 Marketing';
 
     protected static string $view = 'filament.pages.carga-campanas-page';
 

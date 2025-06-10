@@ -3,20 +3,24 @@
 namespace App\Filament\Pages;
 
 use App\Models\Local;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Log;
 
 class DashboardKpi extends Page
 {
+    use HasPageShield;
     protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
 
     protected static ?string $navigationLabel = 'Dashboard KPI';
+    
+    protected static ?string $navigationGroup = '📊 Reportes & KPIs';
+    
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $title = 'Dashboard de Indicadores';
 
     protected static string $view = 'filament.pages.dashboard-kpi';
-
-    protected static ?int $navigationSort = 24;
 
     // Propiedades para filtros
     public string $fechaInicio = '';
