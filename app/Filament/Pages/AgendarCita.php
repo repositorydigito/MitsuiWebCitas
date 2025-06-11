@@ -480,12 +480,6 @@ class AgendarCita extends Page
     protected function cargarModalidadesDisponibles(): void
     {
         try {
-            Log::info('[AgendarCita] === INICIANDO CARGA DE MODALIDADES ===');
-            Log::info('[AgendarCita] Datos actuales:');
-            Log::info('[AgendarCita]   Vehículo: '.json_encode($this->vehiculo ?? []));
-            Log::info('[AgendarCita]   Local seleccionado: '.($this->localSeleccionado ?? 'ninguno'));
-            Log::info('[AgendarCita]   Tipo mantenimiento: '.($this->tipoMantenimiento ?? 'ninguno'));
-
             // Modalidad Regular siempre está disponible
             $this->modalidadesDisponibles = [
                 'Regular' => 'Regular',
@@ -493,17 +487,11 @@ class AgendarCita extends Page
 
             // Verificar si Express está disponible para este vehículo y local
             $expressDisponible = $this->esExpressDisponible();
-            Log::info('[AgendarCita] ¿Express disponible? '.($expressDisponible ? 'SÍ' : 'NO'));
 
             if ($expressDisponible) {
                 $this->modalidadesDisponibles['Express (Duración 1h-30 min)'] = 'Express (Duración 1h 30 min)';
-                Log::info('[AgendarCita] Express agregado a modalidades disponibles');
             }
-
-            Log::info('[AgendarCita] Modalidades finales disponibles: '.implode(', ', array_keys($this->modalidadesDisponibles)));
-            Log::info('[AgendarCita] === FIN CARGA DE MODALIDADES ===');
         } catch (\Exception $e) {
-            Log::error('[AgendarCita] Error al cargar modalidades: '.$e->getMessage());
             // En caso de error, solo mostrar Regular
             $this->modalidadesDisponibles = [
                 'Regular' => 'Regular',
@@ -571,15 +559,8 @@ class AgendarCita extends Page
     protected function esExpressDisponible(): bool
     {
         try {
-            Log::info('[AgendarCita] === VERIFICANDO DISPONIBILIDAD EXPRESS ===');
-
             // Si no hay vehículo, local o tipo de mantenimiento seleccionado, Express no está disponible
             if (empty($this->vehiculo) || empty($this->localSeleccionado) || empty($this->tipoMantenimiento)) {
-                Log::info('[AgendarCita] Express no disponible: falta vehículo, local o tipo de mantenimiento');
-                Log::info('[AgendarCita]   Vehículo vacío: '.(empty($this->vehiculo) ? 'SÍ' : 'NO'));
-                Log::info('[AgendarCita]   Local vacío: '.(empty($this->localSeleccionado) ? 'SÍ' : 'NO'));
-                Log::info('[AgendarCita]   Mantenimiento vacío: '.(empty($this->tipoMantenimiento) ? 'SÍ' : 'NO'));
-
                 return false;
             }
 
@@ -587,23 +568,8 @@ class AgendarCita extends Page
             $marca = $this->vehiculo['marca'] ?? '';
             $anio = $this->vehiculo['anio'] ?? '';
 
-            Log::info('[AgendarCita] Datos del vehículo extraídos:');
-            Log::info("[AgendarCita]   Modelo: '{$modelo}'");
-            Log::info("[AgendarCita]   Marca: '{$marca}'");
-            Log::info("[AgendarCita]   Año: '{$anio}'");
-
             if (empty($modelo) || empty($marca) || empty($anio)) {
-                Log::info('[AgendarCita] Express no disponible: datos incompletos del vehículo');
-
                 return false;
-            }
-
-            // Mostrar todos los registros de vehicles_express para depuración
-            $todosLosVehiculos = \App\Models\VehiculoExpress::where('is_active', true)->get();
-            Log::info('[AgendarCita] Total de vehículos Express activos en BD: '.$todosLosVehiculos->count());
-
-            foreach ($todosLosVehiculos as $index => $veh) {
-                Log::info("[AgendarCita] Vehículo Express #{$index}: Modelo='{$veh->model}', Marca='{$veh->brand}', Año='{$veh->year}', Local='{$veh->premises}', Mantenimiento=".json_encode($veh->maintenance));
             }
 
             // Obtener el nombre del local seleccionado
@@ -611,44 +577,37 @@ class AgendarCita extends Page
             try {
                 $localObj = \App\Models\Local::where('code', $this->localSeleccionado)->first();
                 $nombreLocal = $localObj ? $localObj->name : '';
-                Log::info("[AgendarCita] Local seleccionado - Código: '{$this->localSeleccionado}', Nombre: '{$nombreLocal}'");
             } catch (\Exception $e) {
-                Log::error('[AgendarCita] Error al obtener nombre del local: '.$e->getMessage());
+                // Silenciar error
             }
-
-            // Buscar en la tabla vehicles_express si existe una configuración activa
-            Log::info('[AgendarCita] Buscando configuración con:');
-            Log::info("[AgendarCita]   modelo LIKE '%{$modelo}%'");
-            Log::info("[AgendarCita]   marca LIKE '%{$marca}%'");
-            Log::info("[AgendarCita]   year = '{$anio}'");
-            Log::info("[AgendarCita]   local = '{$nombreLocal}' (nombre del local)");
-            Log::info("[AgendarCita]   mantenimiento = '{$this->tipoMantenimiento}'");
 
             // Normalizar el tipo de mantenimiento para la búsqueda
-            $mantenimientoNormalizado = $this->tipoMantenimiento;
+            $formatosABuscar = [
+                $this->tipoMantenimiento, // Formato original
+            ];
+
+            // Si contiene "Mantenimiento", agregar variaciones
             if (strpos($this->tipoMantenimiento, 'Mantenimiento') !== false) {
-                // Convertir "Mantenimiento 20000 Km" a "20,000 Km"
-                $mantenimientoNormalizado = str_replace(['Mantenimiento ', '000 Km'], [',000 Km'], $this->tipoMantenimiento);
-                $mantenimientoNormalizado = str_replace('Mantenimiento ', '', $mantenimientoNormalizado);
-                $mantenimientoNormalizado = str_replace('000 Km', ',000 Km', $mantenimientoNormalizado);
+                $formato1 = str_replace('Mantenimiento ', '', $this->tipoMantenimiento);
+                $formato2 = str_replace('000 Km', ',000 Km', $formato1);
+                $formatosABuscar[] = $formato1;
+                $formatosABuscar[] = $formato2;
             }
-            Log::info("[AgendarCita] Mantenimiento normalizado: '{$this->tipoMantenimiento}' -> '{$mantenimientoNormalizado}'");
 
             // Buscar vehículos que coincidan con modelo, marca, año y local
             $vehiculosExpress = \App\Models\VehiculoExpress::where('is_active', true)
                 ->where('model', 'like', "%{$modelo}%")
                 ->where('brand', 'like', "%{$marca}%")
                 ->where('year', $anio)
-                ->where('premises', $this->localSeleccionado)
+                ->where(function($query) use ($nombreLocal) {
+                    $query->where('premises', $this->localSeleccionado)  // Buscar por código
+                          ->orWhere('premises', $nombreLocal);            // Buscar por nombre
+                })
                 ->get();
-
-            Log::info('[AgendarCita] Vehículos encontrados para filtrar por mantenimiento: '.$vehiculosExpress->count());
 
             $vehiculoExpress = null;
             foreach ($vehiculosExpress as $vehiculo) {
                 $mantenimientos = $vehiculo->mantenimiento;
-
-                Log::info("[AgendarCita] Mantenimiento raw del vehículo ID {$vehiculo->id}: ".json_encode($mantenimientos).' (tipo: '.gettype($mantenimientos).')');
 
                 // Manejar diferentes formatos de mantenimiento
                 if (is_string($mantenimientos)) {
@@ -657,51 +616,37 @@ class AgendarCita extends Page
                         $decoded = json_decode($mantenimientos, true);
                         if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                             $mantenimientos = $decoded;
-                            Log::info('[AgendarCita] Mantenimiento decodificado de JSON: '.json_encode($mantenimientos));
                         } else {
-                            // Si no es JSON válido, tratarlo como string simple
                             $mantenimientos = [$mantenimientos];
-                            Log::info('[AgendarCita] Mantenimiento tratado como string simple: '.json_encode($mantenimientos));
                         }
                     } else {
-                        // String simple, convertir a array
                         $mantenimientos = [$mantenimientos];
-                        Log::info('[AgendarCita] Mantenimiento convertido a array: '.json_encode($mantenimientos));
                     }
                 } elseif (! is_array($mantenimientos)) {
-                    // Si no es string ni array, convertir a array
                     $mantenimientos = [$mantenimientos];
-                    Log::info('[AgendarCita] Mantenimiento forzado a array: '.json_encode($mantenimientos));
                 }
 
-                Log::info("[AgendarCita] Verificando vehículo ID {$vehiculo->id} con mantenimientos procesados: ".json_encode($mantenimientos));
-                Log::info("[AgendarCita] Buscando coincidencia para: '{$mantenimientoNormalizado}'");
-
-                // Verificar si el mantenimiento normalizado está en el array
-                if (is_array($mantenimientos) && in_array($mantenimientoNormalizado, $mantenimientos)) {
-                    $vehiculoExpress = $vehiculo;
-                    Log::info("[AgendarCita] ✓ Coincidencia encontrada en vehículo ID {$vehiculo->id}");
-                    break;
-                } else {
-                    Log::info("[AgendarCita] ✗ No hay coincidencia en vehículo ID {$vehiculo->id}");
+                // Verificar si alguno de los formatos está en el array
+                $coincidenciaEncontrada = false;
+                if (is_array($mantenimientos)) {
+                    foreach ($formatosABuscar as $formato) {
+                        // Buscar coincidencia exacta o parcial
+                        foreach ($mantenimientos as $mantenimientoVehiculo) {
+                            if ($formato === $mantenimientoVehiculo ||
+                                stripos($mantenimientoVehiculo, $formato) !== false ||
+                                stripos($formato, $mantenimientoVehiculo) !== false) {
+                                $vehiculoExpress = $vehiculo;
+                                $coincidenciaEncontrada = true;
+                                break 3; // Salir de todos los loops
+                            }
+                        }
+                    }
                 }
             }
 
-            if ($vehiculoExpress) {
-                Log::info("[AgendarCita] ✓ Express disponible: encontrada configuración ID {$vehiculoExpress->id}");
-                Log::info("[AgendarCita]   Configuración encontrada: Modelo='{$vehiculoExpress->model}', Marca='{$vehiculoExpress->brand}', Año='{$vehiculoExpress->year}', Local='{$vehiculoExpress->premises}', Mantenimiento=".json_encode($vehiculoExpress->maintenance));
-
-                return true;
-            }
-
-            Log::info('[AgendarCita] ✗ Express no disponible: no se encontró configuración exacta');
-            Log::info('[AgendarCita] === FIN VERIFICACIÓN EXPRESS ===');
-
-            return false;
+            return $vehiculoExpress !== null;
 
         } catch (\Exception $e) {
-            Log::error('[AgendarCita] Error al verificar disponibilidad de Express: '.$e->getMessage());
-
             return false;
         }
     }
@@ -2375,15 +2320,12 @@ class AgendarCita extends Page
      */
     public function updatedTipoMantenimiento(): void
     {
-        Log::info("[AgendarCita] Tipo de mantenimiento actualizado: {$this->tipoMantenimiento}");
-
         // Recargar las modalidades disponibles para el nuevo tipo de mantenimiento
         $this->cargarModalidadesDisponibles();
 
         // Si la modalidad actual ya no está disponible, cambiar a Regular
         if (! array_key_exists($this->modalidadServicio, $this->modalidadesDisponibles)) {
             $this->modalidadServicio = 'Regular';
-            Log::info('[AgendarCita] Modalidad cambiada a Regular porque la anterior no está disponible para el tipo de mantenimiento seleccionado');
         }
     }
 
