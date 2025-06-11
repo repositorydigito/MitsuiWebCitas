@@ -2,10 +2,14 @@
 
 use App\Http\Controllers\ImagenController;
 use App\Livewire\Auth\CreatePassword;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    if (Auth::check()) {
+        return redirect('/admin');
+    }
+    return redirect('/admin/login');
 });
 
 // Ruta para servir imágenes de campañas
