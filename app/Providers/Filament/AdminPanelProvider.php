@@ -1,4 +1,4 @@
-<?php                                                                                                                                                                                                   
+<?php
 
 namespace App\Providers\Filament;
 
@@ -46,6 +46,10 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login(Login::class)
+            ->brandName('Mitsui')
+            ->brandLogo(asset('images/logoMitsui.svg'))
+            ->brandLogoHeight('2.5rem')
+            ->favicon(asset('images/logoMitsui.svg'))
             ->darkMode(false)
             ->sidebarFullyCollapsibleOnDesktop()
             ->colors([
