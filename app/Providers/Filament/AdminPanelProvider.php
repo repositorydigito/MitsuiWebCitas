@@ -10,6 +10,7 @@ use App\Filament\Pages\Campanas;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\DashboardKpi;
 use App\Filament\Pages\DetalleVehiculo;
+use App\Filament\Pages\Home;
 use App\Filament\Pages\Kpis;
 use App\Filament\Pages\ProgramacionCitasServicio;
 use App\Filament\Pages\ProgramarBloqueo;
@@ -56,6 +57,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
+                Home::class,
                 Dashboard::class,
                 Vehiculos::class,
                 AgendarCita::class,

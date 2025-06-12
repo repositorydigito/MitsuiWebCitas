@@ -23,8 +23,21 @@
             flex-direction: row;
         }
         
-        /* Panel izquierdo - Formulario */
+        /* Panel izquierdo - Branding */
         .left-panel {
+            flex: 1;
+            background-image: url('{{ asset('images/imgLogin.jpg') }}');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Panel derecho - Formulario */
+        .right-panel {
             flex: 1;
             background: #ffffff;
             display: flex;
@@ -32,12 +45,12 @@
             justify-content: center;
             padding: 2rem;
         }
-        
+
         .form-container {
             width: 100%;
             max-width: 400px;
         }
-        
+
         .back-link {
             display: inline-flex;
             align-items: center;
@@ -48,34 +61,21 @@
             margin-bottom: 3rem;
             transition: color 0.2s;
         }
-        
+
         .back-link:hover {
             color: #374151;
         }
-        
+
         .form-title {
             font-size: 2rem;
             font-weight: 700;
             color: #111827;
             margin-bottom: 0.5rem;
         }
-        
+
         .form-subtitle {
             color: #6b7280;
             margin-bottom: 2rem;
-        }
-        
-        /* Panel derecho - Branding */
-        .right-panel {
-            flex: 1;
-            background-image: url('{{ asset('images/imgLogin.jpg') }}');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
         
         .right-panel-overlay {
@@ -194,11 +194,11 @@
         
         /* Responsive */
         @media (max-width: 1024px) {
-            .right-panel {
+            .left-panel {
                 display: none;
             }
-            
-            .left-panel {
+
+            .right-panel {
                 background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
             }
         }
@@ -245,8 +245,16 @@
     </script>
 
     <div class="login-container">
-        <!-- Panel izquierdo - Formulario -->
+        <!-- Panel izquierdo - Branding -->
         <div class="left-panel">
+            <div class="right-panel-overlay">
+                <h2 class="brand-title">Sistema de Gestión Mitsui</h2>
+                <p class="brand-subtitle">Plataforma integral para la administración de citas y servicios automotrices</p>
+            </div>
+        </div>
+
+        <!-- Panel derecho - Formulario -->
+        <div class="right-panel">
             <div class="form-container">
                 <!-- Título -->
                 <img src="{{ asset('images/logoMitsui.svg') }}" alt="Mitsui Logo" class="brand-logo">
@@ -264,14 +272,6 @@
                         />
                     </div>
                 </x-filament-panels::form>
-            </div>
-        </div>
-
-        <!-- Panel derecho - Branding -->
-        <div class="right-panel">
-            <div class="right-panel-overlay">                
-                <h2 class="brand-title">Sistema de Gestión Mitsui</h2>
-                <p class="brand-subtitle">Plataforma integral para la administración de citas y servicios automotrices</p>
             </div>
         </div>
     </div>

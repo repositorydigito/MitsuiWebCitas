@@ -1,6 +1,50 @@
 <x-filament-panels::page>
     <style>
         [x-cloak] { display: none !important; }
+
+        /* Estilos para tablas responsive en mobile */
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table-responsive table {
+            min-width: 600px; /* Ancho mínimo para evitar que se comprima demasiado */
+        }
+
+        /* Solo aplicar en mobile */
+        @media (max-width: 768px) {
+            .table-responsive {
+                border-radius: 0.5rem;
+                box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+            }
+
+            .table-responsive table {
+                min-width: 500px;
+            }
+
+            .table-responsive td {
+                white-space: nowrap;
+                padding: 0.75rem 1rem;
+            }
+
+            /* Indicador visual de scroll */
+            .table-responsive::after {
+                content: "← Desliza para ver más →";
+                display: block;
+                text-align: center;
+                font-size: 0.75rem;
+                color: #6b7280;
+                padding: 0.5rem;
+                background: #f9fafb;
+                border-top: 1px solid #e5e7eb;
+            }
+
+            /* Ocultar indicador cuando no hay scroll */
+            .table-responsive:not([data-scrollable])::after {
+                display: none;
+            }
+        }
     </style>
     <div class="bg-white rounded-lg shadow-sm p-6">
         <!-- Indicador de progreso -->
@@ -597,7 +641,8 @@
             <p class="text-gray-600 mb-4">Notificaremos la confirmación de tu cita en el siguiente correo y celular. Si deseas cambiarlos vuelve al paso anterior.</p>
 
             <div class="bg-white p-6 rounded-lg border border-gray-200 mb-4">
-                <table class="w-full">
+                <div class="table-responsive">
+                    <table class="w-full">
                     <tbody>
                         <!-- Datos personales -->
                         <tr>
@@ -716,6 +761,7 @@
                             </tr>
                     </tbody>
                 </table>
+                </div>
             </div>
 
             <!-- Botones de navegación paso 2 -->
@@ -759,7 +805,8 @@
             <h2 class="text-xl font-semibold mb-4">Resumen</h2>
 
             <div class="bg-white p-6 rounded-lg border border-gray-200 mb-4">
-                <table class="w-full">
+                <div class="table-responsive">
+                    <table class="w-full">
                     <tbody>
                         <!-- Datos personales -->
                         <tr>
@@ -877,6 +924,7 @@
                         </tr>
                     </tbody>
                 </table>
+                </div>
             </div>
 
             <div class="flex justify-center">
