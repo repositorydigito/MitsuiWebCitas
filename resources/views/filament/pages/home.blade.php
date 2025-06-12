@@ -77,6 +77,11 @@
             height: 100%;
         }
 
+        .car-icon2 {
+            width: 70%;
+            height: 70%;
+        }
+
         /* === RESPONSIVE DESIGN === */
 
         /* Desktop (1024px y más) */
@@ -234,7 +239,7 @@
 
             <a href="{{ route('filament.admin.pages.vehiculos') }}" class="service-card" style="text-decoration: none; cursor: pointer;">
                 <div class="service-icon">
-                    <img src="{{ asset('images/icono1.svg') }}" alt="Car Icon" class="car-icon">
+                    <img src="{{ asset('images/icono2.png') }}" alt="Car Icon" class="car-icon2">
                 </div>
                 <div class="service-title">Agendamiento de citas</div>
             </a>
