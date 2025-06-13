@@ -58,7 +58,7 @@
                             Formato
                         </th>
                         <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">
-                            URL WP
+                            Correo
                         </th>
                         <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">
                             Acciones
@@ -275,7 +275,7 @@
                             </div>
 
                             <div>
-                                <label for="url_wp" class="block text-sm font-medium text-gray-700">URL WhatsApp</label>
+                                <label for="url_wp" class="block text-sm font-medium text-gray-700">Correo Electrónico</label>
                                 <input type="text" id="url_wp" wire:model.defer="popupEnEdicion.url_wp" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
                             </div>
 

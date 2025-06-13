@@ -13,9 +13,10 @@ class MiCuenta extends Page
     protected static ?string $navigationIcon = 'heroicon-o-user-circle';
 
     protected static ?string $navigationLabel = 'Mi cuenta';
-    
-    protected static ?string $navigationGroup = '👥 Administración';
-    
+
+    // Ocultar de la navegación lateral
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?int $navigationSort = 5;
 
     protected static ?string $title = 'Mi cuenta';

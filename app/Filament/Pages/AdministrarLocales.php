@@ -39,6 +39,7 @@ class AdministrarLocales extends Page implements HasForms
     public $formData = [
         'code' => '',
         'name' => '',
+        'brand' => '',
         'address' => '',
         'phone' => '',
         'opening_time' => '08:00',
@@ -52,6 +53,7 @@ class AdministrarLocales extends Page implements HasForms
     public $errors = [
         'code' => false,
         'name' => false,
+        'brand' => false,
     ];
 
     public function mount(): void
@@ -73,6 +75,7 @@ class AdministrarLocales extends Page implements HasForms
             $this->formData = [
                 'code' => $local->code,
                 'name' => $local->name,
+                'brand' => $local->brand ?? '',
                 'address' => $local->address,
                 'phone' => $local->phone,
                 'opening_time' => $local->opening_time,
@@ -101,6 +104,7 @@ class AdministrarLocales extends Page implements HasForms
         $this->formData = [
             'code' => '',
             'name' => '',
+            'brand' => '',
             'address' => '',
             'phone' => '',
             'opening_time' => '08:00',
@@ -113,6 +117,7 @@ class AdministrarLocales extends Page implements HasForms
         $this->errors = [
             'code' => false,
             'name' => false,
+            'brand' => false,
         ];
     }
 
@@ -122,6 +127,7 @@ class AdministrarLocales extends Page implements HasForms
         $this->errors = [
             'code' => false,
             'name' => false,
+            'brand' => false,
         ];
 
         // Validar campos requeridos
@@ -134,6 +140,17 @@ class AdministrarLocales extends Page implements HasForms
 
         if (empty($this->formData['name'])) {
             $this->errors['name'] = true;
+            $hasErrors = true;
+        }
+
+        if (empty($this->formData['brand'])) {
+            $this->errors['brand'] = true;
+            $hasErrors = true;
+        }
+
+        // Validar que la marca sea válida
+        if (!empty($this->formData['brand']) && !in_array($this->formData['brand'], ['Toyota', 'Lexus', 'Hino'])) {
+            $this->errors['brand'] = true;
             $hasErrors = true;
         }
 
@@ -163,6 +180,7 @@ class AdministrarLocales extends Page implements HasForms
                 $local = Local::findOrFail($this->currentLocalId);
                 $local->update([
                     'name' => $this->formData['name'],
+                    'brand' => $this->formData['brand'],
                     'address' => $this->formData['address'],
                     'phone' => $this->formData['phone'],
                     'opening_time' => $this->formData['opening_time'],
@@ -182,6 +200,7 @@ class AdministrarLocales extends Page implements HasForms
                 Local::create([
                     'code' => $this->formData['code'],
                     'name' => $this->formData['name'],
+                    'brand' => $this->formData['brand'],
                     'address' => $this->formData['address'],
                     'phone' => $this->formData['phone'],
                     'opening_time' => $this->formData['opening_time'],

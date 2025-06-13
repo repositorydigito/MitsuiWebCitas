@@ -21,6 +21,7 @@
                     <tr class="bg-primary-500">
                         <th class="py-3 px-4 text-left text-sm font-medium text-white">Código</th>
                         <th class="py-3 px-4 text-left text-sm font-medium text-white">Nombre</th>
+                        <th class="py-3 px-4 text-left text-sm font-medium text-white">Marca</th>
                         <th class="py-3 px-4 text-left text-sm font-medium text-white">Dirección</th>
                         <th class="py-3 px-4 text-left text-sm font-medium text-white">Ubicación</th>
                         <!-- <th class="py-3 px-4 text-left text-sm font-medium text-white">Horario</th> -->
@@ -33,6 +34,16 @@
                         <tr class="hover:bg-gray-50">
                             <td class="py-3 px-4 text-sm text-gray-700">{{ $local->code }}</td>
                             <td class="py-3 px-4 text-sm text-gray-700">{{ $local->name }}</td>
+                            <td class="py-3 px-4 text-sm text-gray-700">
+                                <span class="px-2 py-1 rounded-full text-xs font-medium
+                                    {{ $local->brand === 'Toyota' ? 'bg-red-100 text-red-800' : '' }}
+                                    {{ $local->brand === 'Lexus' ? 'bg-blue-100 text-blue-800' : '' }}
+                                    {{ $local->brand === 'Hino' ? 'bg-green-100 text-green-800' : '' }}
+                                    {{ !in_array($local->brand, ['Toyota', 'Lexus', 'Hino']) ? 'bg-gray-100 text-gray-800' : '' }}
+                                ">
+                                    {{ $local->brand ?: '-' }}
+                                </span>
+                            </td>
                             <td class="py-3 px-4 text-sm text-gray-700">{{ $local->address ?: '-' }}</td>
                             <td class="py-3 px-4 text-sm text-gray-700">{{ $local->phone ?: '-' }}</td>
                             <!-- <td class="py-3 px-4 text-sm text-gray-700">{{ substr($local->opening_time, 0, 5) }} - {{ substr($local->closing_time, 0, 5) }}</td> -->
@@ -82,7 +93,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-4 px-4 text-center text-gray-500">No hay locales registrados.</td>
+                            <td colspan="8" class="py-4 px-4 text-center text-gray-500">No hay locales registrados.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -139,6 +150,28 @@
                             @if($errors['name'])
                                 <p class="text-primary-500 text-sm mt-1">Elige una opción disponible.</p>
                             @endif
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label for="brand" class="block text-sm font-medium text-gray-700 mb-1">Marca *</label>
+                            <select
+                                wire:model="formData.brand"
+                                id="brand"
+                                class="w-full rounded-lg border {{ $errors['brand'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3"
+                            >
+                                <option value="">Selecciona una marca</option>
+                                <option value="Toyota">Toyota</option>
+                                <option value="Lexus">Lexus</option>
+                                <option value="Hino">Hino</option>
+                            </select>
+                            @if($errors['brand'])
+                                <p class="text-primary-500 text-sm mt-1">Selecciona una marca válida.</p>
+                            @endif
+                        </div>
+                        <div>
+                            <!-- Espacio vacío para mantener el grid balanceado -->
                         </div>
                     </div>
 

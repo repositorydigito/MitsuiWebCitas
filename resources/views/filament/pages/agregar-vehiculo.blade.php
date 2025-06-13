@@ -85,7 +85,25 @@
                     </div>
 
                     <div class="w-auto">
-                        <input type="text" placeholder="Kilometraje (km)" id="kilometraje" wire:model="kilometraje" class="w-full rounded-md border-primary-600 shadow-sm focus:border-[#0075BF] focus:ring focus:ring-[#0075BF] focus:ring-opacity-50">
+                        <input
+                            type="text"
+                            placeholder="Kilometraje (km)"
+                            id="kilometraje"
+                            wire:model.live="kilometraje"
+                            class="w-full rounded-md border-primary-600 shadow-sm focus:border-[#0075BF] focus:ring focus:ring-[#0075BF] focus:ring-opacity-50"
+                            x-data="{
+                                formatNumber() {
+                                    let value = $el.value.replace(/,/g, '');
+                                    if (value && /^\d+$/.test(value)) {
+                                        $el.value = parseInt(value).toLocaleString('en-US');
+                                        $wire.set('kilometraje', value);
+                                    }
+                                }
+                            }"
+                            x-on:input="formatNumber()"
+                            x-on:blur="formatNumber()"
+                            onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+                        >
                     </div>
                 </div>
             </div>
@@ -129,7 +147,7 @@
                     </div>
                     <div class="px-4 py-3 grid grid-cols-3 gap-4">
                         <dt class="text-sm font-medium text-gray-900">Kilometraje</dt>
-                        <dd class="text-sm text-gray-700 col-span-2">{{ $kilometraje ? $kilometraje . ' km' : 'No especificado' }}</dd>
+                        <dd class="text-sm text-gray-700 col-span-2">{{ $kilometraje ? number_format($kilometraje, 0, '.', ',') . ' km' : 'No especificado' }}</dd>
                     </div>
                 </dl>
             </div>
@@ -186,7 +204,7 @@
                     </div>
                     <div class="px-4 py-3 grid grid-cols-3 gap-4">
                         <dt class="text-sm font-medium text-gray-900">Kilometraje</dt>
-                        <dd class="text-sm text-gray-700 col-span-2">{{ $kilometraje ? $kilometraje . ' km' : 'No especificado' }}</dd>
+                        <dd class="text-sm text-gray-700 col-span-2">{{ $kilometraje ? number_format($kilometraje, 0, '.', ',') . ' km' : 'No especificado' }}</dd>
                     </div>
                 </dl>
             </div>
@@ -216,4 +234,6 @@
             </button>
         </div>
     </div>
+
+
 </x-filament-panels::page>

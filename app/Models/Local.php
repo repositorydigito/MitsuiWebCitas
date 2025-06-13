@@ -14,6 +14,7 @@ class Local extends Model
     protected $fillable = [
         'code',
         'name',
+        'brand',
         'address',
         'phone',
         'opening_time',

@@ -12,6 +12,7 @@ use App\Filament\Pages\DashboardKpi;
 use App\Filament\Pages\DetalleVehiculo;
 use App\Filament\Pages\Home;
 use App\Filament\Pages\Kpis;
+use App\Filament\Pages\MiCuenta;
 use App\Filament\Pages\ProgramacionCitasServicio;
 use App\Filament\Pages\ProgramarBloqueo;
 use App\Filament\Pages\Vehiculos;
@@ -19,6 +20,7 @@ use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\MenuItem;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Widgets;
@@ -49,7 +51,9 @@ class AdminPanelProvider extends PanelProvider
             ->login(Login::class)
             ->darkMode(false)
             ->sidebarFullyCollapsibleOnDesktop()
-            ->brandLogo(asset('images/logoMitsui.svg'))
+            ->globalSearch(false)
+            ->sidebarCollapsibleOnDesktop(fn () => !auth()->user()?->hasRole('super_admin'))
+            // Logo movido al header
             ->colors([
                 'primary' => '#0075BF',
                 'secondary' => '#073568',
@@ -70,6 +74,7 @@ class AdminPanelProvider extends PanelProvider
                 AdministrarModelos::class,
                 Kpis::class,
                 DashboardKpi::class,
+                MiCuenta::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
@@ -131,6 +136,17 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
                 fn () => \Illuminate\Support\Facades\Auth::check() ? view('customHeader') : '',
-            );
+            )
+            ->renderHook(
+                PanelsRenderHook::TOPBAR_START,
+                fn (): string => Blade::render('<img src="{{ asset("images/logoMitsui.svg") }}" alt="Logo Mitsui" class="header-logo" style="height: 48px; width: auto; filter: brightness(0) invert(1);">'),
+            )
+            ->userMenuItems([
+                MenuItem::make()
+                    ->label('Mi cuenta')
+                    ->url(fn (): string => MiCuenta::getUrl())
+                    ->icon('heroicon-o-user-circle')
+                    ->sort(1),
+            ]);
     }
 }

@@ -12,19 +12,19 @@
             gap: 0.5rem;
             margin-bottom: 1.5rem;
             font-size: 0.875rem;
-            color: #64748b;
+            color: #0075bf;
         }
 
         .breadcrumb-icon {
             width: 1rem;
             height: 1rem;
-            color: #3b82f6;
+            color: #0075bf;
         }
 
         .welcome-title {
             font-size: 1.875rem;
             font-weight: 700;
-            color: #1e40af;
+            color:rgb(41, 41, 41);
             margin-bottom: 0.5rem;
         }
 
@@ -39,6 +39,16 @@
             gap: 2rem;
             flex-wrap: wrap;
             justify-content: flex-start;
+        }
+
+        .service-card1 {
+            background:rgb(248, 248, 248);
+            border-radius: 0.25rem;
+            padding: 2rem;
+            box-shadow: 0 7px 7px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            text-align: center;
+            width: 20rem;
+            transition: all 0.2s ease-in-out;
         }
 
         .service-card {
@@ -104,6 +114,11 @@
                 justify-content: flex-start;
             }
 
+            .service-card1 {
+                width: 22rem;
+                padding: 2.5rem;
+            }
+
             .service-card {
                 width: 22rem;
                 padding: 2.5rem;
@@ -129,6 +144,10 @@
             .services-container {
                 justify-content: center;
                 gap: 1.5rem;
+            }
+
+            .service-card1 {
+                width: 18rem;
             }
 
             .service-card {
@@ -167,6 +186,13 @@
                 align-items: center;
             }
 
+            .service-card1 {
+                width: 100%;
+                max-width: 280px;
+                padding: 1.5rem;
+                margin: 0 auto;
+            }
+
             .service-card {
                 width: 100%;
                 max-width: 280px;
@@ -197,6 +223,11 @@
 
             .welcome-subtitle {
                 font-size: 0.8rem;
+            }
+
+            .service-card1 {
+                max-width: 250px;
+                padding: 1rem;
             }
 
             .service-card {
@@ -230,18 +261,18 @@
 
         <!-- Services Container -->
         <div class="services-container">
-            <div class="service-card">
+            <div class="service-card1">
                 <div class="service-icon">
                     <img src="{{ asset('images/icono1.svg') }}" alt="Car Icon" class="car-icon">
                 </div>
-                <div class="service-title">Estado de tu compra</div>
+                <div class="service-title">Estado de tu Compra</div>
             </div>
 
             <a href="{{ route('filament.admin.pages.vehiculos') }}" class="service-card" style="text-decoration: none; cursor: pointer;">
                 <div class="service-icon">
                     <img src="{{ asset('images/icono2.png') }}" alt="Car Icon" class="car-icon2">
                 </div>
-                <div class="service-title">Agendamiento de citas</div>
+                <div class="service-title">Agenda tu Servicio</div>
             </a>
         </div>
     </div>

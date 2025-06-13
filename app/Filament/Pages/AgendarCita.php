@@ -262,6 +262,8 @@ class AgendarCita extends Page
                     'modelo' => $vehiculoEncontrado->model,
                     'anio' => $vehiculoEncontrado->year,
                     'marca' => $vehiculoEncontrado->brand_name,
+                    'brand_name' => $vehiculoEncontrado->brand_name,
+                    'brand_code' => $vehiculoEncontrado->brand_code,
                 ];
 
                 Log::info('[AgendarCita] Vehículo encontrado en la base de datos:', $this->vehiculo);
@@ -391,12 +393,27 @@ class AgendarCita extends Page
     }
 
     /**
-     * Cargar los locales desde la tabla de locales
+     * Cargar los locales desde la tabla de locales filtrados por marca del vehículo
      */
     protected function cargarLocales(): void
     {
-        // Obtener los locales activos de la tabla locales
-        $localesActivos = \App\Models\Local::where('is_active', true)->get();
+        // Obtener la marca del vehículo para filtrar locales
+        $marcaVehiculo = $this->obtenerMarcaVehiculo();
+
+        Log::info("[AgendarCita] Marca del vehículo detectada: {$marcaVehiculo}");
+
+        // Construir la consulta base para locales activos
+        $query = \App\Models\Local::where('is_active', true);
+
+        // Filtrar por marca si se detectó una marca válida
+        if ($marcaVehiculo) {
+            $query->where('brand', $marcaVehiculo);
+            Log::info("[AgendarCita] Filtrando locales por marca: {$marcaVehiculo}");
+        } else {
+            Log::info("[AgendarCita] No se detectó marca del vehículo, mostrando todos los locales activos");
+        }
+
+        $localesActivos = $query->get();
 
         Log::info('[AgendarCita] Consultando locales activos. Total encontrados: '.$localesActivos->count());
 
@@ -405,7 +422,7 @@ class AgendarCita extends Page
         Log::info('[AgendarCita] Total de locales en la base de datos: '.$todosLosLocales->count());
 
         foreach ($todosLosLocales as $index => $local) {
-            Log::info("[AgendarCita] Local #{$index} en DB: ID: {$local->id}, Código: {$local->code}, Nombre: {$local->name}, Activo: ".($local->is_active ? 'Sí' : 'No'));
+            Log::info("[AgendarCita] Local #{$index} en DB: ID: {$local->id}, Código: {$local->code}, Nombre: {$local->name}, Marca: {$local->brand}, Activo: ".($local->is_active ? 'Sí' : 'No'));
         }
 
         if ($localesActivos->isNotEmpty()) {
@@ -422,9 +439,10 @@ class AgendarCita extends Page
                     'waze_url' => $local->waze_url,
                     'maps_url' => $local->maps_url,
                     'id' => $local->id,
+                    'brand' => $local->brand,
                 ];
 
-                Log::info("[AgendarCita] Local cargado: Código: {$key}, ID: {$local->id}, Nombre: {$local->name}, Horario: {$local->opening_time} - {$local->closing_time}");
+                Log::info("[AgendarCita] Local cargado: Código: {$key}, ID: {$local->id}, Nombre: {$local->name}, Marca: {$local->brand}, Horario: {$local->opening_time} - {$local->closing_time}");
             }
 
             Log::info('[AgendarCita] Locales cargados: '.count($this->locales));
@@ -440,15 +458,105 @@ class AgendarCita extends Page
                 }
             }
         } else {
-            Log::warning('[AgendarCita] No se encontraron locales activos en la base de datos');
+            Log::warning("[AgendarCita] No se encontraron locales activos para la marca: {$marcaVehiculo}");
 
-            // Si no hay locales en la base de datos, crear algunos locales de prueba
-            $this->locales = [];
-            // Establecer el primer local como seleccionado por defecto
-            if (empty($this->localSeleccionado)) {
-                $this->localSeleccionado = array_key_first($this->locales);
+            // Si no hay locales para la marca específica, mostrar todos los locales activos como fallback
+            if ($marcaVehiculo) {
+                Log::info("[AgendarCita] Fallback: Cargando todos los locales activos");
+                $localesActivos = \App\Models\Local::where('is_active', true)->get();
+
+                if ($localesActivos->isNotEmpty()) {
+                    $this->locales = [];
+                    foreach ($localesActivos as $local) {
+                        $key = $local->code;
+                        $this->locales[$key] = [
+                            'nombre' => $local->name,
+                            'direccion' => $local->address,
+                            'telefono' => $local->phone,
+                            'opening_time' => $local->opening_time ?: '08:00:00',
+                            'closing_time' => $local->closing_time ?: '17:00:00',
+                            'waze_url' => $local->waze_url,
+                            'maps_url' => $local->maps_url,
+                            'id' => $local->id,
+                            'brand' => $local->brand,
+                        ];
+                    }
+
+                    // Establecer el primer local como seleccionado por defecto
+                    if (empty($this->localSeleccionado) && ! empty($this->locales)) {
+                        $this->localSeleccionado = array_key_first($this->locales);
+                    }
+                }
+            } else {
+                $this->locales = [];
             }
         }
+    }
+
+    /**
+     * Obtener la marca del vehículo para filtrar locales
+     */
+    protected function obtenerMarcaVehiculo(): ?string
+    {
+        // Verificar si tenemos datos del vehículo
+        if (empty($this->vehiculo)) {
+            Log::info("[AgendarCita] No hay datos del vehículo disponibles");
+            return null;
+        }
+
+        // Intentar obtener la marca desde diferentes fuentes
+        $marca = null;
+
+        // 1. Desde brand_name del vehículo
+        if (!empty($this->vehiculo['brand_name'])) {
+            $marca = $this->vehiculo['brand_name'];
+            Log::info("[AgendarCita] Marca obtenida desde brand_name: {$marca}");
+        }
+        // 2. Desde brand_code del vehículo
+        elseif (!empty($this->vehiculo['brand_code'])) {
+            $marca = $this->vehiculo['brand_code'];
+            Log::info("[AgendarCita] Marca obtenida desde brand_code: {$marca}");
+        }
+        // 3. Desde marca del vehículo (campo directo)
+        elseif (!empty($this->vehiculo['marca'])) {
+            $marca = $this->vehiculo['marca'];
+            Log::info("[AgendarCita] Marca obtenida desde marca: {$marca}");
+        }
+
+        // Normalizar la marca a los valores esperados en la base de datos
+        if ($marca) {
+            $marca = $this->normalizarMarca($marca);
+            Log::info("[AgendarCita] Marca normalizada: {$marca}");
+        }
+
+        return $marca;
+    }
+
+    /**
+     * Normalizar la marca del vehículo a los valores esperados
+     */
+    protected function normalizarMarca(string $marca): ?string
+    {
+        $marca = strtolower(trim($marca));
+
+        // Mapear diferentes variaciones de marca a los valores estándar
+        $mapeoMarcas = [
+            'toyota' => 'Toyota',
+            'lexus' => 'Lexus',
+            'hino' => 'Hino',
+            'mitsubishi' => 'Toyota', // Fallback si es Mitsubishi
+            'mit' => 'Toyota',
+        ];
+
+        foreach ($mapeoMarcas as $variacion => $marcaEstandar) {
+            if (str_contains($marca, $variacion)) {
+                Log::info("[AgendarCita] Marca '{$marca}' mapeada a '{$marcaEstandar}'");
+                return $marcaEstandar;
+            }
+        }
+
+        Log::warning("[AgendarCita] Marca '{$marca}' no reconocida, no se aplicará filtro");
+        return null;
     }
 
     /**

@@ -26,7 +26,7 @@
         /* Panel izquierdo - Branding */
         .left-panel {
             flex: 1;
-            background-image: url('{{ asset('images/imgLogin.jpg') }}');
+            background-image: url('{{ asset('images/cover.jpg') }}');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -247,10 +247,6 @@
     <div class="login-container">
         <!-- Panel izquierdo - Branding -->
         <div class="left-panel">
-            <div class="right-panel-overlay">
-                <h2 class="brand-title">Sistema de Gestión Mitsui</h2>
-                <p class="brand-subtitle">Plataforma integral para la administración de citas y servicios automotrices</p>
-            </div>
         </div>
 
         <!-- Panel derecho - Formulario -->

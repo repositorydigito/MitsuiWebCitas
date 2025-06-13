@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Filament\Pages\MiCuenta;
 use App\Filament\Pages\Vehiculos;
 use Illuminate\Support\ServiceProvider;
 
@@ -25,7 +24,6 @@ class FilamentServiceProvider extends ServiceProvider
             // Registrar la página una vez que Filament se inicialice
             $filament->registerPages([
                 Vehiculos::class,
-                MiCuenta::class,
             ]);
         });
 

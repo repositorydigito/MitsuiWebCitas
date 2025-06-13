@@ -1,50 +1,6 @@
 <x-filament-panels::page>
     <style>
         [x-cloak] { display: none !important; }
-
-        /* Estilos para tablas responsive en mobile */
-        .table-responsive {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .table-responsive table {
-            min-width: 600px; /* Ancho mínimo para evitar que se comprima demasiado */
-        }
-
-        /* Solo aplicar en mobile */
-        @media (max-width: 768px) {
-            .table-responsive {
-                border-radius: 0.5rem;
-                box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
-            }
-
-            .table-responsive table {
-                min-width: 500px;
-            }
-
-            .table-responsive td {
-                white-space: nowrap;
-                padding: 0.75rem 1rem;
-            }
-
-            /* Indicador visual de scroll */
-            .table-responsive::after {
-                content: "← Desliza para ver más →";
-                display: block;
-                text-align: center;
-                font-size: 0.75rem;
-                color: #6b7280;
-                padding: 0.5rem;
-                background: #f9fafb;
-                border-top: 1px solid #e5e7eb;
-            }
-
-            /* Ocultar indicador cuando no hay scroll */
-            .table-responsive:not([data-scrollable])::after {
-                display: none;
-            }
-        }
     </style>
     <div class="bg-white rounded-lg shadow-sm p-6">
         <!-- Indicador de progreso -->
@@ -135,13 +91,13 @@
                             @if(!empty($local['maps_url']))
                                 <!-- Botón Maps -->
                                 <a href="{{ $local['maps_url'] }}" target="_blank" class="text-primary-600 hover:text-primary-800">
-                                    <img src="/images/maps.svg" alt="Maps" class="w-9 h-9 rounded-md">
+                                    <img src="/images/maps.svg" alt="Maps" class="w-9 h-9 border border-primary-500 rounded-md">
                                 </a>
                             @endif
                             @if(!empty($local['waze_url']))
                                 <!-- Botón Waze -->
                                 <a href="{{ $local['waze_url'] }}" target="_blank" class="text-primary-600 hover:text-primary-800">
-                                    <img src="/images/waze.svg" alt="Waze" class="w-9 h-9 rounded-md">
+                                    <img src="/images/waze.svg" alt="Waze" class="w-9 h-9 border border-primary-500 rounded-md">
                                 </a>
                             @endif
                         </div>
@@ -323,7 +279,7 @@
                                 wire:model.live="tipoMantenimiento"
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50"
                             >
-                                <option value="">Selecciona un tipo de mantenimiento</option>
+                                <option value="">Seleccione un mantenimiento</option>
                                 @foreach($tiposMantenimientoDisponibles as $id => $nombre)
                                     <option value="{{ $nombre }}">{{ $nombre }}</option>
                                 @endforeach
@@ -349,7 +305,7 @@
                                 disabled
                                 class="w-full rounded-md border-gray-300 shadow-sm bg-gray-100 text-gray-400 cursor-not-allowed"
                             >
-                                <option value="">Selecciona un tipo de mantenimiento</option>
+                                <option value="">Seleccione un mantenimiento</option>
                             </select>
                         </div>
 
@@ -393,7 +349,7 @@
                                     wire:model.live="servicioAdicionalSeleccionado"
                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50"
                                 >
-                                    <option value="">Selecciona un servicio adicional</option>
+                                    <option value="">Selecciona un adicional</option>
                                     @foreach($serviciosAdicionalesDisponibles as $id => $nombre)
                                         <option value="servicio_{{ $id }}">{{ $nombre }}</option>
                                     @endforeach
@@ -409,7 +365,7 @@
                                     disabled
                                     class="w-full rounded-md border-gray-300 shadow-sm bg-gray-100 text-gray-400 cursor-not-allowed"
                                 >
-                                    <option value="">Selecciona un servicio adicional</option>
+                                    <option value="">Selecciona un adicional</option>
                                 </select>
                             </div>
                         @endif
@@ -640,127 +596,99 @@
             <h2 class="text-xl font-semibold mb-4">Resumen</h2>
             <p class="text-gray-600 mb-4">Notificaremos la confirmación de tu cita en el siguiente correo y celular. Si deseas cambiarlos vuelve al paso anterior.</p>
 
-            <div class="bg-white p-6 rounded-lg border border-gray-200 mb-4">
-                <div class="table-responsive">
-                    <table class="w-full">
-                    <tbody>
-                        <!-- Datos personales -->
-                        <tr>
-                            <td colspan="2" class="pb-2">
-                                <h3 class="font-medium text-primary-700 text-lg border-b border-gray-200 pb-1 mb-2">Datos personales</h3>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-primary-800">Nombre Completo</span>
-                            </td>
-                            <td class="py-2 text-gray-800">{{ $nombreCliente }} {{ $apellidoCliente }}</td>
-                        </tr>
-                        <tr>
-                            <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-primary-800">Celular</span>
-                            </td>
-                            <td class="py-2 text-gray-800">{{ $celularCliente }}</td>
-                        </tr>
-                        <tr>
-                            <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-primary-800">Correo</span>
-                            </td>
-                            <td class="py-2 text-gray-800">{{ $emailCliente }}</td>
-                        </tr>
+            <div class="bg-white rounded-lg mb-4">
+                <!-- Datos personales -->
+                <div class="mb-4">
+                    <h3 class="font-medium text-primary-700 text-lg border-b border-gray-200 pb-2 mb-4">Datos personales</h3>
 
-                        <!-- Datos del vehículo -->
-                        <tr>
-                            <td colspan="2" class="pt-4 pb-2">
-                                <h3 class="font-medium text-success-700 text-lg border-b border-gray-200 pb-1 mb-2">Datos del vehículo</h3>
-                                <!-- Debug: {{ json_encode($vehiculo) }}
-                                <div class="text-xs text-gray-500">ID: {{ $vehiculo['id'] ?? 'No disponible' }}</div>-->
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-success-800">Modelo</span>
-                            </td>
-                            <td class="py-2 text-gray-800">{{ $vehiculo['modelo'] ?: 'No especificado' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-success-800">Placa</span>
-                            </td>
-                            <td class="py-2 text-gray-800">{{ $vehiculo['placa'] ?: 'No especificado' }}</td>
-                        </tr>
+                    <div class="space-y-3">
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-gray-800">{{ $nombreCliente }} {{ $apellidoCliente }}</div>
+                        </div>
 
-                        <!-- Datos de la cita -->
-                        <tr>
-                            <td colspan="2" class="pt-4 pb-2">
-                                <h3 class="font-medium text-info-700 text-lg border-b border-gray-200 pb-1 mb-2">Datos de la cita</h3>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-info-800">Local</span>
-                            </td>
-                            <td class="py-2 text-gray-800">{{ !empty($localSeleccionado) && isset($locales[$localSeleccionado]) ? $locales[$localSeleccionado]['nombre'] : 'No seleccionado' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-primary-800">Fecha</span>
-                            </td>
-                            <td class="py-2 text-gray-800">{{ $fechaSeleccionada ?: 'No seleccionada' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-primary-800">Hora</span>
-                            </td>
-                            <td class="py-2 text-gray-800">{{ $horaSeleccionada ?: 'No seleccionada' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-primary-800">Servicios</span>
-                            </td>
-                            <td class="py-2 text-gray-800">
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-gray-800">{{ $celularCliente }}</div>
+                        </div>
+
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-gray-800">{{ $emailCliente }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Datos del vehículo -->
+                <div class="mb-4">
+                    <h3 class="font-medium text-success-700 text-lg border-b border-gray-200 pb-2 mb-4">Datos del vehículo</h3>
+
+                    <div class="space-y-3">
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-sm font-medium text-success-800 mb-1">Modelo</div>
+                            <div class="text-gray-800">{{ $vehiculo['modelo'] ?: 'No especificado' }}</div>
+                        </div>
+
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-sm font-medium text-success-800 mb-1">Placa</div>
+                            <div class="text-gray-800">{{ $vehiculo['placa'] ?: 'No especificado' }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Datos de la cita -->
+                <div class="mb-4">
+                    <h3 class="font-medium text-info-700 text-lg border-b border-gray-200 pb-2 mb-4">Datos de la cita</h3>
+
+                    <div class="space-y-3">
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-sm font-medium text-info-800 mb-1">Local</div>
+                            <div class="text-gray-800">{{ !empty($localSeleccionado) && isset($locales[$localSeleccionado]) ? $locales[$localSeleccionado]['nombre'] : 'No seleccionado' }}</div>
+                        </div>
+
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-sm font-medium text-primary-800 mb-1">Fecha y hora</div>
+                            <div class="text-gray-800">{{ $fechaSeleccionada ?: 'No seleccionada' }} - {{ $horaSeleccionada ?: 'No seleccionada' }}</div>
+                        </div>
+
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-sm font-medium text-primary-800 mb-1">Servicios</div>
+                            <div class="text-gray-800">
                                 @if(count($serviciosSeleccionados) > 0)
                                     {{ implode(', ', $serviciosSeleccionados) }}
                                 @else
                                     No seleccionado
                                 @endif
-                            </td>
-                        </tr>
+                            </div>
+                        </div>
 
                         @if (in_array('Mantenimiento periódico', $serviciosSeleccionados))
-                            <tr>
-                                <td class="py-2 pr-4 w-1/3">
-                                    <span class="font-medium text-primary-800">Tipo de Mantenimiento</span>
-                                </td>
-                                <td class="py-2 text-gray-800">{{ $tipoMantenimiento ?: 'No seleccionado' }}</td>
-                            </tr>
-                            <tr>
-                                <td class="py-2 pr-4 w-1/3">
-                                    <span class="font-medium text-primary-800">Modalidad</span>
-                                </td>
-                                <td class="py-2 text-gray-800">{{ $modalidadServicio ?: 'No seleccionado' }}</td>
-                            </tr>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <div class="text-sm font-medium text-primary-800 mb-1">Tipo de Mantenimiento</div>
+                                <div class="text-gray-800">{{ $tipoMantenimiento ?: 'No seleccionado' }}</div>
+                            </div>
+
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <div class="text-sm font-medium text-primary-800 mb-1">Modalidad</div>
+                                <div class="text-gray-800">{{ $modalidadServicio ?: 'No seleccionado' }}</div>
+                            </div>
                         @endif
 
-                            <tr>
-                                <td class="py-2 pr-4 w-1/3">
-                                    <span class="font-medium text-primary-800">Adicionales</span>
-                                </td>
-                                <td class="py-2 text-gray-800">
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-sm font-medium text-primary-800 mb-1">Adicionales</div>
+                            <div class="text-gray-800">
+                                @if(count($serviciosAdicionales) > 0)
                                     @foreach ($serviciosAdicionales as $servicio)
                                         {{ $opcionesServiciosAdicionales[$servicio] ?? $servicio }}@if (!$loop->last), @endif
                                     @endforeach
-                                </td>
-                            </tr>
+                                @else
+                                    Ninguno
+                                @endif
+                            </div>
+                        </div>
 
-                            <tr>
-                                <td class="py-2 pr-4 w-1/3">
-                                    <span class="font-medium text-primary-800">Comentario</span>
-                                </td>
-                                <td class="py-2 text-gray-800">{{ $comentarios }}</td>
-                            </tr>
-                    </tbody>
-                </table>
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-sm font-medium text-primary-800 mb-1">Comentario</div>
+                            <div class="text-gray-800">{{ $comentarios ?: 'Sin comentarios' }}</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -789,8 +717,8 @@
 
         <!-- Paso 3: Confirmación -->
         <div class="{{ $pasoActual == 3 ? 'block' : 'hidden' }}">
-            <div class="bg-green-100 border-l-4 border-green-500 p-4 mb-6">
-                <div class="flex items-center">
+            <div class="p-4 mb-4">
+                <div class="flex">
                     <div class="flex-shrink-0">
                         <svg class="h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
@@ -804,126 +732,99 @@
 
             <h2 class="text-xl font-semibold mb-4">Resumen</h2>
 
-            <div class="bg-white p-6 rounded-lg border border-gray-200 mb-4">
-                <div class="table-responsive">
-                    <table class="w-full">
-                    <tbody>
-                        <!-- Datos personales -->
-                        <tr>
-                            <td colspan="2" class="pb-2">
-                                <h3 class="font-medium text-primary-700 text-lg border-b border-gray-200 pb-1 mb-2">Datos personales</h3>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-primary-800">Nombre</span>
-                            </td>
-                            <td class="py-2 text-gray-800">{{ $nombreCliente }} {{ $apellidoCliente }}</td>
-                        </tr>
-                        <tr>
-                            <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-primary-800">Celular</span>
-                            </td>
-                            <td class="py-2 text-gray-800">{{ $celularCliente }}</td>
-                        </tr>
-                        <tr>
-                            <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-primary-800">Correo</span>
-                            </td>
-                            <td class="py-2 text-gray-800">{{ $emailCliente }}</td>
-                        </tr>
+            <div class="bg-white rounded-lg mb-4">
+                <!-- Datos personales -->
+                <div class="mb-4">
+                    <h3 class="font-medium text-primary-700 text-lg border-b border-gray-200 pb-2 mb-4">Datos personales</h3>
 
-                        <!-- Datos del vehículo -->
-                        <tr>
-                            <td colspan="2" class="pt-4 pb-2">
-                                <h3 class="font-medium text-primary-700 text-lg border-b border-gray-200 pb-1 mb-2">Datos del vehículo</h3>
-                                <!-- Debug: {{ json_encode($vehiculo) }} -->
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-primary-800">Modelo</span>
-                            </td>
-                            <td class="py-2 text-gray-800">{{ $vehiculo['modelo'] ?: 'No especificado' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-primary-800">Placa</span>
-                            </td>
-                            <td class="py-2 text-gray-800">{{ $vehiculo['placa'] ?: 'No especificado' }}</td>
-                        </tr>
+                    <div class="space-y-3">
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-gray-800">{{ $nombreCliente }} {{ $apellidoCliente }}</div>
+                        </div>
 
-                        <!-- Datos de la cita -->
-                        <tr>
-                            <td colspan="2" class="pt-4 pb-2">
-                                <h3 class="font-medium text-primary-700 text-lg border-b border-gray-200 pb-1 mb-2">Datos de la cita</h3>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-primary-800">Local</span>
-                            </td>
-                            <td class="py-2 text-gray-800">{{ !empty($localSeleccionado) && isset($locales[$localSeleccionado]) ? $locales[$localSeleccionado]['nombre'] : 'No seleccionado' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-primary-800">Fecha</span>
-                            </td>
-                            <td class="py-2 text-gray-800">{{ $fechaSeleccionada ?: 'No seleccionada' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-primary-800">Hora</span>
-                            </td>
-                            <td class="py-2 text-gray-800">{{ $horaSeleccionada ?: 'No seleccionada' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-primary-800">Servicios</span>
-                            </td>
-                            <td class="py-2 text-gray-800">
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-gray-800">{{ $celularCliente }}</div>
+                        </div>
+
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-gray-800">{{ $emailCliente }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Datos del vehículo -->
+                <div class="mb-4">
+                    <h3 class="font-medium text-primary-700 text-lg border-b border-gray-200 pb-2 mb-4">Datos del vehículo</h3>
+
+                    <div class="space-y-3">
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-sm font-medium text-primary-800 mb-1">Modelo</div>
+                            <div class="text-gray-800">{{ $vehiculo['modelo'] ?: 'No especificado' }}</div>
+                        </div>
+
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-sm font-medium text-primary-800 mb-1">Placa</div>
+                            <div class="text-gray-800">{{ $vehiculo['placa'] ?: 'No especificado' }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Datos de la cita -->
+                <div class="mb-4">
+                    <h3 class="font-medium text-primary-700 text-lg border-b border-gray-200 pb-2 mb-4">Datos de la cita</h3>
+
+                    <div class="space-y-3">
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-sm font-medium text-primary-800 mb-1">Local</div>
+                            <div class="text-gray-800">{{ !empty($localSeleccionado) && isset($locales[$localSeleccionado]) ? $locales[$localSeleccionado]['nombre'] : 'No seleccionado' }}</div>
+                        </div>
+
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-sm font-medium text-primary-800 mb-1">Fecha y hora</div>
+                            <div class="text-gray-800">{{ $fechaSeleccionada ?: 'No seleccionada' }} - {{ $horaSeleccionada ?: 'No seleccionada' }}</div>
+                        </div>
+
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-sm font-medium text-primary-800 mb-1">Servicios</div>
+                            <div class="text-gray-800">
                                 @if(count($serviciosSeleccionados) > 0)
                                     {{ implode(', ', $serviciosSeleccionados) }}
                                 @else
                                     No seleccionado
                                 @endif
-                            </td>
-                        </tr>
+                            </div>
+                        </div>
 
                         @if (in_array('Mantenimiento periódico', $serviciosSeleccionados))
-                            <tr>
-                                <td class="py-2 pr-4 w-1/3">
-                                    <span class="font-medium text-primary-800">Tipo de Mantenimiento</span>
-                                </td>
-                                <td class="py-2 text-gray-800">{{ $tipoMantenimiento ?: 'No seleccionado' }}</td>
-                            </tr>
-                            <tr>
-                                <td class="py-2 pr-4 w-1/3">
-                                    <span class="font-medium text-primary-800">Modalidad</span>
-                                </td>
-                                <td class="py-2 text-gray-800">{{ $modalidadServicio ?: 'No seleccionado' }}</td>
-                            </tr>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <div class="text-sm font-medium text-primary-800 mb-1">Tipo de Mantenimiento</div>
+                                <div class="text-gray-800">{{ $tipoMantenimiento ?: 'No seleccionado' }}</div>
+                            </div>
+
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <div class="text-sm font-medium text-primary-800 mb-1">Modalidad</div>
+                                <div class="text-gray-800">{{ $modalidadServicio ?: 'No seleccionado' }}</div>
+                            </div>
                         @endif
 
-                        <tr>
-                            <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-primary-800">Adicionales</span>
-                            </td>
-                            <td class="py-2 text-gray-800">
-                                @foreach ($serviciosAdicionales as $servicio)
-                                    {{ $opcionesServiciosAdicionales[$servicio] ?? $servicio }}@if (!$loop->last), @endif
-                                @endforeach
-                            </td>
-                        </tr>
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-sm font-medium text-primary-800 mb-1">Adicionales</div>
+                            <div class="text-gray-800">
+                                @if(count($serviciosAdicionales) > 0)
+                                    @foreach ($serviciosAdicionales as $servicio)
+                                        {{ $opcionesServiciosAdicionales[$servicio] ?? $servicio }}@if (!$loop->last), @endif
+                                    @endforeach
+                                @else
+                                    Ninguno
+                                @endif
+                            </div>
+                        </div>
 
-                        <tr>
-                            <td class="py-2 pr-4 w-1/3">
-                                <span class="font-medium text-primary-800">Comentario</span>
-                            </td>
-                            <td class="py-2 text-gray-800">{{ $comentarios }}</td>
-                        </tr>
-                    </tbody>
-                </table>
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-sm font-medium text-primary-800 mb-1">Comentario</div>
+                            <div class="text-gray-800">{{ $comentarios ?: 'Sin comentarios' }}</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -942,15 +843,7 @@
 
         <!-- Modal centrado con tamaño fijo -->
         <div x-show="show" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 scale-95" x-transition:enter-end="opacity-100 translate-y-0 scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 scale-100" x-transition:leave-end="opacity-0 translate-y-4 scale-95" class="bg-white rounded-lg shadow-xl w-full max-w-lg h-auto transform transition-all flex flex-col relative">
-            <!-- Botón de cerrar -->
-            <div class="absolute top-0 right-0 p-4 z-10">
-                <button @click="show = false" wire:click="cancelarYVolverAVehiculos" type="button" class="text-gray-400 hover:text-gray-500 focus:outline-none">
-                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-
+    
             <!-- Contenido con altura fija -->
             <div class="px-6 pt-6 pb-4">
                 <div class="text-center">
@@ -1014,15 +907,7 @@
 
             <!-- Modal -->
             <div x-show="show" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <!-- Botón de cerrar -->
-                <div class="absolute top-0 right-0 px-4 pt-4">
-                    <button @click="show = false" wire:click="cerrarResumen" type="button" class="text-gray-400 hover:text-gray-500 focus:outline-none">
-                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-
+                
                 <!-- Contenido del modal -->
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div class="sm:flex sm:items-start">
