@@ -130,12 +130,12 @@
                                     <div class="flex flex-row justify-between gap-2">
                                         <!-- Estado: Cita confirmada -->
                                         <div class="flex flex-col items-center">
-                                            <div class="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center">
-                                                <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                            <div class="w-8 h-8 rounded-full flex bg-green-600 items-center justify-center">
+                                                <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                                     <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                                                 </svg>
                                             </div>
-                                            <span class="text-xs font-medium text-gray-900 mt-1 text-center">Cita confirmada</span>
+                                            <span class="text-xs font-medium text-green-500 mt-1 text-center">Cita confirmada</span>
                                         </div>
 
                                         <!-- Estado: En trabajo -->

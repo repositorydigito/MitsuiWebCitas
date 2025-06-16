@@ -8,7 +8,6 @@ use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
@@ -17,16 +16,16 @@ use Filament\Pages\Page;
 
 class ProgramarBloqueo extends Page implements HasForms
 {
-    use InteractsWithForms, HasPageShield;
+    use HasPageShield, InteractsWithForms;
 
     protected static string $view = 'filament.pages.programar-bloqueo';
 
     protected static ?string $navigationIcon = 'heroicon-o-lock-closed';
 
     protected static ?string $navigationLabel = 'Programar Bloqueo';
-    
+
     protected static ?string $navigationGroup = '📅 Citas & Servicios';
-    
+
     protected static ?int $navigationSort = 3;
 
     protected static ?string $title = 'Programar bloqueo';
@@ -236,17 +235,17 @@ class ProgramarBloqueo extends Page implements HasForms
                     ->displayFormat('d/m/Y')
                     ->required(),
 
-                TimePicker::make('start_time')
+                Select::make('start_time')
                     ->label('Hora de inicio')
                     ->placeholder('Elige la hora de inicio')
-                    ->seconds(false)
+                    ->options($this->getTimeOptions())
                     ->required()
                     ->disabled(fn (callable $get) => $get('all_day')),
 
-                TimePicker::make('end_time')
+                Select::make('end_time')
                     ->label('Hora de fin')
                     ->placeholder('Elige la hora de fin')
-                    ->seconds(false)
+                    ->options($this->getTimeOptions())
                     ->required()
                     ->disabled(fn (callable $get) => $get('all_day')),
 
@@ -265,5 +264,41 @@ class ProgramarBloqueo extends Page implements HasForms
     public static function getNavigationGroup(): ?string
     {
         return 'Gestión de Citas';
+    }
+
+    /**
+     * Genera las opciones de tiempo cada 15 minutos
+     */
+    private function getTimeOptions(): array
+    {
+        $options = [];
+
+        // Generar horarios desde las 8:00 AM hasta las 6:45 PM cada 15 minutos
+        for ($hour = 8; $hour <= 18; $hour++) {
+            for ($minute = 0; $minute < 60; $minute += 15) {
+                // No agregar 7:00 PM (19:00) en adelante
+                if ($hour == 18 && $minute > 45) {
+                    break;
+                }
+
+                $time24 = sprintf('%02d:%02d', $hour, $minute);
+
+                // Convertir a formato 12 horas para mostrar
+                $hour12 = $hour;
+                $ampm = 'AM';
+
+                if ($hour >= 12) {
+                    $ampm = 'PM';
+                    if ($hour > 12) {
+                        $hour12 = $hour - 12;
+                    }
+                }
+
+                $timeDisplay = sprintf('%d:%02d %s', $hour12, $minute, $ampm);
+                $options[$time24] = $timeDisplay;
+            }
+        }
+
+        return $options;
     }
 }

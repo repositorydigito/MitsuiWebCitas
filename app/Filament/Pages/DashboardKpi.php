@@ -10,12 +10,13 @@ use Illuminate\Support\Facades\Log;
 class DashboardKpi extends Page
 {
     use HasPageShield;
+
     protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
 
     protected static ?string $navigationLabel = 'Dashboard KPI';
-    
+
     protected static ?string $navigationGroup = '📊 Reportes & KPIs';
-    
+
     protected static ?int $navigationSort = 2;
 
     protected static ?string $title = 'Dashboard de Indicadores';

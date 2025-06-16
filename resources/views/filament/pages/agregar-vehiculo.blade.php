@@ -29,8 +29,28 @@
                             type="text"
                             id="placa"
                             wire:model="placa"
-                            placeholder="Placa"
-                            class="text-primary-600 w-full rounded-md border-primary-600 shadow-sm focus:border-primary-600 focus:ring focus:ring-primary-600 focus:ring-opacity-50"
+                            placeholder="ABC-123"
+                            maxlength="7"
+                            class="text-primary-600 w-full rounded-md border-primary-600 shadow-sm focus:border-primary-600 focus:ring focus:ring-primary-600 focus:ring-opacity-50 uppercase"
+                            x-data="{
+                                formatPlaca(event) {
+                                    let value = event.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+                                    if (value.length > 6) value = value.substring(0, 6);
+                                    if (value.length > 3) {
+                                        value = value.substring(0, 3) + '-' + value.substring(3);
+                                    }
+                                    event.target.value = value;
+                                    $wire.set('placa', value);
+                                }
+                            }"
+                            x-on:input="formatPlaca($event)"
+                            x-on:keypress="
+                                const char = String.fromCharCode(event.which);
+                                const currentValue = event.target.value.replace('-', '');
+                                if (!/[A-Za-z0-9]/.test(char) || currentValue.length >= 6) {
+                                    event.preventDefault();
+                                }
+                            "
                         >
                     </div>
 

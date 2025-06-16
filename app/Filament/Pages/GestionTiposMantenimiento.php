@@ -12,6 +12,7 @@ use Illuminate\Support\Collection;
 class GestionTiposMantenimiento extends Page
 {
     use HasPageShield;
+
     protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
 
     protected static ?string $navigationLabel = 'Tipos de Mantenimiento';
@@ -21,7 +22,7 @@ class GestionTiposMantenimiento extends Page
     protected static string $view = 'filament.pages.gestion-tipos-mantenimiento';
 
     protected static ?string $navigationGroup = '⚙️ Configuración';
-    
+
     protected static ?int $navigationSort = 3;
 
     // Propiedades para la tabla
@@ -116,6 +117,7 @@ class GestionTiposMantenimiento extends Page
                 if ($tipo['id'] === $id) {
                     $tipo['is_active'] = $this->estadoTipos[$id];
                 }
+
                 return $tipo;
             });
 

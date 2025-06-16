@@ -60,8 +60,8 @@
 
                         @foreach ($timeSlots as $time => $slots)
                             @php
-                                // Determinar si es hora en punto o media hora
-                                $isHalfHour = strpos($time, ':30') !== false;
+                                // Determinar si es hora en punto (00 minutos)
+                                $isHourStart = strpos($time, ':00') !== false;
                                 $hourBase = substr($time, 0, strpos($time, ':'));
                                 $ampm = strpos($time, 'AM') !== false ? 'AM' : 'PM';
                                 $fullHour = $hourBase . ':00 ' . $ampm;
@@ -72,9 +72,9 @@
                             @endphp
 
                             <tr>
-                                @if (!$isHalfHour)
-                                    <!-- Hora en punto - mostrar celda con rowspan=2 -->
-                                    <td class="border text-center text-sm font-medium bg-primary-600 text-white" rowspan="2">{{ $time }}</td>
+                                @if ($isHourStart)
+                                    <!-- Hora en punto - mostrar celda con rowspan=4 (4 intervalos de 15 minutos) -->
+                                    <td class="border text-center text-sm font-medium bg-primary-600 text-white" rowspan="4">{{ $time }}</td>
                                     @php $rowspanActive = true; @endphp
                                 @endif
 

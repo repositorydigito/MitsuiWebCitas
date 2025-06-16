@@ -45,11 +45,11 @@ class C4CTestConnectivity extends Command
 
             try {
                 $startTime = microtime(true);
-                
+
                 $response = Http::withBasicAuth($username, $password)
                     ->timeout(30)
                     ->head($url);
-                
+
                 $endTime = microtime(true);
                 $duration = round(($endTime - $startTime) * 1000, 2);
 
@@ -74,15 +74,15 @@ class C4CTestConnectivity extends Command
         }
 
         $this->info("\n🔧 DIAGNÓSTICO ADICIONAL:");
-        $this->info("- Timeout configurado: " . config('c4c.timeout') . " segundos");
-        $this->info("- Usuario: " . $username);
-        $this->info("- Fecha/Hora: " . now()->format('Y-m-d H:i:s'));
+        $this->info('- Timeout configurado: '.config('c4c.timeout').' segundos');
+        $this->info('- Usuario: '.$username);
+        $this->info('- Fecha/Hora: '.now()->format('Y-m-d H:i:s'));
 
         $this->info("\n💡 RECOMENDACIONES:");
-        $this->info("1. Si todos fallan: Problema de red/firewall");
-        $this->info("2. Si algunos fallan: Problema específico del servicio");
-        $this->info("3. Si todos son lentos (>5000ms): Problema de latencia");
-        $this->info("4. Si Status 401/403: Problema de autenticación");
+        $this->info('1. Si todos fallan: Problema de red/firewall');
+        $this->info('2. Si algunos fallan: Problema específico del servicio');
+        $this->info('3. Si todos son lentos (>5000ms): Problema de latencia');
+        $this->info('4. Si Status 401/403: Problema de autenticación');
 
         return 0;
     }

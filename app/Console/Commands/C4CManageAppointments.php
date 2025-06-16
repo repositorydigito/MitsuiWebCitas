@@ -40,8 +40,8 @@ class C4CManageAppointments extends Command
     public function handle()
     {
         $action = strtolower($this->argument('action'));
-        
-        $this->info("🎯 GESTIÓN DE CITAS C4C - Acción: " . strtoupper($action));
+
+        $this->info('🎯 GESTIÓN DE CITAS C4C - Acción: '.strtoupper($action));
         $this->info(str_repeat('=', 60));
 
         if ($this->option('real')) {
@@ -51,28 +51,30 @@ class C4CManageAppointments extends Command
         }
 
         try {
-            $appointmentService = new AppointmentService();
-            
+            $appointmentService = new AppointmentService;
+
             switch ($action) {
                 case 'create':
                     return $this->handleCreate($appointmentService);
-                    
+
                 case 'update':
                     return $this->handleUpdate($appointmentService);
-                    
+
                 case 'delete':
                     return $this->handleDelete($appointmentService);
-                    
+
                 case 'query':
                     return $this->handleQuery($appointmentService);
-                    
+
                 default:
                     $this->error("Acción no válida: {$action}");
-                    $this->info("Acciones disponibles: create, update, delete, query");
+                    $this->info('Acciones disponibles: create, update, delete, query');
+
                     return 1;
             }
         } catch (\Exception $e) {
-            $this->error('❌ Excepción en gestión de citas: ' . $e->getMessage());
+            $this->error('❌ Excepción en gestión de citas: '.$e->getMessage());
+
             return 1;
         }
     }
@@ -85,6 +87,7 @@ class C4CManageAppointments extends Command
         $customerId = $this->option('customer_id');
         if (empty($customerId)) {
             $this->error('--customer_id es requerido para crear una cita');
+
             return 1;
         }
 
@@ -96,7 +99,7 @@ class C4CManageAppointments extends Command
             'start_date' => $startDate,
             'end_date' => $endDate,
             'center_id' => $this->option('center_id'),
-            'vehicle_plate' => $this->option('license_plate') ?: 'TEST-' . rand(100, 999),
+            'vehicle_plate' => $this->option('license_plate') ?: 'TEST-'.rand(100, 999),
             'customer_name' => $this->option('customer_name') ?: 'Cliente Test',
             'notes' => $this->option('notes') ?: 'Cita creada desde comando de gestión',
         ];
@@ -105,6 +108,7 @@ class C4CManageAppointments extends Command
         $this->displayAppointmentData($data);
 
         $result = $service->create($data);
+
         return $this->displayResult($result, 'crear');
     }
 
@@ -116,17 +120,27 @@ class C4CManageAppointments extends Command
         $uuid = $this->option('uuid');
         if (empty($uuid)) {
             $this->error('--uuid es requerido para actualizar una cita');
+
             return 1;
         }
 
         $updateData = [];
-        if ($this->option('status')) $updateData['status'] = $this->option('status');
-        if ($this->option('appointment_status')) $updateData['appointment_status'] = $this->option('appointment_status');
-        if ($this->option('start_date')) $updateData['start_date'] = $this->option('start_date');
-        if ($this->option('end_date')) $updateData['end_date'] = $this->option('end_date');
+        if ($this->option('status')) {
+            $updateData['status'] = $this->option('status');
+        }
+        if ($this->option('appointment_status')) {
+            $updateData['appointment_status'] = $this->option('appointment_status');
+        }
+        if ($this->option('start_date')) {
+            $updateData['start_date'] = $this->option('start_date');
+        }
+        if ($this->option('end_date')) {
+            $updateData['end_date'] = $this->option('end_date');
+        }
 
         if (empty($updateData)) {
             $this->error('Debe especificar al menos un campo para actualizar (--status, --appointment_status, --start_date, --end_date)');
+
             return 1;
         }
 
@@ -134,6 +148,7 @@ class C4CManageAppointments extends Command
         $this->displayUpdateData($updateData);
 
         $result = $service->update($uuid, $updateData);
+
         return $this->displayResult($result, 'actualizar');
     }
 
@@ -145,17 +160,20 @@ class C4CManageAppointments extends Command
         $uuid = $this->option('uuid');
         if (empty($uuid)) {
             $this->error('--uuid es requerido para eliminar una cita');
+
             return 1;
         }
 
         $this->info("\n🗑️ ELIMINANDO CITA: {$uuid}");
-        
-        if (!$this->confirm('¿Está seguro de que desea eliminar esta cita?')) {
+
+        if (! $this->confirm('¿Está seguro de que desea eliminar esta cita?')) {
             $this->info('Operación cancelada.');
+
             return 0;
         }
 
         $result = $service->delete($uuid);
+
         return $this->displayResult($result, 'eliminar');
     }
 
@@ -167,31 +185,34 @@ class C4CManageAppointments extends Command
         $customerId = $this->option('customer_id');
         if (empty($customerId)) {
             $this->error('--customer_id es requerido para consultar citas');
+
             return 1;
         }
 
         $this->info("\n🔍 CONSULTANDO CITAS PARA CLIENTE: {$customerId}");
 
         $result = $service->queryPendingAppointments($customerId);
-        
+
         if ($result['success']) {
             $count = $result['count'] ?? 0;
             $this->info("✅ Se encontraron {$count} citas");
-            
+
             if ($count > 0) {
                 foreach ($result['data'] as $index => $appointment) {
-                    $this->info("\n--- Cita " . ($index + 1) . " ---");
-                    $this->info('UUID: ' . ($appointment['uuid'] ?? 'N/A'));
-                    $this->info('ID: ' . ($appointment['id'] ?? 'N/A'));
-                    $this->info('Cliente: ' . ($appointment['client_name'] ?? 'N/A'));
-                    $this->info('Placa: ' . ($appointment['license_plate'] ?? 'N/A'));
-                    $this->info('Estado: ' . ($appointment['appointment_status'] ?? 'N/A'));
-                    $this->info('Centro: ' . ($appointment['center_id'] ?? 'N/A'));
+                    $this->info("\n--- Cita ".($index + 1).' ---');
+                    $this->info('UUID: '.($appointment['uuid'] ?? 'N/A'));
+                    $this->info('ID: '.($appointment['id'] ?? 'N/A'));
+                    $this->info('Cliente: '.($appointment['client_name'] ?? 'N/A'));
+                    $this->info('Placa: '.($appointment['license_plate'] ?? 'N/A'));
+                    $this->info('Estado: '.($appointment['appointment_status'] ?? 'N/A'));
+                    $this->info('Centro: '.($appointment['center_id'] ?? 'N/A'));
                 }
             }
+
             return 0;
         } else {
-            $this->error('❌ Error al consultar citas: ' . ($result['error'] ?? 'Error desconocido'));
+            $this->error('❌ Error al consultar citas: '.($result['error'] ?? 'Error desconocido'));
+
             return 1;
         }
     }
@@ -234,18 +255,19 @@ class C4CManageAppointments extends Command
     {
         if ($result['success']) {
             $this->info("✅ ¡Cita {$operation}da exitosamente!");
-            
-            if (isset($result['warnings']) && !empty($result['warnings'])) {
+
+            if (isset($result['warnings']) && ! empty($result['warnings'])) {
                 $this->info("\n⚠️ Advertencias:");
                 foreach ($result['warnings'] as $warning) {
-                    $this->warn('  - ' . $warning);
+                    $this->warn('  - '.$warning);
                 }
             }
-            
+
             return 0;
         } else {
             $this->error("❌ Error al {$operation} la cita");
-            $this->error('Error: ' . ($result['error'] ?? 'Error desconocido'));
+            $this->error('Error: '.($result['error'] ?? 'Error desconocido'));
+
             return 1;
         }
     }

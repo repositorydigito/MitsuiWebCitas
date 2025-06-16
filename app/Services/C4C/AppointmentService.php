@@ -54,7 +54,7 @@ class AppointmentService
 
         Log::info('AppointmentService inicializado', [
             'create_wsdl' => $this->createWsdl,
-            'query_wsdl' => $this->queryWsdl
+            'query_wsdl' => $this->queryWsdl,
         ]);
     }
 
@@ -134,19 +134,18 @@ class AppointmentService
                 $hasAppointmentData = true;
                 $appointmentData = $result['data'];
                 Log::info('✅ Estructura SoapClient: Appointment response encontrada');
-            }
-            else {
+            } else {
                 Log::warning('❌ No se encontró respuesta de appointment en ninguna estructura conocida');
-                Log::info('Estructura disponible: ' . json_encode(array_keys((array)$result['data'])));
+                Log::info('Estructura disponible: '.json_encode(array_keys((array) $result['data'])));
             }
         }
 
         if ($hasAppointmentData && $appointmentData) {
             $formattedResult = $this->formatAppointmentResponse($appointmentData);
 
-            Log::info("📋 Resultado del formateo de cita", [
+            Log::info('📋 Resultado del formateo de cita', [
                 'success' => $formattedResult['success'],
-                'error' => $formattedResult['error'] ?? 'none'
+                'error' => $formattedResult['error'] ?? 'none',
             ]);
 
             return $formattedResult;
@@ -161,16 +160,13 @@ class AppointmentService
 
     /**
      * Create a new appointment using simplified structure (like the example).
-     *
-     * @param array $data
-     * @return array
      */
     public function createSimple(array $data): array
     {
-        Log::info("🆕 Creando nueva cita (método simplificado)", [
+        Log::info('🆕 Creando nueva cita (método simplificado)', [
             'customer_id' => $data['customer_id'] ?? 'N/A',
             'start_date' => $data['start_date'] ?? 'N/A',
-            'license_plate' => $data['license_plate'] ?? 'N/A'
+            'license_plate' => $data['license_plate'] ?? 'N/A',
         ]);
 
         // Preparar fechas en formato ISO
@@ -202,7 +198,7 @@ class AppointmentService
                 'Text' => [
                     'actionCode' => '01',
                     'TextTypeCode' => '10002',
-                    'ContentText' => $data['notes'] ?? 'Nueva cita para ' . ($data['license_plate'] ?? 'vehículo') . ' creada desde Laravel',
+                    'ContentText' => $data['notes'] ?? 'Nueva cita para '.($data['license_plate'] ?? 'vehículo').' creada desde Laravel',
                 ],
                 // Campos personalizados con namespace y6s (EXACTAMENTE como Python)
                 'y6s:zClienteComodin' => $data['customer_name'] ?? 'Cliente de Prueba',
@@ -241,19 +237,18 @@ class AppointmentService
                 $hasAppointmentData = true;
                 $appointmentData = $result['data']->Body->AppointmentActivityBundleMaintainConfirmation_sync_V1;
                 Log::info('✅ Estructura HTTP: Fallback a AppointmentActivityBundleMaintainConfirmation_sync_V1');
-            }
-            else {
+            } else {
                 Log::warning('❌ No se encontró respuesta de appointment en ninguna estructura conocida');
-                Log::info('Estructura disponible: ' . json_encode(array_keys((array)($result['data']->Body ?? []))));
+                Log::info('Estructura disponible: '.json_encode(array_keys((array) ($result['data']->Body ?? []))));
             }
         }
 
         if ($hasAppointmentData && $appointmentData) {
             $formattedResult = $this->formatAppointmentResponse($appointmentData);
 
-            Log::info("📋 Resultado del formateo de cita (método simplificado)", [
+            Log::info('📋 Resultado del formateo de cita (método simplificado)', [
                 'success' => $formattedResult['success'],
-                'error' => $formattedResult['error'] ?? 'none'
+                'error' => $formattedResult['error'] ?? 'none',
             ]);
 
             return $formattedResult;
@@ -269,15 +264,14 @@ class AppointmentService
     /**
      * Update an existing appointment (Actualizar Cita).
      *
-     * @param string $uuid UUID de la cita a actualizar
-     * @param array $data Datos a actualizar
-     * @return array
+     * @param  string  $uuid  UUID de la cita a actualizar
+     * @param  array  $data  Datos a actualizar
      */
     public function update(string $uuid, array $data): array
     {
-        Log::info("📝 Actualizando cita", [
+        Log::info('📝 Actualizando cita', [
             'uuid' => $uuid,
-            'fields_to_update' => array_keys($data)
+            'fields_to_update' => array_keys($data),
         ]);
 
         if (empty($uuid)) {
@@ -348,7 +342,7 @@ class AppointmentService
 
         if (isset($data['notes'])) {
             $params['AppointmentActivity']['Text'] = [
-                'ContentText' => $data['notes']
+                'ContentText' => $data['notes'],
             ];
         }
 
@@ -370,19 +364,18 @@ class AppointmentService
                 $hasAppointmentData = true;
                 $appointmentData = $result['data'];
                 Log::info('✅ Estructura SoapClient: Update appointment response encontrada');
-            }
-            else {
+            } else {
                 Log::warning('❌ No se encontró respuesta de update appointment en ninguna estructura conocida');
-                Log::info('Estructura disponible: ' . json_encode(array_keys((array)($result['data']->Body ?? []))));
+                Log::info('Estructura disponible: '.json_encode(array_keys((array) ($result['data']->Body ?? []))));
             }
         }
 
         if ($hasAppointmentData && $appointmentData) {
             $formattedResult = $this->formatAppointmentResponse($appointmentData);
 
-            Log::info("📋 Resultado del update de cita", [
+            Log::info('📋 Resultado del update de cita', [
                 'success' => $formattedResult['success'],
-                'error' => $formattedResult['error'] ?? 'none'
+                'error' => $formattedResult['error'] ?? 'none',
             ]);
 
             return $formattedResult;
@@ -398,13 +391,12 @@ class AppointmentService
     /**
      * Delete an appointment (Eliminar Cita).
      *
-     * @param string $uuid UUID de la cita a eliminar
-     * @return array
+     * @param  string  $uuid  UUID de la cita a eliminar
      */
     public function delete(string $uuid): array
     {
-        Log::info("🗑️ Eliminando cita", [
-            'uuid' => $uuid
+        Log::info('🗑️ Eliminando cita', [
+            'uuid' => $uuid,
         ]);
 
         if (empty($uuid)) {
@@ -442,19 +434,18 @@ class AppointmentService
                 $hasAppointmentData = true;
                 $appointmentData = $result['data'];
                 Log::info('✅ Estructura SoapClient: Delete appointment response encontrada');
-            }
-            else {
+            } else {
                 Log::warning('❌ No se encontró respuesta de delete appointment en ninguna estructura conocida');
-                Log::info('Estructura disponible: ' . json_encode(array_keys((array)($result['data']->Body ?? []))));
+                Log::info('Estructura disponible: '.json_encode(array_keys((array) ($result['data']->Body ?? []))));
             }
         }
 
         if ($hasAppointmentData && $appointmentData) {
             $formattedResult = $this->formatAppointmentResponse($appointmentData);
 
-            Log::info("📋 Resultado del delete de cita", [
+            Log::info('📋 Resultado del delete de cita', [
                 'success' => $formattedResult['success'],
-                'error' => $formattedResult['error'] ?? 'none'
+                'error' => $formattedResult['error'] ?? 'none',
             ]);
 
             return $formattedResult;
@@ -469,9 +460,6 @@ class AppointmentService
 
     /**
      * Query pending appointments for a client (como Python).
-     *
-     * @param string $clientId
-     * @return array
      */
     public function queryPendingAppointments(string $clientId): array
     {
@@ -482,26 +470,26 @@ class AppointmentService
                 'SelectionByTypeCode' => [
                     'InclusionExclusionCode' => 'I',
                     'IntervalBoundaryTypeCode' => '1',
-                    'LowerBoundaryTypeCode' => '12'
+                    'LowerBoundaryTypeCode' => '12',
                 ],
                 'SelectionByPartyID' => [
                     'InclusionExclusionCode' => 'I',
                     'IntervalBoundaryTypeCode' => '1',
                     'LowerBoundaryPartyID' => $clientId,
-                    'UpperBoundaryPartyID' => ''
+                    'UpperBoundaryPartyID' => '',
                 ],
                 'SelectionByzEstadoCita_5PEND6QL5482763O1SFB05YP5' => [
                     'InclusionExclusionCode' => 'I',
                     'IntervalBoundaryTypeCode' => '3',
                     'LowerBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5' => '1',
-                    'UpperBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5' => '2'
-                ]
+                    'UpperBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5' => '2',
+                ],
             ],
             'ProcessingConditions' => [
                 'QueryHitsMaximumNumberValue' => 10000,
                 'QueryHitsUnlimitedIndicator' => '',
-                'LastReturnedObjectID' => ''
-            ]
+                'LastReturnedObjectID' => '',
+            ],
         ];
 
         $result = C4CClient::call($this->queryWsdl, $this->queryMethod, $params);
@@ -528,11 +516,10 @@ class AppointmentService
                 $hasAppointmentData = true;
                 $appointmentData = $result['data']->Body->ActivityBOVNCitasQueryByElementsSimpleByResponse_sync;
                 Log::info('✅ Estructura HTTP: Query appointments response encontrada (fallback)');
-            }
-            else {
+            } else {
                 Log::warning('❌ No se encontró respuesta de query appointments en ninguna estructura conocida');
                 Log::info('Estructuras disponibles en Body:', [
-                    'body_keys' => array_keys((array)($result['data']->Body ?? []))
+                    'body_keys' => array_keys((array) ($result['data']->Body ?? [])),
                 ]);
             }
         }
@@ -542,7 +529,7 @@ class AppointmentService
 
             if ($formattedResult['success']) {
                 Log::info("✅ Consulta de citas exitosa para cliente: {$clientId}", [
-                    'appointments_found' => $formattedResult['count'] ?? 0
+                    'appointments_found' => $formattedResult['count'] ?? 0,
                 ]);
 
                 return $formattedResult;
@@ -563,13 +550,12 @@ class AppointmentService
     /**
      * Format appointment query response.
      *
-     * @param object $response
-     * @return array
+     * @param  object  $response
      */
     protected function formatAppointmentQueryResponse($response): array
     {
         // Verificar si hay citas en la respuesta
-        if (!isset($response->Activity) && isset($response->ProcessingConditions)) {
+        if (! isset($response->Activity) && isset($response->ProcessingConditions)) {
             // No hay citas, pero hay información de procesamiento
             return [
                 'success' => true,
@@ -583,7 +569,7 @@ class AppointmentService
         }
 
         // Si no hay información de citas ni de procesamiento, es un error
-        if (!isset($response->Activity) && !isset($response->ProcessingConditions)) {
+        if (! isset($response->Activity) && ! isset($response->ProcessingConditions)) {
             return [
                 'success' => false,
                 'error' => 'Invalid response format',
@@ -597,7 +583,7 @@ class AppointmentService
             $activityData = $response->Activity;
 
             // If only one appointment is returned, convert to array
-            if (!is_array($activityData)) {
+            if (! is_array($activityData)) {
                 $activityData = [$activityData];
             }
 
@@ -712,10 +698,10 @@ class AppointmentService
      */
     protected function formatAppointmentResponse($response)
     {
-        Log::info("📋 Formateando respuesta de appointment", [
+        Log::info('📋 Formateando respuesta de appointment', [
             'has_log' => isset($response->Log),
             'has_appointment_activity' => isset($response->AppointmentActivity),
-            'response_keys' => array_keys((array)$response)
+            'response_keys' => array_keys((array) $response),
         ]);
 
         // Check for errors in the response
@@ -723,9 +709,9 @@ class AppointmentService
             $log = $response->Log;
             $maxSeverity = $log->MaximumLogItemSeverityCode ?? 0;
 
-            Log::info("📋 Log encontrado", [
+            Log::info('📋 Log encontrado', [
                 'max_severity' => $maxSeverity,
-                'has_items' => isset($log->Item)
+                'has_items' => isset($log->Item),
             ]);
 
             $errors = [];
@@ -747,8 +733,9 @@ class AppointmentService
             }
 
             // Si hay errores críticos (severity >= 3), considerarlo como fallo
-            if (!empty($errors)) {
-                Log::warning("❌ Errores críticos en la respuesta", ['errors' => $errors]);
+            if (! empty($errors)) {
+                Log::warning('❌ Errores críticos en la respuesta', ['errors' => $errors]);
+
                 return [
                     'success' => false,
                     'error' => implode('; ', $errors),
@@ -758,15 +745,16 @@ class AppointmentService
             }
 
             // Si solo hay warnings, considerarlo como éxito con advertencias
-            if (!empty($warnings)) {
-                Log::info("⚠️ Warnings en la respuesta", ['warnings' => $warnings]);
+            if (! empty($warnings)) {
+                Log::info('⚠️ Warnings en la respuesta', ['warnings' => $warnings]);
+
                 return [
                     'success' => true,
                     'error' => null,
                     'warnings' => $warnings,
                     'data' => [
                         'status' => 'created_with_warnings',
-                        'warnings' => $warnings
+                        'warnings' => $warnings,
                     ],
                 ];
             }
@@ -774,7 +762,8 @@ class AppointmentService
 
         // Process successful response
         if (isset($response->AppointmentActivity)) {
-            Log::info("✅ AppointmentActivity encontrada en respuesta");
+            Log::info('✅ AppointmentActivity encontrada en respuesta');
+
             return [
                 'success' => true,
                 'error' => null,
@@ -782,19 +771,20 @@ class AppointmentService
                     'uuid' => $response->AppointmentActivity->UUID ?? null,
                     'id' => $response->AppointmentActivity->ID ?? null,
                     'change_state_id' => $response->AppointmentActivity->ChangeStateID ?? null,
-                    'status' => 'created'
+                    'status' => 'created',
                 ],
             ];
         }
 
         // Si no hay AppointmentActivity pero tampoco errores críticos, asumir éxito
-        Log::info("✅ Respuesta sin errores críticos - asumiendo éxito");
+        Log::info('✅ Respuesta sin errores críticos - asumiendo éxito');
+
         return [
             'success' => true,
             'error' => null,
             'data' => [
                 'status' => 'processed',
-                'message' => 'Request processed successfully'
+                'message' => 'Request processed successfully',
             ],
         ];
     }

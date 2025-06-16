@@ -41,6 +41,7 @@ class ImagenController extends Controller
 
         if (! $imagen || empty($imagen->route)) {
             Log::warning("[ImagenController] No se encontró imagen para la campaña ID: {$id}");
+
             return $this->imagenPorDefecto();
         }
 
@@ -53,22 +54,25 @@ class ImagenController extends Controller
     private function mostrarImagenPorNombre($filename)
     {
         // Buscar en la carpeta private
-        $rutaPrivate = 'private/public/images/campanas/' . $filename;
+        $rutaPrivate = 'private/public/images/campanas/'.$filename;
 
         if (Storage::exists($rutaPrivate)) {
             Log::info("[ImagenController] Imagen encontrada en private: {$rutaPrivate}");
+
             return $this->servirArchivo($rutaPrivate);
         }
 
         // Buscar en la carpeta public
-        $rutaPublic = 'public/images/campanas/' . $filename;
+        $rutaPublic = 'public/images/campanas/'.$filename;
 
         if (Storage::exists($rutaPublic)) {
             Log::info("[ImagenController] Imagen encontrada en public: {$rutaPublic}");
+
             return $this->servirArchivo($rutaPublic);
         }
 
         Log::warning("[ImagenController] No se encontró imagen con nombre: {$filename}");
+
         return $this->imagenPorDefecto();
     }
 
@@ -77,7 +81,7 @@ class ImagenController extends Controller
      */
     private function servirArchivo($ruta)
     {
-        $rutaCompleta = storage_path('app/' . $ruta);
+        $rutaCompleta = storage_path('app/'.$ruta);
         Log::info("[ImagenController] Sirviendo archivo: {$rutaCompleta}");
 
         if (file_exists($rutaCompleta)) {
@@ -85,6 +89,7 @@ class ImagenController extends Controller
         }
 
         Log::warning("[ImagenController] Archivo no existe: {$rutaCompleta}");
+
         return $this->imagenPorDefecto();
     }
 

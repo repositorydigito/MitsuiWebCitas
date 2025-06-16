@@ -75,7 +75,7 @@ class User extends Authenticatable
      */
     public function getFullDocumentAttribute(): string
     {
-        return $this->document_type . ': ' . $this->document_number;
+        return $this->document_type.': '.$this->document_number;
     }
 
     /**
@@ -92,7 +92,7 @@ class User extends Authenticatable
     public function scopeByDocument($query, string $documentType, string $documentNumber)
     {
         return $query->where('document_type', $documentType)
-                    ->where('document_number', $documentNumber);
+            ->where('document_number', $documentNumber);
     }
 
     /**
@@ -108,6 +108,6 @@ class User extends Authenticatable
      */
     public function hasRealC4cData(): bool
     {
-        return !$this->is_comodin && !empty($this->c4c_internal_id) && $this->c4c_internal_id !== '99911999';
+        return ! $this->is_comodin && ! empty($this->c4c_internal_id) && $this->c4c_internal_id !== '99911999';
     }
 }

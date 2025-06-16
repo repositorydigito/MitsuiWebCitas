@@ -591,7 +591,7 @@ class AppointmentQueryService
             $reportedDateTime = null;
             $creationDateTime = null;
             $lastChangeDateTime = null;
-            
+
             // Por ahora saltamos el parsing de fechas complejas para que funcione el flujo
             // TODO: Implementar parsing robusto de fechas C4C
 
@@ -729,7 +729,7 @@ class AppointmentQueryService
      */
     public function bulkCheckPendingAppointments(array $clientIds)
     {
-        Log::info("Verificación masiva de citas para " . count($clientIds) . " clientes");
+        Log::info('Verificación masiva de citas para '.count($clientIds).' clientes');
 
         $results = [];
         $totalAppointments = 0;
@@ -751,7 +751,7 @@ class AppointmentQueryService
                         'success' => true,
                         'pending_appointments' => $appointmentCount,
                         'has_appointments' => $hasAppointments,
-                        'appointments_data' => $result['data'] ?? []
+                        'appointments_data' => $result['data'] ?? [],
                     ];
 
                     $totalAppointments += $appointmentCount;
@@ -768,10 +768,10 @@ class AppointmentQueryService
                         'success' => false,
                         'error' => $result['error'] ?? 'Unknown error',
                         'pending_appointments' => 0,
-                        'has_appointments' => false
+                        'has_appointments' => false,
                     ];
 
-                    Log::error("Error consultando cliente {$clientId}: " . ($result['error'] ?? 'Unknown error'));
+                    Log::error("Error consultando cliente {$clientId}: ".($result['error'] ?? 'Unknown error'));
                 }
             } catch (\Exception $e) {
                 $results[] = [
@@ -779,10 +779,10 @@ class AppointmentQueryService
                     'success' => false,
                     'error' => $e->getMessage(),
                     'pending_appointments' => 0,
-                    'has_appointments' => false
+                    'has_appointments' => false,
                 ];
 
-                Log::error("Excepción consultando cliente {$clientId}: " . $e->getMessage());
+                Log::error("Excepción consultando cliente {$clientId}: ".$e->getMessage());
             }
         }
 
@@ -793,10 +793,10 @@ class AppointmentQueryService
             'total_pending_appointments' => $totalAppointments,
             'clients_with_appointments' => $clientsWithAppointments,
             'clients_without_appointments' => $successfulChecks - $clientsWithAppointments,
-            'detailed_results' => $results
+            'detailed_results' => $results,
         ];
 
-        Log::info("Resumen verificación masiva: {$successfulChecks}/" . count($clientIds) . " exitosos, {$totalAppointments} citas total");
+        Log::info("Resumen verificación masiva: {$successfulChecks}/".count($clientIds)." exitosos, {$totalAppointments} citas total");
 
         return $summary;
     }

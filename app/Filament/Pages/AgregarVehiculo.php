@@ -11,12 +11,13 @@ use Illuminate\Support\Str;
 class AgregarVehiculo extends Page
 {
     use HasPageShield;
+
     protected static ?string $navigationIcon = 'heroicon-o-plus-circle';
 
     protected static ?string $navigationLabel = 'Agregar Vehículo';
-    
+
     protected static ?string $navigationGroup = '🚗 Vehículos';
-    
+
     protected static ?int $navigationSort = 2;
 
     protected static ?string $title = 'Agregar vehículo';

@@ -2,10 +2,9 @@
 
 namespace App\Filament\Pages\Auth;
 
-use Filament\Pages\Auth\Register as BaseRegister;
 use Filament\Actions\Action;
 use Filament\Http\Responses\Auth\Contracts\RegistrationResponse;
-use Illuminate\Http\RedirectResponse;
+use Filament\Pages\Auth\Register as BaseRegister;
 
 class Register extends BaseRegister
 {

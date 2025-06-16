@@ -26,11 +26,11 @@ class StartQueue extends Command
     public function handle()
     {
         $timeout = $this->option('timeout');
-        
+
         $this->info("🚀 Iniciando Laravel Queue Worker (timeout: {$timeout}s)");
-        $this->info("📝 Para procesar jobs de citas C4C");
+        $this->info('📝 Para procesar jobs de citas C4C');
         $this->newLine();
-        
+
         // Ejecutar el comando queue:work
         $this->call('queue:work', [
             '--timeout' => $timeout,

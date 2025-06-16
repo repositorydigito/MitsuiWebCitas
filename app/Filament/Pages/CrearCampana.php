@@ -16,14 +16,14 @@ use Livewire\WithFileUploads;
 
 class CrearCampana extends Page
 {
-    use WithFileUploads, HasPageShield;
+    use HasPageShield, WithFileUploads;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-plus';
 
     protected static ?string $navigationLabel = 'Crear Campaña';
-    
+
     protected static ?string $navigationGroup = '📢 Marketing';
-    
+
     protected static ?int $navigationSort = 2;
 
     protected static ?string $title = 'Gestionar campaña';
@@ -286,7 +286,7 @@ class CrearCampana extends Page
                 $this->anos = ['2024', '2023', '2022', '2021', '2020', '2019', '2018'];
             }
 
-            Log::info('[CrearCampana] Años cargados: ' . json_encode($this->anos));
+            Log::info('[CrearCampana] Años cargados: '.json_encode($this->anos));
         } catch (\Exception $e) {
             Log::error('[CrearCampana] Error al cargar años: '.$e->getMessage());
             // Años por defecto en caso de error
@@ -498,7 +498,7 @@ class CrearCampana extends Page
                     // Guardar en el disco público de Laravel
                     $rutaArchivo = $this->imagen->storeAs('images/campanas', $nombreArchivo, 'public');
 
-                    if (!$rutaArchivo) {
+                    if (! $rutaArchivo) {
                         throw new \Exception('No se pudo guardar la imagen');
                     }
 
@@ -565,8 +565,6 @@ class CrearCampana extends Page
         $this->redirect(Campanas::getUrl());
     }
 
-
-
     /**
      * Genera la URL correcta para una imagen de campaña
      */
@@ -583,12 +581,13 @@ class CrearCampana extends Page
             $nombreArchivo = basename($rutaOriginal);
             $url = route('imagen.campana', ['idOrFilename' => $nombreArchivo]);
             Log::info("[CrearCampana] Imagen en carpeta private, usando ruta especial: {$url}");
+
             return $url;
         }
 
         // Para imágenes nuevas en public
         $rutaLimpia = str_replace('public/', '', $rutaOriginal);
-        $url = asset('storage/' . $rutaLimpia);
+        $url = asset('storage/'.$rutaLimpia);
 
         // Registrar la URL generada para depuración
         Log::info('[CrearCampana] URL generada para imagen: '.$url);

@@ -54,7 +54,7 @@ class C4CTestFallback extends Command
             $documents = explode(',', $this->option('documents'));
             $documents = array_map('trim', $documents);
 
-            $this->info("Buscando con documentos: " . implode(', ', $documents));
+            $this->info('Buscando con documentos: '.implode(', ', $documents));
 
             $result = $customerService->findMultiple($documents);
 
@@ -62,7 +62,7 @@ class C4CTestFallback extends Command
         }
 
         // Si no se proporcionan opciones, ejecutar ejemplos por defecto
-        if (!$this->option('dni') && !$this->option('ruc') && !$this->option('documents')) {
+        if (! $this->option('dni') && ! $this->option('ruc') && ! $this->option('documents')) {
             $this->runDefaultExamples($customerService);
         }
 
@@ -98,7 +98,7 @@ class C4CTestFallback extends Command
     {
         if ($result['success']) {
             $this->info('✅ Cliente encontrado!');
-            
+
             $this->table(['Campo', 'Valor'], [
                 ['Tipo de búsqueda', $result['search_type'] ?? 'N/A'],
                 ['Documento usado', $result['document_used'] ?? 'N/A'],
@@ -107,7 +107,7 @@ class C4CTestFallback extends Command
                 ['Clientes encontrados', $result['count'] ?? 0],
             ]);
 
-            if (!empty($result['data'])) {
+            if (! empty($result['data'])) {
                 $customer = $result['data'][0];
                 $this->line('');
                 $this->info('📋 Datos del cliente:');
@@ -120,10 +120,10 @@ class C4CTestFallback extends Command
             }
         } else {
             $this->error('❌ Cliente no encontrado');
-            $this->line("Error: " . ($result['error'] ?? 'Unknown error'));
-            
+            $this->line('Error: '.($result['error'] ?? 'Unknown error'));
+
             if (isset($result['documents_tried'])) {
-                $this->line("Documentos probados: " . implode(', ', $result['documents_tried']));
+                $this->line('Documentos probados: '.implode(', ', $result['documents_tried']));
             }
         }
 

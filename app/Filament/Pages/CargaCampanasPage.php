@@ -17,7 +17,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class CargaCampanasPage extends Page
 {
-    use WithFileUploads, HasPageShield;
+    use HasPageShield, WithFileUploads;
 
     protected static ?string $navigationIcon = 'heroicon-o-arrow-up-tray';
 

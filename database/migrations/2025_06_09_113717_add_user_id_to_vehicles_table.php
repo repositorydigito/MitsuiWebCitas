@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::table('vehicles', function (Blueprint $table) {
             // Agregar campo user_id como foreign key
             $table->foreignId('user_id')
-                  ->after('id')
-                  ->nullable()
-                  ->constrained('users')
-                  ->onDelete('cascade');
-                  
+                ->after('id')
+                ->nullable()
+                ->constrained('users')
+                ->onDelete('cascade');
+
             // Agregar campos adicionales que faltan en la estructura actual
             $table->string('color')->nullable()->after('brand_code');
             $table->string('vin')->nullable()->after('color');
@@ -32,7 +32,7 @@ return new class extends Migration
             $table->date('prepaid_maintenance_expiry')->nullable()->after('has_prepaid_maintenance');
             $table->string('image_url')->nullable()->after('prepaid_maintenance_expiry');
             $table->string('status')->default('active')->after('image_url');
-            
+
             // Agregar índices para mejor rendimiento
             $table->index(['user_id', 'status']);
             $table->index(['brand_code', 'status']);
@@ -50,10 +50,10 @@ return new class extends Migration
             $table->dropIndex(['user_id', 'status']);
             $table->dropIndex(['brand_code', 'status']);
             $table->dropIndex(['license_plate']);
-            
+
             // Eliminar foreign key constraint
             $table->dropForeign(['user_id']);
-            
+
             // Eliminar columnas
             $table->dropColumn([
                 'user_id',

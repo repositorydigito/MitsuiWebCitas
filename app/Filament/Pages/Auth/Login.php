@@ -8,9 +8,6 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Pages\Auth\Login as BaseLogin;
-use Filament\Support\RawJs;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
 class Login extends BaseLogin
@@ -35,7 +32,7 @@ class Login extends BaseLogin
             ->label('Tipo de Documento')
             ->options([
                 'DNI' => 'DNI',
-                'RUC' => 'RUC', 
+                'RUC' => 'RUC',
                 'CE' => 'Carné de Extranjería',
                 'PASAPORTE' => 'Pasaporte',
             ])
@@ -54,7 +51,8 @@ class Login extends BaseLogin
             ->required()
             ->placeholder(function (callable $get) {
                 $type = $get('document_type');
-                return match($type) {
+
+                return match ($type) {
                     'DNI' => 'Ej: 12345678',
                     'RUC' => 'Ej: 20123456789',
                     'CE' => 'Ej: 123456789',
@@ -64,11 +62,13 @@ class Login extends BaseLogin
             })
             ->numeric(function (callable $get) {
                 $type = $get('document_type');
+
                 return in_array($type, ['DNI', 'RUC', 'CE']);
             })
             ->maxLength(function (callable $get) {
                 $type = $get('document_type');
-                return match($type) {
+
+                return match ($type) {
                     'DNI' => 8,
                     'RUC' => 11,
                     'CE' => 12,
@@ -78,7 +78,8 @@ class Login extends BaseLogin
             })
             ->minLength(function (callable $get) {
                 $type = $get('document_type');
-                return match($type) {
+
+                return match ($type) {
                     'DNI' => 8,
                     'RUC' => 11,
                     'CE' => 8,
@@ -92,7 +93,6 @@ class Login extends BaseLogin
     {
         return TextInput::make('password')
             ->label('Contraseña')
-            ->hint('Si es su primer acceso, se le solicitará crear una contraseña')
             ->password()
             ->revealable()
             ->placeholder('Ingrese su contraseña');
@@ -108,7 +108,7 @@ class Login extends BaseLogin
             $data['password'] ?? null
         );
 
-        if (!$result['success']) {
+        if (! $result['success']) {
             throw ValidationException::withMessages([
                 'data.password' => $result['message'],
             ]);
@@ -132,6 +132,7 @@ class Login extends BaseLogin
                 // Redirigir a página de creación de contraseña
                 session(['pending_user_id' => $result['user']->id]);
                 $this->redirect('/auth/create-password');
+
                 return [];
 
             default:
@@ -140,4 +141,4 @@ class Login extends BaseLogin
                 ]);
         }
     }
-} 
+}

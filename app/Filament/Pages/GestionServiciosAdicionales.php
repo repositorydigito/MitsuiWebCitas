@@ -12,6 +12,7 @@ use Illuminate\Support\Collection;
 class GestionServiciosAdicionales extends Page
 {
     use HasPageShield;
+
     protected static ?string $navigationIcon = 'heroicon-o-plus-circle';
 
     protected static ?string $navigationLabel = 'Servicios Adicionales';
@@ -21,7 +22,7 @@ class GestionServiciosAdicionales extends Page
     protected static string $view = 'filament.pages.gestion-servicios-adicionales';
 
     protected static ?string $navigationGroup = '⚙️ Configuración';
-    
+
     protected static ?int $navigationSort = 4;
 
     // Propiedades para la tabla
@@ -117,6 +118,7 @@ class GestionServiciosAdicionales extends Page
                 if ($servicio['id'] === $id) {
                     $servicio['is_active'] = $this->estadoServicios[$id];
                 }
+
                 return $servicio;
             });
 

@@ -1,4 +1,4 @@
-<?php                                                                                                                                                                                                   
+<?php
 
 namespace App\Providers\Filament;
 
@@ -6,6 +6,7 @@ use App\Filament\Pages\AdministrarLocales;
 use App\Filament\Pages\AdministrarModelos;
 use App\Filament\Pages\AgendarCita;
 use App\Filament\Pages\AgregarVehiculo;
+use App\Filament\Pages\Auth\Login;
 use App\Filament\Pages\Campanas;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\DashboardKpi;
@@ -21,8 +22,10 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\MenuItem;
+use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -30,18 +33,11 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
-use Illuminate\View\Middleware\ShareErrorsFromSession;
-
-use App\Filament\Pages\Auth\Login;
-use Filament\Support\Facades\FilamentView;
-use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Blade;
-use Filament\Navigation\NavigationGroup;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
 {
-
-
     public function panel(Panel $panel): Panel
     {
         return $panel
@@ -52,7 +48,7 @@ class AdminPanelProvider extends PanelProvider
             ->darkMode(false)
             ->sidebarFullyCollapsibleOnDesktop()
             ->globalSearch(false)
-            ->sidebarCollapsibleOnDesktop(fn () => !auth()->user()?->hasRole('super_admin'))
+            ->sidebarCollapsibleOnDesktop(fn () => ! auth()->user()?->hasRole('super_admin'))
             // Logo movido al header
             ->colors([
                 'primary' => '#0075BF',
@@ -139,7 +135,7 @@ class AdminPanelProvider extends PanelProvider
             )
             ->renderHook(
                 PanelsRenderHook::TOPBAR_START,
-                fn (): string => Blade::render('<img src="{{ asset("images/logoMitsui.svg") }}" alt="Logo Mitsui" class="header-logo" style="height: 48px; width: auto; filter: brightness(0) invert(1);">'),
+                fn (): string => Blade::render('<img src="{{ asset("images/logomitsui2.svg") }}" alt="Logo Mitsui" class="header-logo" style="height: 48px; width: auto;">'),
             )
             ->userMenuItems([
                 MenuItem::make()

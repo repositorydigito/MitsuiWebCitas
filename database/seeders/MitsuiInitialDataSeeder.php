@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class MitsuiInitialDataSeeder extends Seeder
 {
@@ -33,7 +33,7 @@ class MitsuiInitialDataSeeder extends Seeder
             'campaigns',
             'model_years',
             'models',
-            'premises'
+            'premises',
         ];
 
         foreach ($tables as $table) {

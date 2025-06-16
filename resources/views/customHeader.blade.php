@@ -5,7 +5,7 @@
     }
     /* Estilos generales para el header */
     header.fi-sidebar-header {
-        background-color: #0075BF !important;
+        background-color:rgb(255, 255, 255) !important;
         color: #ffffff !important;
         height: 80px !important;
         /* Aumentamos la altura para un aspecto más moderno */
@@ -36,14 +36,12 @@
 
     /* Estilos para la barra de navegación */
     nav.flex.h-16.items-center {
-        background-color: #0075BF !important;
-        color: #ffffff !important;
+        background-color:rgb(255, 255, 255) !important;
         height: 80px !important;
         /* Aumentamos la altura */
         padding: 0 24px !important;
         /* Más espacio interno */
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
-        border-bottom: 2px solid #005bb5 !important;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -53,7 +51,6 @@
     .header-logo {
         height: 48px !important;
         width: auto !important;
-        filter: brightness(0) invert(1) !important;
         transition: transform 0.3s ease !important;
         position: absolute !important;
         left: 50% !important;
@@ -287,7 +284,7 @@
         /* Tamaño del ícono */
         height: 36px !important;
         /* Tamaño del ícono */
-        color: #ffffff !important;
+        color: #0075BF !important;
         /* Color del ícono */
         transition: transform 0.3s ease !important;
         /* Transición suave para el ícono */

@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Services\C4C\CustomerService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class C4CCustomerQueryTest extends TestCase
@@ -106,23 +105,23 @@ class C4CCustomerQueryTest extends TestCase
     {
         $response = $this->postJson('/api/c4c/customers/find', [
             'document_type' => 'DNI',
-            'document_number' => '40359482'
+            'document_number' => '40359482',
         ]);
 
         $response->assertStatus(200)
-                ->assertJsonStructure([
-                    'success',
-                    'data' => [
-                        '*' => [
-                            'uuid',
-                            'internal_id',
-                            'external_id',
-                            'organisation' => [
-                                'first_line_name'
-                            ]
-                        ]
-                    ]
-                ]);
+            ->assertJsonStructure([
+                'success',
+                'data' => [
+                    '*' => [
+                        'uuid',
+                        'internal_id',
+                        'external_id',
+                        'organisation' => [
+                            'first_line_name',
+                        ],
+                    ],
+                ],
+            ]);
     }
 
     /** @test */
@@ -130,34 +129,34 @@ class C4CCustomerQueryTest extends TestCase
     {
         $response = $this->postJson('/api/c4c/customers/find-with-fallback', [
             'dni' => '40359482',
-            'ruc' => '20558638223'
+            'ruc' => '20558638223',
         ]);
 
         $response->assertStatus(200)
-                ->assertJsonStructure([
-                    'success',
-                    'search_type',
-                    'document_used',
-                    'fallback_used',
-                    'data'
-                ]);
+            ->assertJsonStructure([
+                'success',
+                'search_type',
+                'document_used',
+                'fallback_used',
+                'data',
+            ]);
     }
 
     /** @test */
     public function api_can_find_customer_with_multiple_documents()
     {
         $response = $this->postJson('/api/c4c/customers/find-multiple', [
-            'documents' => ['12345678', '40359482', '99999999999']
+            'documents' => ['12345678', '40359482', '99999999999'],
         ]);
 
         $response->assertStatus(200)
-                ->assertJsonStructure([
-                    'success',
-                    'search_type',
-                    'document_used',
-                    'attempt_number',
-                    'total_attempts',
-                    'data'
-                ]);
+            ->assertJsonStructure([
+                'success',
+                'search_type',
+                'document_used',
+                'attempt_number',
+                'total_attempts',
+                'data',
+            ]);
     }
 }

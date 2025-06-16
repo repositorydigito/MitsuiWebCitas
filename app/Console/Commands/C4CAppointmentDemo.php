@@ -33,14 +33,15 @@ class C4CAppointmentDemo extends Command
     {
         $customerId = $this->argument('customer_id');
 
-        $this->info("🎯 DEMOSTRACIÓN COMPLETA DE GESTIÓN DE CITAS C4C");
+        $this->info('🎯 DEMOSTRACIÓN COMPLETA DE GESTIÓN DE CITAS C4C');
         $this->info("Cliente: {$customerId}");
         $this->info(str_repeat('=', 70));
 
         if ($this->option('real')) {
             $this->info('🔴 Usando servicio REAL - Las operaciones afectarán datos reales');
-            if (!$this->confirm('¿Está seguro de continuar con el servicio real?')) {
+            if (! $this->confirm('¿Está seguro de continuar con el servicio real?')) {
                 $this->info('Operación cancelada.');
+
                 return 0;
             }
         } else {
@@ -48,7 +49,7 @@ class C4CAppointmentDemo extends Command
         }
 
         try {
-            $appointmentService = new AppointmentService();
+            $appointmentService = new AppointmentService;
 
             // PASO 1: Consultar citas existentes
             $this->info("\n📋 PASO 1: Consultando citas existentes...");
@@ -58,7 +59,7 @@ class C4CAppointmentDemo extends Command
                 $count = $existingAppointments['count'] ?? 0;
                 $this->info("✅ Cliente tiene {$count} cita(s) pendiente(s)");
             } else {
-                $this->warn("⚠️ No se pudieron consultar las citas existentes");
+                $this->warn('⚠️ No se pudieron consultar las citas existentes');
             }
 
             // PASO 2: Crear nueva cita
@@ -67,7 +68,7 @@ class C4CAppointmentDemo extends Command
             // Determinar placa a usar
             $licensePlate = $this->option('license_plate');
             if (empty($licensePlate)) {
-                $licensePlate = 'DEMO-' . rand(100, 999);
+                $licensePlate = 'DEMO-'.rand(100, 999);
                 $this->info("🔢 Placa generada automáticamente: {$licensePlate}");
             } else {
                 $this->info("🚗 Usando placa especificada: {$licensePlate}");
@@ -83,7 +84,7 @@ class C4CAppointmentDemo extends Command
                 'center_id' => 'M013',
                 'vehicle_plate' => $licensePlate,
                 'customer_name' => $customerName,
-                'notes' => 'Cita de demostración creada desde Laravel - ' . now()->format('Y-m-d H:i:s'),
+                'notes' => 'Cita de demostración creada desde Laravel - '.now()->format('Y-m-d H:i:s'),
                 'express' => 'false',
             ];
 
@@ -116,7 +117,7 @@ class C4CAppointmentDemo extends Command
                     $updateData = [
                         'appointment_status' => '2', // Confirmada
                         'customer_name' => 'Cliente Demo Laravel (ACTUALIZADO)',
-                        'notes' => 'Cita actualizada desde Laravel - ' . now()->format('Y-m-d H:i:s'),
+                        'notes' => 'Cita actualizada desde Laravel - '.now()->format('Y-m-d H:i:s'),
                     ];
 
                     $updateResult = $appointmentService->update($appointmentUuid, $updateData);
@@ -125,14 +126,14 @@ class C4CAppointmentDemo extends Command
                         $this->info('✅ Cita actualizada exitosamente');
 
                         // Mostrar warnings si existen
-                        if (isset($updateResult['warnings']) && !empty($updateResult['warnings'])) {
+                        if (isset($updateResult['warnings']) && ! empty($updateResult['warnings'])) {
                             $this->info("\n⚠️ Advertencias:");
                             foreach ($updateResult['warnings'] as $warning) {
-                                $this->warn('  - ' . $warning);
+                                $this->warn('  - '.$warning);
                             }
                         }
                     } else {
-                        $this->error('❌ Error al actualizar la cita: ' . ($updateResult['error'] ?? 'Error desconocido'));
+                        $this->error('❌ Error al actualizar la cita: '.($updateResult['error'] ?? 'Error desconocido'));
                     }
 
                     // PASO 4: Consultar citas nuevamente para ver los cambios
@@ -146,7 +147,7 @@ class C4CAppointmentDemo extends Command
 
                     // PASO 5: Preguntar si eliminar la cita
                     if ($this->confirm("\n🗑️ ¿Desea eliminar la cita de demostración?")) {
-                        $this->info("PASO 5: Eliminando la cita de demostración...");
+                        $this->info('PASO 5: Eliminando la cita de demostración...');
 
                         $deleteResult = $appointmentService->delete($appointmentUuid);
 
@@ -154,14 +155,14 @@ class C4CAppointmentDemo extends Command
                             $this->info('✅ Cita eliminada exitosamente');
 
                             // Mostrar warnings si existen
-                            if (isset($deleteResult['warnings']) && !empty($deleteResult['warnings'])) {
+                            if (isset($deleteResult['warnings']) && ! empty($deleteResult['warnings'])) {
                                 $this->info("\n⚠️ Advertencias:");
                                 foreach ($deleteResult['warnings'] as $warning) {
-                                    $this->warn('  - ' . $warning);
+                                    $this->warn('  - '.$warning);
                                 }
                             }
                         } else {
-                            $this->error('❌ Error al eliminar la cita: ' . ($deleteResult['error'] ?? 'Error desconocido'));
+                            $this->error('❌ Error al eliminar la cita: '.($deleteResult['error'] ?? 'Error desconocido'));
                         }
                     } else {
                         $this->info("ℹ️ Cita conservada. UUID: {$appointmentUuid}");
@@ -172,15 +173,16 @@ class C4CAppointmentDemo extends Command
                 }
 
                 // Mostrar warnings de creación si existen
-                if (isset($createResult['warnings']) && !empty($createResult['warnings'])) {
+                if (isset($createResult['warnings']) && ! empty($createResult['warnings'])) {
                     $this->info("\n⚠️ Advertencias de creación:");
                     foreach ($createResult['warnings'] as $warning) {
-                        $this->warn('  - ' . $warning);
+                        $this->warn('  - '.$warning);
                     }
                 }
 
             } else {
-                $this->error('❌ Error al crear la cita: ' . ($createResult['error'] ?? 'Error desconocido'));
+                $this->error('❌ Error al crear la cita: '.($createResult['error'] ?? 'Error desconocido'));
+
                 return 1;
             }
 
@@ -198,8 +200,9 @@ class C4CAppointmentDemo extends Command
             return 0;
 
         } catch (\Exception $e) {
-            $this->error('❌ Excepción durante la demostración: ' . $e->getMessage());
-            $this->error('Trace: ' . $e->getTraceAsString());
+            $this->error('❌ Excepción durante la demostración: '.$e->getMessage());
+            $this->error('Trace: '.$e->getTraceAsString());
+
             return 1;
         }
     }

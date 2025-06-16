@@ -253,7 +253,7 @@
         <div class="right-panel">
             <div class="form-container">
                 <!-- Título -->
-                <img src="{{ asset('images/logoMitsui.svg') }}" alt="Mitsui Logo" class="brand-logo">
+                <img src="{{ asset('images/logomitsui2.svg') }}" alt="Mitsui Logo" class="brand-logo">
                 <h1 class="form-title text-center">Iniciar Sesión</h1>
                 <p class="form-subtitle text-center">Ingresa tus credenciales para acceder al sistema</p>
 
@@ -268,6 +268,15 @@
                         />
                     </div>
                 </x-filament-panels::form>
+
+                <!-- Botón Crear Cuenta -->
+                <div class="mt-4">
+                    <a href="{{ route('auth.create-password') }}"
+                       class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                       style="color: #0075BF; border-color: #0075BF;">
+                        Crear Cuenta
+                    </a>
+                </div>
             </div>
         </div>
     </div>

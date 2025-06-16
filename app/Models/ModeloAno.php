@@ -65,7 +65,7 @@ class ModeloAno extends Model
             // Verificar si el modelo ya tiene años
             $tieneAnos = self::where('model_id', $modelo->id)->exists();
 
-            if (!$tieneAnos) {
+            if (! $tieneAnos) {
                 // Crear años por defecto para este modelo
                 foreach ($anosDefecto as $ano) {
                     self::create([

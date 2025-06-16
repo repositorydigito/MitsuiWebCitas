@@ -40,14 +40,12 @@ class CustomerService
 
     /**
      * Find a customer by document type and number.
-     *
-     * @return array|null
      */
     public function findByDocument(string $documentType, string $documentNumber): ?array
     {
         Log::info("Buscando cliente con {$documentType}: {$documentNumber}");
 
-        $result = match($documentType) {
+        $result = match ($documentType) {
             'DNI' => $this->findByDNI($documentNumber),
             'RUC' => $this->findByRUC($documentNumber),
             'CE' => $this->findByCE($documentNumber),
@@ -60,7 +58,7 @@ class CustomerService
         };
 
         // Si encontró datos, devolver el primer cliente
-        if ($result['success'] && !empty($result['data'])) {
+        if ($result['success'] && ! empty($result['data'])) {
             return $result['data'][0]; // Retornar primer cliente encontrado
         }
 
@@ -97,7 +95,7 @@ class CustomerService
         Log::info("Enviando parámetros SOAP para DNI: {$dni}", [
             'params' => $params,
             'wsdl' => $this->wsdl,
-            'method' => $this->method
+            'method' => $this->method,
         ]);
 
         $result = C4CClient::call($this->wsdl, $this->method, $params);
@@ -107,7 +105,7 @@ class CustomerService
             'success' => $result['success'],
             'error' => $result['error'] ?? null,
             'has_customer_data' => isset($result['data']->Customer),
-            'raw_response_preview' => isset($result['data']) ? substr(json_encode($result['data']), 0, 500) : null
+            'raw_response_preview' => isset($result['data']) ? substr(json_encode($result['data']), 0, 500) : null,
         ]);
 
         // Verificar la estructura correcta de la respuesta como viene del HTTP request
@@ -126,11 +124,10 @@ class CustomerService
                 $hasCustomerData = true;
                 $customerData = $result['data'];
                 Log::info('✅ Estructura SoapClient: Customer encontrado directamente');
-            }
-            else {
+            } else {
                 Log::warning('❌ No se encontró Customer en ninguna estructura conocida');
                 Log::info('Estructura disponible:', [
-                    'data_keys' => array_keys((array)$result['data'])
+                    'data_keys' => array_keys((array) $result['data']),
                 ]);
             }
         }
@@ -139,7 +136,7 @@ class CustomerService
             $formattedResult = $this->formatCustomerData($customerData);
 
             // Implementar la MISMA lógica que Python: success + 'Customer' en respuesta
-            if ($formattedResult['success'] && !empty($formattedResult['data'])) {
+            if ($formattedResult['success'] && ! empty($formattedResult['data'])) {
 
                 // Python considera exitoso si hay clientes en la respuesta, sin filtrar por DNI específico
                 $customer = $formattedResult['data'][0]; // Tomar el primer cliente como Python
@@ -150,7 +147,7 @@ class CustomerService
                     'internal_id' => $customer['internal_id'] ?? null,
                     'external_id' => $customer['external_id'] ?? null,
                     'total_customers_returned' => count($formattedResult['data']),
-                    'behavior' => 'same_as_python_examples'
+                    'behavior' => 'same_as_python_examples',
                 ]);
 
                 return $formattedResult; // Devolver todos los clientes como Python
@@ -212,8 +209,7 @@ class CustomerService
                 $hasCustomerData = true;
                 $customerData = $result['data'];
                 Log::info('✅ Estructura SoapClient: Customer encontrado directamente para RUC');
-            }
-            else {
+            } else {
                 Log::warning('❌ No se encontró Customer en ninguna estructura conocida para RUC');
             }
         }
@@ -222,7 +218,7 @@ class CustomerService
             $formattedResult = $this->formatCustomerData($customerData);
 
             // Implementar la MISMA lógica que Python: success + 'Customer' en respuesta
-            if ($formattedResult['success'] && !empty($formattedResult['data'])) {
+            if ($formattedResult['success'] && ! empty($formattedResult['data'])) {
 
                 // Python considera exitoso si hay clientes en la respuesta, sin filtrar por RUC específico
                 $customer = $formattedResult['data'][0]; // Tomar el primer cliente como Python
@@ -233,7 +229,7 @@ class CustomerService
                     'internal_id' => $customer['internal_id'] ?? null,
                     'external_id' => $customer['external_id'] ?? null,
                     'total_customers_returned' => count($formattedResult['data']),
-                    'behavior' => 'same_as_python_examples'
+                    'behavior' => 'same_as_python_examples',
                 ]);
 
                 return $formattedResult; // Devolver todos los clientes como Python
@@ -295,8 +291,7 @@ class CustomerService
                 $hasCustomerData = true;
                 $customerData = $result['data'];
                 Log::info('✅ Estructura SoapClient: Customer encontrado directamente para CE');
-            }
-            else {
+            } else {
                 Log::warning('❌ No se encontró Customer en ninguna estructura conocida para CE');
             }
         }
@@ -305,7 +300,7 @@ class CustomerService
             $formattedResult = $this->formatCustomerData($customerData);
 
             // Implementar la MISMA lógica que Python: success + 'Customer' en respuesta
-            if ($formattedResult['success'] && !empty($formattedResult['data'])) {
+            if ($formattedResult['success'] && ! empty($formattedResult['data'])) {
 
                 // Python considera exitoso si hay clientes en la respuesta, sin filtrar por CE específico
                 $customer = $formattedResult['data'][0]; // Tomar el primer cliente como Python
@@ -316,7 +311,7 @@ class CustomerService
                     'internal_id' => $customer['internal_id'] ?? null,
                     'external_id' => $customer['external_id'] ?? null,
                     'total_customers_returned' => count($formattedResult['data']),
-                    'behavior' => 'same_as_python_examples'
+                    'behavior' => 'same_as_python_examples',
                 ]);
 
                 return $formattedResult; // Devolver todos los clientes como Python
@@ -378,8 +373,7 @@ class CustomerService
                 $hasCustomerData = true;
                 $customerData = $result['data'];
                 Log::info('✅ Estructura SoapClient: Customer encontrado directamente para Passport');
-            }
-            else {
+            } else {
                 Log::warning('❌ No se encontró Customer en ninguna estructura conocida para Passport');
             }
         }
@@ -388,7 +382,7 @@ class CustomerService
             $formattedResult = $this->formatCustomerData($customerData);
 
             // Implementar la MISMA lógica que Python: success + 'Customer' en respuesta
-            if ($formattedResult['success'] && !empty($formattedResult['data'])) {
+            if ($formattedResult['success'] && ! empty($formattedResult['data'])) {
 
                 // Python considera exitoso si hay clientes en la respuesta, sin filtrar por Passport específico
                 $customer = $formattedResult['data'][0]; // Tomar el primer cliente como Python
@@ -399,7 +393,7 @@ class CustomerService
                     'internal_id' => $customer['internal_id'] ?? null,
                     'external_id' => $customer['external_id'] ?? null,
                     'total_customers_returned' => count($formattedResult['data']),
-                    'behavior' => 'same_as_python_examples'
+                    'behavior' => 'same_as_python_examples',
                 ]);
 
                 return $formattedResult; // Devolver todos los clientes como Python
@@ -417,26 +411,25 @@ class CustomerService
         ];
     }
 
-
-
     /**
      * Find customer with fallback (DNI -> RUC).
      *
      * @return array
      */
-    public function findWithFallback(string $dni, string $ruc = null)
+    public function findWithFallback(string $dni, ?string $ruc = null)
     {
         Log::info("Buscando cliente con fallback - DNI: {$dni}, RUC: {$ruc}");
 
         // Paso 1: Buscar por DNI
         $result = $this->findByDNI($dni);
 
-        if ($result['success'] && !empty($result['data'])) {
+        if ($result['success'] && ! empty($result['data'])) {
             Log::info("Cliente encontrado por DNI: {$dni}");
+
             return array_merge($result, [
                 'search_type' => 'DNI',
                 'document_used' => $dni,
-                'fallback_used' => false
+                'fallback_used' => false,
             ]);
         }
 
@@ -445,12 +438,13 @@ class CustomerService
             Log::info("Cliente no encontrado por DNI, intentando con RUC: {$ruc}");
             $result = $this->findByRUC($ruc);
 
-            if ($result['success'] && !empty($result['data'])) {
+            if ($result['success'] && ! empty($result['data'])) {
                 Log::info("Cliente encontrado por RUC: {$ruc}");
+
                 return array_merge($result, [
                     'search_type' => 'RUC',
                     'document_used' => $ruc,
-                    'fallback_used' => true
+                    'fallback_used' => true,
                 ]);
             }
         }
@@ -463,7 +457,7 @@ class CustomerService
             'data' => null,
             'search_type' => null,
             'document_used' => null,
-            'fallback_used' => true
+            'fallback_used' => true,
         ];
     }
 
@@ -474,7 +468,7 @@ class CustomerService
      */
     public function findMultiple(array $documents)
     {
-        Log::info("Búsqueda múltiple con documentos: " . implode(', ', $documents));
+        Log::info('Búsqueda múltiple con documentos: '.implode(', ', $documents));
 
         foreach ($documents as $index => $document) {
             $document = trim($document);
@@ -488,24 +482,26 @@ class CustomerService
                 $result = $this->findByRUC($document);
             } else {
                 Log::warning("Documento {$document} no tiene formato reconocido");
+
                 continue;
             }
 
-            if ($result['success'] && !empty($result['data'])) {
+            if ($result['success'] && ! empty($result['data'])) {
                 Log::info("Cliente encontrado con {$searchType}: {$document}");
+
                 return array_merge($result, [
                     'search_type' => $searchType,
                     'document_used' => $document,
                     'attempt_number' => $index + 1,
                     'total_attempts' => count($documents),
-                    'documents_tried' => array_slice($documents, 0, $index + 1)
+                    'documents_tried' => array_slice($documents, 0, $index + 1),
                 ]);
             } else {
                 Log::info("No encontrado con {$searchType}: {$document}");
             }
         }
 
-        Log::warning("Cliente no encontrado con ningún documento de: " . implode(', ', $documents));
+        Log::warning('Cliente no encontrado con ningún documento de: '.implode(', ', $documents));
 
         return [
             'success' => false,
@@ -514,7 +510,7 @@ class CustomerService
             'search_type' => null,
             'document_used' => null,
             'documents_tried' => $documents,
-            'total_attempts' => count($documents)
+            'total_attempts' => count($documents),
         ];
     }
 
@@ -746,8 +742,8 @@ class CustomerService
 
             // Debug: mostrar todas las propiedades del customer
             Log::info('Propiedades del customer:', [
-                'customer_keys' => array_keys((array)$customer),
-                'customer_preview' => json_encode($customer, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+                'customer_keys' => array_keys((array) $customer),
+                'customer_preview' => json_encode($customer, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
             ]);
 
             // Agregar el cliente formateado a la lista

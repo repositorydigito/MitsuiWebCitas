@@ -271,7 +271,7 @@ class C4CFindCustomer extends Command
                     }
                 }
 
-                if (!$hasIdentification) {
+                if (! $hasIdentification) {
                     $this->info('No se encontraron documentos de identidad');
                 }
 
@@ -286,7 +286,7 @@ class C4CFindCustomer extends Command
                 }
 
                 // Teléfonos desde address_information
-                if (isset($customer['address_information']['address']['telephone']) && !empty($customer['address_information']['address']['telephone'])) {
+                if (isset($customer['address_information']['address']['telephone']) && ! empty($customer['address_information']['address']['telephone'])) {
                     $this->info('Teléfonos:');
                     foreach ($customer['address_information']['address']['telephone'] as $phone) {
                         $number = $phone['formatted_number_description'] ?? 'N/A';
@@ -297,7 +297,7 @@ class C4CFindCustomer extends Command
                 }
 
                 // Fallback: buscar en estructura legacy
-                if (!$hasContact && isset($customer['contact']) && ! empty($customer['contact'])) {
+                if (! $hasContact && isset($customer['contact']) && ! empty($customer['contact'])) {
                     if (isset($customer['contact']['email'])) {
                         $this->info('Email: '.$customer['contact']['email']);
                         $hasContact = true;
@@ -313,7 +313,7 @@ class C4CFindCustomer extends Command
                     }
                 }
 
-                if (!$hasContact) {
+                if (! $hasContact) {
                     $this->info('No se encontró información de contacto');
                 }
 
@@ -350,7 +350,7 @@ class C4CFindCustomer extends Command
                 }
 
                 // Fallback: estructura legacy
-                if (!$hasAddress && isset($customer['address']) && ! empty($customer['address'])) {
+                if (! $hasAddress && isset($customer['address']) && ! empty($customer['address'])) {
                     if (isset($customer['address']['formatted'])) {
                         $this->info('Dirección completa: '.$customer['address']['formatted']);
                         $hasAddress = true;
@@ -360,14 +360,26 @@ class C4CFindCustomer extends Command
                         $region = $customer['address']['region_description'] ?? '';
                         $country = $customer['address']['country'] ?? '';
 
-                        if ($street) { $this->info('Calle: '.$street); $hasAddress = true; }
-                        if ($city) { $this->info('Ciudad: '.$city); $hasAddress = true; }
-                        if ($region) { $this->info('Región: '.$region); $hasAddress = true; }
-                        if ($country) { $this->info('País: '.$country); $hasAddress = true; }
+                        if ($street) {
+                            $this->info('Calle: '.$street);
+                            $hasAddress = true;
+                        }
+                        if ($city) {
+                            $this->info('Ciudad: '.$city);
+                            $hasAddress = true;
+                        }
+                        if ($region) {
+                            $this->info('Región: '.$region);
+                            $hasAddress = true;
+                        }
+                        if ($country) {
+                            $this->info('País: '.$country);
+                            $hasAddress = true;
+                        }
                     }
                 }
 
-                if (!$hasAddress) {
+                if (! $hasAddress) {
                     $this->info('No se encontró información de dirección');
                 }
 
@@ -406,7 +418,7 @@ class C4CFindCustomer extends Command
                 }
 
                 // Fallback: estructura legacy
-                if (!$hasSales && isset($customer['sales']) && ! empty($customer['sales'])) {
+                if (! $hasSales && isset($customer['sales']) && ! empty($customer['sales'])) {
                     $this->info('Organización: '.($customer['sales']['organisation_id'] ?? 'N/A'));
                     $this->info('Canal de distribución: '.($customer['sales']['distribution_channel'] ?? 'N/A'));
                     $this->info('Grupo de ventas: '.($customer['sales']['group_id'] ?? 'N/A'));
@@ -415,7 +427,7 @@ class C4CFindCustomer extends Command
                     $hasSales = true;
                 }
 
-                if (!$hasSales) {
+                if (! $hasSales) {
                     $this->info('No se encontró información de ventas');
                 }
             }

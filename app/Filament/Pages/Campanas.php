@@ -15,16 +15,16 @@ use Livewire\WithPagination;
 
 class Campanas extends Page
 {
-    use WithPagination, HasPageShield;
+    use HasPageShield, WithPagination;
 
     public int $page = 1;
 
     protected static ?string $navigationIcon = 'heroicon-o-megaphone';
 
     protected static ?string $navigationLabel = 'Campañas';
-    
+
     protected static ?string $navigationGroup = '📢 Marketing';
-    
+
     protected static ?int $navigationSort = 1;
 
     protected static ?string $title = 'Campañas';
@@ -304,6 +304,7 @@ class Campanas extends Page
                 // Si no hay fechas seleccionadas, todas las campañas pasan el filtro
                 Log::debug("[CampanasPage] No hay filtro de fechas aplicado para campaña {$campana['codigo']}");
             }
+
             return $pasaFiltroCiudad && $pasaFiltroEstado && $pasaFiltroBusqueda && $pasaFiltroFechas;
         });
     }
@@ -642,7 +643,7 @@ class Campanas extends Page
                     // Mostrar el modal
                     $this->modalDetalleVisible = true;
                 } catch (\Exception $e) {
-                    throw $e; 
+                    throw $e;
                 }
             } else {
                 \Filament\Notifications\Notification::make()
@@ -672,7 +673,7 @@ class Campanas extends Page
         try {
             $campana = Campana::where('code', $codigo)->first();
 
-            if (! $campana) { 
+            if (! $campana) {
                 \Filament\Notifications\Notification::make()
                     ->title('Campaña no encontrada')
                     ->body("No se encontró la campaña con código: {$codigo}")
@@ -702,12 +703,14 @@ class Campanas extends Page
             // Para imágenes en private, crear una ruta especial
             $nombreArchivo = basename($rutaOriginal);
             $url = route('imagen.campana', ['idOrFilename' => $nombreArchivo]);
+
             return $url;
         }
 
         // Para imágenes nuevas en public
         $rutaLimpia = str_replace('public/', '', $rutaOriginal);
-        $url = asset('storage/' . $rutaLimpia);
+        $url = asset('storage/'.$rutaLimpia);
+
         return $url;
     }
 

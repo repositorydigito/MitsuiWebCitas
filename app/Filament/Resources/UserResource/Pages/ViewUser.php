@@ -21,4 +21,4 @@ class ViewUser extends ViewRecord
                 ->icon('heroicon-o-trash'),
         ];
     }
-} 
+}

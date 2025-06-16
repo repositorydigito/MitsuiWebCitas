@@ -2,6 +2,8 @@
 
 namespace App\Filament\Pages;
 
+use App\Jobs\EnviarCitaC4CJob;
+use App\Mail\SolicitudInformacionPopup;
 use App\Models\AdditionalService;
 use App\Models\Appointment;
 use App\Models\Bloqueo;
@@ -10,8 +12,6 @@ use App\Models\Local;
 use App\Models\MaintenanceType;
 use App\Models\Vehicle;
 use App\Services\VehiculoSoapService;
-use App\Services\C4C\AppointmentService;
-use App\Jobs\EnviarCitaC4CJob;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Carbon\Carbon;
 use Filament\Pages\Page;
@@ -19,17 +19,19 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class AgendarCita extends Page
 {
     use HasPageShield;
+
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
 
     protected static ?string $navigationLabel = 'Agendar Cita';
-    
+
     protected static ?string $navigationGroup = '📅 Citas & Servicios';
-    
+
     protected static ?int $navigationSort = 1;
 
     protected static ?string $title = 'Agendar Cita';
@@ -94,13 +96,13 @@ class AgendarCita extends Page
 
     // Estados del job de C4C
     public ?string $citaJobId = null;
-    
+
     public string $citaStatus = 'idle'; // idle, processing, completed, failed
-    
+
     public int $citaProgress = 0;
-    
+
     public string $citaMessage = '';
-    
+
     public ?string $appointmentNumber = null;
 
     // Modales de pop-ups
@@ -145,7 +147,7 @@ class AgendarCita extends Page
             // Obtener los pop-ups activos
             $popups = \App\Models\PopUp::where('is_active', true)->get();
 
-            Log::info('[AgendarCita] Pop-ups activos encontrados: ' . $popups->count());
+            Log::info('[AgendarCita] Pop-ups activos encontrados: '.$popups->count());
 
             if ($popups->isNotEmpty()) {
                 $this->popupsDisponibles = [];
@@ -168,7 +170,7 @@ class AgendarCita extends Page
                     Log::info("[AgendarCita] Pop-up cargado: ID {$popup->id}, Nombre: {$popup->name}");
                 }
 
-                Log::info('[AgendarCita] Total pop-ups disponibles: ' . count($this->popupsDisponibles));
+                Log::info('[AgendarCita] Total pop-ups disponibles: '.count($this->popupsDisponibles));
             } else {
                 // Si no hay pop-ups en la base de datos, crear algunos pop-ups de ejemplo
                 $this->popupsDisponibles = [];
@@ -187,26 +189,26 @@ class AgendarCita extends Page
     {
         try {
             $user = Auth::user();
-            
+
             if ($user) {
                 // Dividir el nombre completo en nombres y apellidos
                 $nombreCompleto = $user->name ?? '';
                 $partesNombre = explode(' ', trim($nombreCompleto));
-                
+
                 // Si hay al menos una palabra, la primera va a nombres
                 if (count($partesNombre) >= 1) {
                     $this->nombreCliente = $partesNombre[0];
                 }
-                
+
                 // Si hay más de una palabra, el resto va a apellidos
                 if (count($partesNombre) > 1) {
                     $this->apellidoCliente = implode(' ', array_slice($partesNombre, 1));
                 }
-                
+
                 // Asignar email y teléfono
                 $this->emailCliente = $user->email ?? '';
                 $this->celularCliente = $user->phone ?? '';
-                
+
                 Log::info('[AgendarCita] Datos del cliente cargados automáticamente:', [
                     'nombre' => $this->nombreCliente,
                     'apellido' => $this->apellidoCliente,
@@ -220,7 +222,7 @@ class AgendarCita extends Page
                 Log::warning('[AgendarCita] No hay usuario autenticado. Manteniendo campos vacíos.');
             }
         } catch (\Exception $e) {
-            Log::error('[AgendarCita] Error al cargar datos del cliente: ' . $e->getMessage());
+            Log::error('[AgendarCita] Error al cargar datos del cliente: '.$e->getMessage());
             // Los campos quedarán vacíos en caso de error
         }
     }
@@ -271,16 +273,16 @@ class AgendarCita extends Page
                 // Si no encontramos el vehículo en la base de datos, intentamos buscarlo en el servicio SOAP
                 try {
                     $service = app(VehiculoSoapService::class);
-                    
+
                     // Obtener documento del usuario autenticado
                     $user = Auth::user();
                     $documentoCliente = $user ? $user->document_number : null;
-                    
-                    if (!$documentoCliente) {
+
+                    if (! $documentoCliente) {
                         Log::warning('[AgendarCita] No se encontró documento del usuario autenticado, usando documento por defecto');
                         $documentoCliente = '20605414410'; // Fallback
                     }
-                    
+
                     Log::info("[AgendarCita] Consultando vehículos con documento: {$documentoCliente}");
                     $marcas = ['Z01', 'Z02', 'Z03']; // Todas las marcas disponibles
 
@@ -367,7 +369,7 @@ class AgendarCita extends Page
     {
         if (in_array($servicio, $this->serviciosSeleccionados)) {
             // Remover el servicio
-            $this->serviciosSeleccionados = array_filter($this->serviciosSeleccionados, function($s) use ($servicio) {
+            $this->serviciosSeleccionados = array_filter($this->serviciosSeleccionados, function ($s) use ($servicio) {
                 return $s !== $servicio;
             });
 
@@ -381,7 +383,7 @@ class AgendarCita extends Page
             $this->serviciosSeleccionados[] = $servicio;
         }
 
-        Log::info("[AgendarCita] Servicios seleccionados actualizados: " . json_encode($this->serviciosSeleccionados));
+        Log::info('[AgendarCita] Servicios seleccionados actualizados: '.json_encode($this->serviciosSeleccionados));
     }
 
     /**
@@ -410,7 +412,7 @@ class AgendarCita extends Page
             $query->where('brand', $marcaVehiculo);
             Log::info("[AgendarCita] Filtrando locales por marca: {$marcaVehiculo}");
         } else {
-            Log::info("[AgendarCita] No se detectó marca del vehículo, mostrando todos los locales activos");
+            Log::info('[AgendarCita] No se detectó marca del vehículo, mostrando todos los locales activos');
         }
 
         $localesActivos = $query->get();
@@ -462,7 +464,7 @@ class AgendarCita extends Page
 
             // Si no hay locales para la marca específica, mostrar todos los locales activos como fallback
             if ($marcaVehiculo) {
-                Log::info("[AgendarCita] Fallback: Cargando todos los locales activos");
+                Log::info('[AgendarCita] Fallback: Cargando todos los locales activos');
                 $localesActivos = \App\Models\Local::where('is_active', true)->get();
 
                 if ($localesActivos->isNotEmpty()) {
@@ -500,7 +502,8 @@ class AgendarCita extends Page
     {
         // Verificar si tenemos datos del vehículo
         if (empty($this->vehiculo)) {
-            Log::info("[AgendarCita] No hay datos del vehículo disponibles");
+            Log::info('[AgendarCita] No hay datos del vehículo disponibles');
+
             return null;
         }
 
@@ -508,17 +511,17 @@ class AgendarCita extends Page
         $marca = null;
 
         // 1. Desde brand_name del vehículo
-        if (!empty($this->vehiculo['brand_name'])) {
+        if (! empty($this->vehiculo['brand_name'])) {
             $marca = $this->vehiculo['brand_name'];
             Log::info("[AgendarCita] Marca obtenida desde brand_name: {$marca}");
         }
         // 2. Desde brand_code del vehículo
-        elseif (!empty($this->vehiculo['brand_code'])) {
+        elseif (! empty($this->vehiculo['brand_code'])) {
             $marca = $this->vehiculo['brand_code'];
             Log::info("[AgendarCita] Marca obtenida desde brand_code: {$marca}");
         }
         // 3. Desde marca del vehículo (campo directo)
-        elseif (!empty($this->vehiculo['marca'])) {
+        elseif (! empty($this->vehiculo['marca'])) {
             $marca = $this->vehiculo['marca'];
             Log::info("[AgendarCita] Marca obtenida desde marca: {$marca}");
         }
@@ -551,11 +554,13 @@ class AgendarCita extends Page
         foreach ($mapeoMarcas as $variacion => $marcaEstandar) {
             if (str_contains($marca, $variacion)) {
                 Log::info("[AgendarCita] Marca '{$marca}' mapeada a '{$marcaEstandar}'");
+
                 return $marcaEstandar;
             }
         }
 
         Log::warning("[AgendarCita] Marca '{$marca}' no reconocida, no se aplicará filtro");
+
         return null;
     }
 
@@ -571,11 +576,11 @@ class AgendarCita extends Page
         try {
             $serviciosAdicionales = AdditionalService::where('is_active', true)->get();
             foreach ($serviciosAdicionales as $servicio) {
-                $this->opcionesServiciosAdicionales['servicio_' . $servicio->id] = $servicio->name;
+                $this->opcionesServiciosAdicionales['servicio_'.$servicio->id] = $servicio->name;
             }
-            Log::info('[AgendarCita] Servicios adicionales del maestro cargados: ' . count($serviciosAdicionales));
+            Log::info('[AgendarCita] Servicios adicionales del maestro cargados: '.count($serviciosAdicionales));
         } catch (\Exception $e) {
-            Log::error('[AgendarCita] Error al cargar servicios adicionales del maestro: ' . $e->getMessage());
+            Log::error('[AgendarCita] Error al cargar servicios adicionales del maestro: '.$e->getMessage());
         }
 
         // Cargar campañas activas
@@ -640,7 +645,7 @@ class AgendarCita extends Page
      */
     public function updatedServicioAdicionalSeleccionado($value): void
     {
-        if (!empty($value) && !in_array($value, $this->serviciosAdicionales)) {
+        if (! empty($value) && ! in_array($value, $this->serviciosAdicionales)) {
             // Agregar el servicio seleccionado a la lista de servicios adicionales
             $this->serviciosAdicionales[] = $value;
             Log::info("[AgendarCita] Servicio adicional agregado: {$value}");
@@ -655,7 +660,7 @@ class AgendarCita extends Page
      */
     public function eliminarServicioAdicional($servicio): void
     {
-        $this->serviciosAdicionales = array_values(array_filter($this->serviciosAdicionales, function($item) use ($servicio) {
+        $this->serviciosAdicionales = array_values(array_filter($this->serviciosAdicionales, function ($item) use ($servicio) {
             return $item !== $servicio;
         }));
         Log::info("[AgendarCita] Servicio adicional eliminado: {$servicio}");
@@ -707,9 +712,9 @@ class AgendarCita extends Page
                 ->where('model', 'like', "%{$modelo}%")
                 ->where('brand', 'like', "%{$marca}%")
                 ->where('year', $anio)
-                ->where(function($query) use ($nombreLocal) {
+                ->where(function ($query) use ($nombreLocal) {
                     $query->where('premises', $this->localSeleccionado)  // Buscar por código
-                          ->orWhere('premises', $nombreLocal);            // Buscar por nombre
+                        ->orWhere('premises', $nombreLocal);            // Buscar por nombre
                 })
                 ->get();
 
@@ -1186,46 +1191,46 @@ class AgendarCita extends Page
      */
     public function checkJobStatus(): void
     {
-        if (!$this->citaJobId) {
+        if (! $this->citaJobId) {
             return;
         }
 
         $jobData = Cache::get("cita_job_{$this->citaJobId}");
-        
+
         if ($jobData) {
             $newStatus = $jobData['status'] ?? 'idle';
             $newProgress = $jobData['progress'] ?? 0;
             $newMessage = $jobData['message'] ?? '';
-            
+
             // Solo actualizar si hay cambios
             if ($newStatus !== $this->citaStatus || $newProgress !== $this->citaProgress) {
                 $this->citaStatus = $newStatus;
                 $this->citaProgress = $newProgress;
                 $this->citaMessage = $newMessage;
-                
-                Log::info("[AgendarCita] Job status actualizado", [
+
+                Log::info('[AgendarCita] Job status actualizado', [
                     'job_id' => $this->citaJobId,
                     'status' => $this->citaStatus,
                     'progress' => $this->citaProgress,
-                    'message' => $this->citaMessage
+                    'message' => $this->citaMessage,
                 ]);
-                
+
                 // Si se completó exitosamente
                 if ($this->citaStatus === 'completed') {
                     $this->appointmentNumber = $jobData['appointment_number'] ?? null;
                     $this->citaAgendada = true;
                     $this->pasoActual = 3; // Ir al paso de confirmación
-                    
+
                     \Filament\Notifications\Notification::make()
                         ->title('¡Cita Confirmada!')
                         ->body('Tu cita ha sido agendada exitosamente.')
                         ->success()
                         ->send();
-                        
+
                     // Detener el polling
                     $this->dispatch('stop-polling');
                 }
-                
+
                 // Si falló
                 elseif ($this->citaStatus === 'failed') {
                     \Filament\Notifications\Notification::make()
@@ -1233,10 +1238,10 @@ class AgendarCita extends Page
                         ->body($this->citaMessage)
                         ->danger()
                         ->send();
-                        
+
                     // Detener el polling
                     $this->dispatch('stop-polling');
-                    
+
                     // NO resetear estado automáticamente para que el usuario vea el error
                 }
             }
@@ -1253,8 +1258,8 @@ class AgendarCita extends Page
         $this->citaMessage = '';
         $this->citaJobId = null;
         $this->appointmentNumber = null;
-        
-        Log::info("[AgendarCita] Estado de cita reseteado para nuevo intento");
+
+        Log::info('[AgendarCita] Estado de cita reseteado para nuevo intento');
     }
 
     // Método para guardar la cita
@@ -1314,11 +1319,11 @@ class AgendarCita extends Page
             $user = Auth::user();
 
             // 🚀 **NUEVA IMPLEMENTACIÓN CON JOBS - SIN TIMEOUT** 🚀
-            Log::info("[AgendarCita] Iniciando proceso asíncrono de cita...");
-            
+            Log::info('[AgendarCita] Iniciando proceso asíncrono de cita...');
+
             // Generar ID único para el job
             $this->citaJobId = (string) Str::uuid();
-            
+
             // **PASO 1: CREAR APPOINTMENT EN BD PRIMERO** 💾
             $appointment = new Appointment;
             $appointment->appointment_number = 'CITA-'.date('Ymd').'-'.strtoupper(Str::random(5));
@@ -1352,15 +1357,15 @@ class AgendarCita extends Page
             $appointment->comments = $this->comentarios;
             $appointment->status = 'pending'; // Pendiente hasta que C4C confirme
             $appointment->is_synced = false;
-            
+
             $appointment->save();
 
             Log::info("[AgendarCita] Appointment creado en BD con ID: {$appointment->id}");
 
             // **PASO 2: PREPARAR DATOS PARA C4C** 📋
-            $fechaHoraInicio = Carbon::createFromFormat('Y-m-d H:i:s', $fechaFormateada . ' ' . $horaFormateada);
+            $fechaHoraInicio = Carbon::createFromFormat('Y-m-d H:i:s', $fechaFormateada.' '.$horaFormateada);
             $fechaHoraFin = $fechaHoraInicio->copy()->addMinutes(45); // 45 minutos por defecto
-            
+
             $citaData = [
                 'customer_id' => $user->c4c_internal_id ?? '1270002726', // Cliente de prueba si no tiene C4C ID
                 'employee_id' => '1740', // ID del asesor por defecto
@@ -1368,7 +1373,7 @@ class AgendarCita extends Page
                 'end_date' => $fechaHoraFin->format('Y-m-d H:i:s'),
                 'center_id' => $localSeleccionado->code,
                 'vehicle_plate' => $vehicle->license_plate,
-                'customer_name' => $this->nombreCliente . ' ' . $this->apellidoCliente,
+                'customer_name' => $this->nombreCliente.' '.$this->apellidoCliente,
                 'notes' => $this->comentarios ?: 'Cita agendada desde la aplicación web',
                 'express' => false,
             ];
@@ -1376,7 +1381,7 @@ class AgendarCita extends Page
             $appointmentData = [
                 'appointment_number' => $appointment->appointment_number,
                 'servicios_adicionales' => $this->serviciosAdicionales,
-                'campanas_disponibles' => $this->campanasDisponibles ?? []
+                'campanas_disponibles' => $this->campanasDisponibles ?? [],
             ];
 
             // **PASO 3: INICIALIZAR JOB STATUS** ⏳
@@ -1384,7 +1389,7 @@ class AgendarCita extends Page
                 'status' => 'queued',
                 'progress' => 0,
                 'message' => 'Preparando envío a C4C...',
-                'updated_at' => now()
+                'updated_at' => now(),
             ], 600); // 10 minutos
 
             // **PASO 4: DESPACHAR JOB EN BACKGROUND** 🚀
@@ -1394,10 +1399,10 @@ class AgendarCita extends Page
             $this->citaStatus = 'processing';
             $this->citaProgress = 0;
             $this->citaMessage = 'Enviando cita a C4C...';
-            
-            Log::info("[AgendarCita] Job despachado exitosamente", [
+
+            Log::info('[AgendarCita] Job despachado exitosamente', [
                 'job_id' => $this->citaJobId,
-                'appointment_id' => $appointment->id
+                'appointment_id' => $appointment->id,
             ]);
 
             // **PASO 6: NOTIFICAR AL USUARIO** ✅
@@ -1666,6 +1671,144 @@ class AgendarCita extends Page
     }
 
     /**
+     * Enviar correos electrónicos para cada pop-up seleccionado
+     */
+    protected function enviarCorreosInformacion(): void
+    {
+        try {
+            // Obtener datos del usuario autenticado
+            $user = Auth::user();
+
+            if (! $user) {
+                Log::error('[AgendarCita] No hay usuario autenticado para enviar correos');
+
+                return;
+            }
+
+            // Preparar datos del usuario
+            $datosUsuario = [
+                'nombres' => $this->nombreCliente,
+                'apellidos' => $this->apellidoCliente,
+                'email' => $this->emailCliente,
+                'celular' => $this->celularCliente,
+                'dni' => $user->document_number ?? '',
+                'placa' => $this->vehiculo['placa'] ?? '',
+            ];
+
+            Log::info('[AgendarCita] Iniciando envío de correos para pop-ups seleccionados', [
+                'popups_seleccionados' => $this->popupsSeleccionados,
+                'datos_usuario' => $datosUsuario,
+            ]);
+
+            $correosEnviados = 0;
+            $errores = [];
+
+            // Enviar un correo por cada pop-up seleccionado
+            foreach ($this->popupsSeleccionados as $popupId) {
+                // Buscar el pop-up en los disponibles
+                $popup = collect($this->popupsDisponibles)->firstWhere('id', $popupId);
+
+                if (! $popup) {
+                    Log::warning("[AgendarCita] Pop-up con ID {$popupId} no encontrado en disponibles");
+
+                    continue;
+                }
+
+                // Extraer el correo electrónico del campo url_wp
+                $correoDestino = $this->extraerCorreoDeUrlWp($popup['url_wp']);
+
+                if (! $correoDestino) {
+                    Log::warning("[AgendarCita] No se pudo extraer correo válido de url_wp: {$popup['url_wp']}");
+                    $errores[] = "No se pudo enviar correo para {$popup['nombre']} - correo no válido";
+
+                    continue;
+                }
+
+                try {
+                    Log::info("[AgendarCita] Intentando enviar correo para {$popup['nombre']} a {$correoDestino}");
+                    Log::info('[AgendarCita] Datos del usuario: '.json_encode($datosUsuario));
+
+                    // Verificar configuración de correo
+                    $mailConfig = config('mail');
+                    Log::info('[AgendarCita] Configuración de correo - Driver: '.$mailConfig['default']);
+                    Log::info('[AgendarCita] Configuración SMTP - Host: '.config('mail.mailers.smtp.host'));
+
+                    // Enviar el correo
+                    Mail::to($correoDestino)
+                        ->send(new SolicitudInformacionPopup($datosUsuario, $popup['nombre']));
+
+                    $correosEnviados++;
+                    Log::info("[AgendarCita] ✅ Correo enviado exitosamente para {$popup['nombre']} a {$correoDestino}");
+
+                } catch (\Exception $e) {
+                    Log::error("[AgendarCita] ❌ Error al enviar correo para {$popup['nombre']}: ".$e->getMessage());
+                    Log::error('[AgendarCita] Stack trace: '.$e->getTraceAsString());
+                    $errores[] = "Error al enviar correo para {$popup['nombre']}: ".$e->getMessage();
+                }
+            }
+
+            // Mostrar notificación según el resultado
+            if ($correosEnviados > 0) {
+                $mensaje = $correosEnviados === 1
+                    ? 'Se ha enviado 1 solicitud de información por correo electrónico.'
+                    : "Se han enviado {$correosEnviados} solicitudes de información por correo electrónico.";
+
+                if (! empty($errores)) {
+                    $mensaje .= ' Algunos envíos fallaron.';
+                }
+
+                \Filament\Notifications\Notification::make()
+                    ->title('Solicitudes Enviadas')
+                    ->body($mensaje)
+                    ->success()
+                    ->send();
+            } else {
+                \Filament\Notifications\Notification::make()
+                    ->title('Error en el Envío')
+                    ->body('No se pudo enviar ninguna solicitud de información. Verifique la configuración de correos.')
+                    ->danger()
+                    ->send();
+            }
+
+            Log::info("[AgendarCita] Proceso de envío completado. Enviados: {$correosEnviados}, Errores: ".count($errores));
+
+        } catch (\Exception $e) {
+            Log::error('[AgendarCita] Error general al enviar correos de información: '.$e->getMessage());
+
+            \Filament\Notifications\Notification::make()
+                ->title('Error')
+                ->body('Ocurrió un error al procesar las solicitudes de información.')
+                ->danger()
+                ->send();
+        }
+    }
+
+    /**
+     * Extraer correo electrónico del campo url_wp
+     */
+    protected function extraerCorreoDeUrlWp(?string $urlWp): ?string
+    {
+        if (empty($urlWp)) {
+            Log::info('[AgendarCita] url_wp está vacío');
+
+            return null;
+        }
+
+        Log::info("[AgendarCita] Procesando url_wp: {$urlWp}");
+
+        // Si ya es un correo electrónico válido, devolverlo
+        if (filter_var($urlWp, FILTER_VALIDATE_EMAIL)) {
+            Log::info("[AgendarCita] url_wp es un correo válido: {$urlWp}");
+
+            return $urlWp;
+        }
+
+        Log::error("[AgendarCita] El valor en url_wp no es un correo válido: {$urlWp}");
+
+        return null;
+    }
+
+    /**
      * Método para cerrar el modal de resumen y volver a la página de vehículos
      */
     public function cerrarResumen(): void
@@ -1701,10 +1844,10 @@ class AgendarCita extends Page
                 }
             }
 
-            // Aquí se podría implementar la lógica para guardar los pop-ups seleccionados
-            // Por ejemplo, enviar un correo, guardar en la base de datos, etc.
-
             Log::info('[AgendarCita] Pop-ups seleccionados guardados: '.json_encode($popupsSeleccionados));
+
+            // Enviar correos electrónicos para cada pop-up seleccionado
+            $this->enviarCorreosInformacion();
 
             // Mostrar notificación de éxito
             \Filament\Notifications\Notification::make()
@@ -2231,14 +2374,16 @@ class AgendarCita extends Page
             $horaAperturaInt = (int) $apertura->format('H');
             $horaCierreInt = (int) $cierre->format('H');
 
-            // Generar horarios cada 30 minutos desde la apertura hasta el cierre
+            // Generar horarios cada 15 minutos desde la apertura hasta el cierre
             for ($hora = $horaAperturaInt; $hora <= $horaCierreInt; $hora++) {
-                // Agregar la hora en punto
+                // Agregar los 4 intervalos de 15 minutos por hora
                 $horarios[] = sprintf('%02d:00:00', $hora);
 
-                // Agregar la media hora, excepto para la última hora
+                // Agregar los otros intervalos, excepto para la última hora
                 if ($hora < $horaCierreInt) {
+                    $horarios[] = sprintf('%02d:15:00', $hora);
                     $horarios[] = sprintf('%02d:30:00', $hora);
+                    $horarios[] = sprintf('%02d:45:00', $hora);
                 }
             }
 

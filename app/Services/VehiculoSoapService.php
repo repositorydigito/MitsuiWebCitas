@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\C4C\AppointmentQueryService;
-use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use SoapClient;
@@ -55,7 +54,7 @@ class VehiculoSoapService
             // Preferir WSDL local si está habilitado y existe
             $this->wsdlUrl = $localWsdl;
             Log::info('[VehiculoSoapService] Usando WSDL local (preferencia configurada):', ['path' => $localWsdl]);
-        } elseif (!$preferLocal) {
+        } elseif (! $preferLocal) {
             // Usar directamente el remoto si no se prefiere el local
             $this->wsdlUrl = $remoteWsdl;
             Log::info('[VehiculoSoapService] Usando WSDL remoto (configuración prefer_local_wsdl=false):', ['url' => $remoteWsdl]);
@@ -82,6 +81,7 @@ class VehiculoSoapService
     {
         if (empty($this->wsdlUrl)) {
             Log::error('[VehiculoSoapService] No se puede crear cliente SOAP: URL/ruta WSDL no válida.');
+
             return null;
         }
 
@@ -150,6 +150,7 @@ class VehiculoSoapService
     {
         if (empty($this->wsdlUrl)) {
             Log::error('[VehiculoSoapService] No se puede crear cliente SOAP: URL/ruta WSDL no válida.');
+
             return null;
         }
 
@@ -201,6 +202,7 @@ class VehiculoSoapService
 
             // Marcar el servicio como no disponible
             $this->healthCheck->isAvailable(true);
+
             return null;
         } catch (\Exception $e) {
             Log::error("[VehiculoSoapService] Exception general al crear cliente SOAP con WSDL {$wsdlType}:", [
@@ -226,6 +228,7 @@ class VehiculoSoapService
 
         if (empty($remoteWsdl)) {
             Log::error('[VehiculoSoapService] No hay URL remota configurada para fallback.');
+
             return null;
         }
 
@@ -248,6 +251,7 @@ class VehiculoSoapService
 
             // Marcar el servicio como no disponible
             $this->healthCheck->isAvailable(true);
+
             return null;
         } catch (\Exception $e) {
             Log::error('[VehiculoSoapService] Exception también en WSDL remoto:', [
@@ -277,14 +281,14 @@ class VehiculoSoapService
         $sapEnabled = config('vehiculos_webservice.enabled', true) && config('SAP_ENABLED', false);
         if ($sapEnabled) {
             Log::info('[VehiculoSoapService] NIVEL 1: Intentando obtener vehículos desde SAP Z3PF_GETLISTAVEHICULOS');
-            
+
             $vehiculosSAP = $this->getVehiculosDesdeSAP($documentoCliente, $marcas);
             if (! $vehiculosSAP->isEmpty()) {
                 Log::info('[VehiculoSoapService] NIVEL 1: Vehículos obtenidos exitosamente desde SAP Z3PF_GETLISTAVEHICULOS');
-                
+
                 // **NUEVA FUNCIONALIDAD: Persistir vehículos en BD**
                 $this->persistirVehiculosEnBD($vehiculosSAP, $documentoCliente);
-                
+
                 return $vehiculosSAP;
             }
         } else {
@@ -294,27 +298,28 @@ class VehiculoSoapService
         // NIVEL 2: C4C WSCitas - Citas Pendientes (INTERMEDIO) - **DESACTIVADO**
         // if (config('vehiculos_webservice.enabled', true)) {
         //     Log::info('[VehiculoSoapService] NIVEL 2: Intentando obtener vehículos desde C4C WSCitas - Citas Pendientes');
-        //     
+        //
         //     $vehiculosC4C = $this->getVehiculosDesdeC4C($documentoCliente, $marcas);
         //     if (! $vehiculosC4C->isEmpty()) {
         //         Log::info('[VehiculoSoapService] NIVEL 2: Vehículos obtenidos exitosamente desde C4C WSCitas - Citas Pendientes');
-        //         
+        //
         //         // **NUEVA FUNCIONALIDAD: Persistir vehículos en BD**
         //         $this->persistirVehiculosEnBD($vehiculosC4C, $documentoCliente);
-        //         
+        //
         //         return $vehiculosC4C;
         //     }
         // }
-        
+
         Log::info('[VehiculoSoapService] NIVEL 2: C4C WSCitas desactivado. Saltando directamente a Base de Datos Local.');
 
         // NIVEL 2: Base de datos local (FALLBACK DIRECTO DESDE SAP)
         if (config('vehiculos_webservice.enabled', true)) {
             Log::info('[VehiculoSoapService] NIVEL 2: Intentando obtener vehículos desde base de datos local');
-            
+
             $vehiculosLocal = $this->getVehiculosLocal($documentoCliente, $marcas);
             if (! $vehiculosLocal->isEmpty()) {
                 Log::info('[VehiculoSoapService] NIVEL 2: Vehículos obtenidos exitosamente desde base de datos local');
+
                 return $vehiculosLocal;
             }
         }
@@ -322,12 +327,12 @@ class VehiculoSoapService
         // Si no se obtuvieron vehículos en ningún nivel, usar datos simulados
         Log::warning('[VehiculoSoapService] No se encontraron vehículos en los niveles 1 y 2 (SAP y BD Local). Usando datos simulados.');
         $vehiculosMock = $this->mockService->getVehiculosCliente($documentoCliente, $marcas);
-        
+
         // **NUEVA FUNCIONALIDAD: Persistir datos mock también para testing**
-        if (!$vehiculosMock->isEmpty()) {
+        if (! $vehiculosMock->isEmpty()) {
             $this->persistirVehiculosEnBD($vehiculosMock, $documentoCliente);
         }
-        
+
         return $vehiculosMock;
     }
 
@@ -342,6 +347,7 @@ class VehiculoSoapService
         $cliente = $this->crearClienteSoapConTimeout(8); // 8 segundos timeout para SAP
         if (! $cliente) {
             Log::error('[VehiculoSoapService] Abortando getVehiculosDesdeSAP: No se pudo crear el cliente SOAP.');
+
             return collect();
         }
 
@@ -363,45 +369,45 @@ class VehiculoSoapService
 
                 // Control de tiempo de inicio para timeout manual MUY ESTRICTO
                 $inicioTiempo = microtime(true);
-                
+
                 // Si ya han pasado más de 15 segundos desde el inicio del flujo total, abortar
                 static $inicioFlujoTotal = null;
                 if ($inicioFlujoTotal === null) {
                     $inicioFlujoTotal = microtime(true);
                 }
-                
+
                 $tiempoTotalTranscurrido = microtime(true) - $inicioFlujoTotal;
                 if ($tiempoTotalTranscurrido > 15) { // 15 segundos máximo para todo el flujo SAP
-                    Log::warning("[VehiculoSoapService] Timeout total del flujo SAP detectado: " . round($tiempoTotalTranscurrido, 2) . "s. Abortando marca {$marca}.");
+                    Log::warning('[VehiculoSoapService] Timeout total del flujo SAP detectado: '.round($tiempoTotalTranscurrido, 2)."s. Abortando marca {$marca}.");
                     break; // Abortar completamente SAP
                 }
-                
+
                 try {
                     // TIMEOUT EXTREMO: Si ya tardó más de 5 segundos desde el inicio, abortar inmediatamente
                     if ($tiempoTotalTranscurrido > 5) {
                         throw new \Exception("Timeout preventivo: flujo SAP ya lleva {$tiempoTotalTranscurrido}s");
                     }
-                    
+
                     // Implementar timeout usando proceso asíncrono con tiempo límite REAL
                     $timeoutReal = 8; // 8 segundos máximo REAL
                     $timeStart = microtime(true);
-                    
+
                     // Capturar cualquier excepción y convertirla en timeout si tarda más de 8s
                     $pid = null;
-                    $descriptorspec = array(
-                        0 => array("pipe", "r"),  // stdin
-                        1 => array("pipe", "w"),  // stdout
-                        2 => array("pipe", "w")   // stderr
-                    );
-                    
+                    $descriptorspec = [
+                        0 => ['pipe', 'r'],  // stdin
+                        1 => ['pipe', 'w'],  // stdout
+                        2 => ['pipe', 'w'],   // stderr
+                    ];
+
                     // Llamada SOAP con control de tiempo manual
                     $respuesta = $cliente->Z3PF_GETLISTAVEHICULOS($parametros);
-                    
+
                     $timeElapsed = microtime(true) - $timeStart;
                     if ($timeElapsed > $timeoutReal) {
                         throw new \Exception("Timeout manual: llamada tardó {$timeElapsed}s (límite {$timeoutReal}s)");
                     }
-                    
+
                     $erroresConsecutivos = 0; // Reset contador de errores si la llamada es exitosa
                 } catch (SoapFault $e) {
                     $erroresConsecutivos++;
@@ -409,24 +415,26 @@ class VehiculoSoapService
                     Log::error("[VehiculoSoapService] SoapFault en llamada Z3PF_GETLISTAVEHICULOS (Marca: {$marca}): ", [
                         'message' => $e->getMessage(),
                         'code' => $e->getCode(),
-                        'tiempo_transcurrido' => round($tiempoTranscurrido, 2) . 's',
+                        'tiempo_transcurrido' => round($tiempoTranscurrido, 2).'s',
                         'errores_consecutivos' => $erroresConsecutivos,
                         'request' => $cliente->__getLastRequest() ?? 'N/A',
                         'response' => $cliente->__getLastResponse() ?? 'N/A',
                     ]);
-                    
+
                     // Si hay 2 errores consecutivos, abortar SAP inmediatamente
                     if ($erroresConsecutivos >= 2) {
                         Log::warning("[VehiculoSoapService] Abortando SAP debido a {$erroresConsecutivos} errores consecutivos. Pasando a NIVEL 2 (BD Local).");
                         break; // Salir del foreach para pasar al siguiente nivel
                     }
+
                     continue; // Saltar a la siguiente marca sin procesar
                 }
-                
+
                 // Verificar si excedió el timeout manual
                 $tiempoTranscurrido = microtime(true) - $inicioTiempo;
                 if ($tiempoTranscurrido > 8) { // 8 segundos para dar margen
-                    Log::warning("[VehiculoSoapService] Timeout manual detectado para marca {$marca}: " . round($tiempoTranscurrido, 2) . "s");
+                    Log::warning("[VehiculoSoapService] Timeout manual detectado para marca {$marca}: ".round($tiempoTranscurrido, 2).'s');
+
                     continue; // Saltar a la siguiente marca
                 }
 
@@ -458,7 +466,7 @@ class VehiculoSoapService
                 Log::error("[VehiculoSoapService] Exception general al obtener vehículos (Marca: {$marca}): ", [
                     'message' => $e->getMessage(),
                 ]);
-                
+
                 // Si hay 2 errores consecutivos, abortar SAP inmediatamente
                 if ($erroresConsecutivos >= 2) {
                     Log::warning("[VehiculoSoapService] Abortando SAP debido a {$erroresConsecutivos} errores consecutivos. Pasando a NIVEL 2 (BD Local).");
@@ -564,49 +572,47 @@ class VehiculoSoapService
 
     /**
      * Obtener vehículos desde C4C WSCitas - Citas Pendientes (NIVEL 2)
-     *
-     * @param string $documentoCliente
-     * @param array $marcas
-     * @return Collection
      */
     protected function getVehiculosDesdeC4C(string $documentoCliente, array $marcas): Collection
     {
         try {
             Log::info("[VehiculoSoapService] Buscando c4c_internal_id para cliente: {$documentoCliente}");
-            
+
             // Buscar el c4c_internal_id del usuario en la base de datos
             $user = User::where('document_number', $documentoCliente)->first();
-            
-            if (!$user || !$user->c4c_internal_id) {
+
+            if (! $user || ! $user->c4c_internal_id) {
                 Log::warning("[VehiculoSoapService] No se encontró c4c_internal_id para cliente: {$documentoCliente}");
+
                 return collect();
             }
-            
+
             $c4cInternalId = $user->c4c_internal_id;
             Log::info("[VehiculoSoapService] C4C Internal ID encontrado: {$c4cInternalId}");
-            
+
             // Consultar citas pendientes en C4C
             $appointmentResult = $this->appointmentQueryService->getPendingAppointments($c4cInternalId);
-            
-            if (!$appointmentResult['success'] || !isset($appointmentResult['data'])) {
+
+            if (! $appointmentResult['success'] || ! isset($appointmentResult['data'])) {
                 Log::warning("[VehiculoSoapService] No se pudieron obtener citas pendientes de C4C para cliente: {$c4cInternalId}");
+
                 return collect();
             }
-            
+
             $appointments = $appointmentResult['data'];
-            Log::info("[VehiculoSoapService] Encontradas " . count($appointments) . " citas pendientes en C4C");
-            
+            Log::info('[VehiculoSoapService] Encontradas '.count($appointments).' citas pendientes en C4C');
+
             // Extraer vehículos únicos de las citas
             $vehiculosEncontrados = collect();
             $placasProcessadas = [];
-            
+
             foreach ($appointments as $appointment) {
                 // Usar los campos correctos de C4C según la estructura real
                 $placa = $appointment['vehicle']['plate'] ?? null;
-                
-                if ($placa && !in_array($placa, $placasProcessadas)) {
+
+                if ($placa && ! in_array($placa, $placasProcessadas)) {
                     $placasProcessadas[] = $placa;
-                    
+
                     // Crear estructura de vehículo compatible usando datos reales de C4C
                     $vehiculo = [
                         'vhclie' => $appointment['vehicle']['vin'] ?? $appointment['vehicle']['vin_tmp'] ?? $placa, // **CORREGIDO: Usar VIN real del vehículo**
@@ -628,53 +634,53 @@ class VehiculoSoapService
                         'imagen_url' => null,
                         'fuente_datos' => 'C4C_WSCitas', // Marcar la fuente
                     ];
-                    
+
                     $vehiculosEncontrados->push($vehiculo);
                 }
             }
-            
-            Log::info("[VehiculoSoapService] Extraídos " . $vehiculosEncontrados->count() . " vehículos únicos desde C4C");
+
+            Log::info('[VehiculoSoapService] Extraídos '.$vehiculosEncontrados->count().' vehículos únicos desde C4C');
+
             return $vehiculosEncontrados;
-            
+
         } catch (\Exception $e) {
-            Log::error("[VehiculoSoapService] Error al obtener vehículos desde C4C: " . $e->getMessage());
+            Log::error('[VehiculoSoapService] Error al obtener vehículos desde C4C: '.$e->getMessage());
+
             return collect();
         }
     }
 
     /**
      * Obtener vehículos desde base de datos local (NIVEL 3)
-     *
-     * @param string $documentoCliente
-     * @param array $marcas
-     * @return Collection
      */
     protected function getVehiculosLocal(string $documentoCliente, array $marcas): Collection
     {
         try {
             Log::info("[VehiculoSoapService] Buscando vehículos en base de datos local para cliente: {$documentoCliente}");
-            
+
             // Buscar usuario por documento
             $user = User::where('document_number', $documentoCliente)->first();
-            
-            if (!$user) {
+
+            if (! $user) {
                 Log::warning("[VehiculoSoapService] Usuario no encontrado en base de datos local: {$documentoCliente}");
+
                 return collect();
             }
-            
+
             // Buscar vehículos del usuario que estén activos
             $vehiculosDB = Vehicle::where('user_id', $user->id)
                 ->where('status', 'active')
                 ->whereIn('brand_code', $marcas)
                 ->get();
-            
+
             if ($vehiculosDB->isEmpty()) {
                 Log::info("[VehiculoSoapService] No se encontraron vehículos activos en base de datos local para usuario: {$user->id}");
+
                 return collect();
             }
-            
-            Log::info("[VehiculoSoapService] Encontrados " . $vehiculosDB->count() . " vehículos en base de datos local");
-            
+
+            Log::info('[VehiculoSoapService] Encontrados '.$vehiculosDB->count().' vehículos en base de datos local');
+
             // Convertir modelos a formato compatible
             $vehiculosCompatibles = $vehiculosDB->map(function ($vehicle) {
                 return [
@@ -698,21 +704,18 @@ class VehiculoSoapService
                     'fuente_datos' => 'BaseDatos_Local', // Marcar la fuente
                 ];
             });
-            
+
             return $vehiculosCompatibles;
-            
+
         } catch (\Exception $e) {
-            Log::error("[VehiculoSoapService] Error al obtener vehículos desde base de datos local: " . $e->getMessage());
+            Log::error('[VehiculoSoapService] Error al obtener vehículos desde base de datos local: '.$e->getMessage());
+
             return collect();
         }
     }
 
     /**
      * Determinar marca por placa (lógica simplificada)
-     *
-     * @param string $placa
-     * @param array $marcas
-     * @return string
      */
     protected function determinarMarcaPorPlaca(string $placa, array $marcas): string
     {
@@ -723,9 +726,6 @@ class VehiculoSoapService
 
     /**
      * Mapear código de marca a nombre
-     *
-     * @param string $codigo
-     * @return string
      */
     protected function mapearCodigoMarca(string $codigo): string
     {
@@ -742,31 +742,31 @@ class VehiculoSoapService
      * **NUEVA FUNCIONALIDAD:** Persistir vehículos obtenidos de webservices en la tabla vehicles
      * Esto permite mantener la referencia entre el vehículo y su ID para envío posterior a C4C
      *
-     * @param Collection $vehiculos Vehículos obtenidos de webservices
-     * @param string $documentoCliente Documento del cliente propietario
-     * @return void
+     * @param  Collection  $vehiculos  Vehículos obtenidos de webservices
+     * @param  string  $documentoCliente  Documento del cliente propietario
      */
     protected function persistirVehiculosEnBD(Collection $vehiculos, string $documentoCliente): void
     {
         try {
             Log::info("[VehiculoSoapService] PERSISTENCIA: Iniciando persistencia de {$vehiculos->count()} vehículos para cliente: {$documentoCliente}");
-            
+
             // Buscar el usuario propietario
             $user = User::where('document_number', $documentoCliente)->first();
-            
-            if (!$user) {
+
+            if (! $user) {
                 Log::warning("[VehiculoSoapService] PERSISTENCIA: Usuario no encontrado para documento {$documentoCliente}. Creando como comodín.");
                 // Buscar o crear usuario comodín
                 $user = User::where('is_comodin', true)->first();
-                if (!$user) {
-                    Log::error("[VehiculoSoapService] PERSISTENCIA: No se encontró usuario comodín. Abortando persistencia.");
+                if (! $user) {
+                    Log::error('[VehiculoSoapService] PERSISTENCIA: No se encontró usuario comodín. Abortando persistencia.');
+
                     return;
                 }
             }
-            
+
             $vehiculosGuardados = 0;
             $vehiculosActualizados = 0;
-            
+
             foreach ($vehiculos as $vehiculoData) {
                 try {
                     // Extraer datos del vehículo
@@ -777,18 +777,19 @@ class VehiculoSoapService
                     $brandCode = $vehiculoData['marca_codigo'] ?? 'Z01';
                     $brandName = $this->mapearCodigoMarca($brandCode);
                     $fuente = $vehiculoData['fuente_datos'] ?? 'webservice';
-                    
+
                     // Validar que tenemos datos mínimos
                     if (empty($vehicleId) || empty($licensePlate)) {
-                        Log::warning("[VehiculoSoapService] PERSISTENCIA: Vehículo con datos insuficientes, saltando: " . json_encode($vehiculoData));
+                        Log::warning('[VehiculoSoapService] PERSISTENCIA: Vehículo con datos insuficientes, saltando: '.json_encode($vehiculoData));
+
                         continue;
                     }
-                    
+
                     // Buscar si el vehículo ya existe (por vehicle_id o license_plate)
                     $existingVehicle = Vehicle::where('vehicle_id', $vehicleId)
                         ->orWhere('license_plate', $licensePlate)
                         ->first();
-                    
+
                     if ($existingVehicle) {
                         // Actualizar vehículo existente
                         $existingVehicle->update([
@@ -803,21 +804,21 @@ class VehiculoSoapService
                             'vin' => $vehiculoData['vin'] ?? null,
                             'engine_number' => $vehiculoData['motor'] ?? null,
                             'mileage' => $vehiculoData['kilometraje'] ?? null,
-                            'last_service_date' => isset($vehiculoData['ultimo_servicio_fecha']) ? 
+                            'last_service_date' => isset($vehiculoData['ultimo_servicio_fecha']) ?
                                 (\Carbon\Carbon::createFromFormat('Y-m-d', $vehiculoData['ultimo_servicio_fecha'])->format('Y-m-d') ?? null) : null,
                             'last_service_mileage' => $vehiculoData['ultimo_servicio_km'] ?? null,
-                            'next_service_date' => isset($vehiculoData['proximo_servicio_fecha']) ? 
+                            'next_service_date' => isset($vehiculoData['proximo_servicio_fecha']) ?
                                 (\Carbon\Carbon::createFromFormat('Y-m-d', $vehiculoData['proximo_servicio_fecha'])->format('Y-m-d') ?? null) : null,
                             'next_service_mileage' => $vehiculoData['proximo_servicio_km'] ?? null,
                             'has_prepaid_maintenance' => $vehiculoData['mantenimiento_prepagado'] ?? false,
-                            'prepaid_maintenance_expiry' => isset($vehiculoData['mantenimiento_prepagado_vencimiento']) ? 
+                            'prepaid_maintenance_expiry' => isset($vehiculoData['mantenimiento_prepagado_vencimiento']) ?
                                 (\Carbon\Carbon::createFromFormat('Y-m-d', $vehiculoData['mantenimiento_prepagado_vencimiento'])->format('Y-m-d') ?? null) : null,
                             'image_url' => $vehiculoData['imagen_url'] ?? null,
                         ]);
-                        
+
                         $vehiculosActualizados++;
                         Log::debug("[VehiculoSoapService] PERSISTENCIA: Vehículo actualizado - ID: {$vehicleId}, Placa: {$licensePlate}");
-                        
+
                     } else {
                         // Crear nuevo vehículo
                         Vehicle::create([
@@ -834,34 +835,35 @@ class VehiculoSoapService
                             'vin' => $vehiculoData['vin'] ?? null,
                             'engine_number' => $vehiculoData['motor'] ?? null,
                             'mileage' => $vehiculoData['kilometraje'] ?? null,
-                            'last_service_date' => isset($vehiculoData['ultimo_servicio_fecha']) ? 
+                            'last_service_date' => isset($vehiculoData['ultimo_servicio_fecha']) ?
                                 (\Carbon\Carbon::createFromFormat('Y-m-d', $vehiculoData['ultimo_servicio_fecha'])->format('Y-m-d') ?? null) : null,
                             'last_service_mileage' => $vehiculoData['ultimo_servicio_km'] ?? null,
-                            'next_service_date' => isset($vehiculoData['proximo_servicio_fecha']) ? 
+                            'next_service_date' => isset($vehiculoData['proximo_servicio_fecha']) ?
                                 (\Carbon\Carbon::createFromFormat('Y-m-d', $vehiculoData['proximo_servicio_fecha'])->format('Y-m-d') ?? null) : null,
                             'next_service_mileage' => $vehiculoData['proximo_servicio_km'] ?? null,
                             'has_prepaid_maintenance' => $vehiculoData['mantenimiento_prepagado'] ?? false,
-                            'prepaid_maintenance_expiry' => isset($vehiculoData['mantenimiento_prepagado_vencimiento']) ? 
+                            'prepaid_maintenance_expiry' => isset($vehiculoData['mantenimiento_prepagado_vencimiento']) ?
                                 (\Carbon\Carbon::createFromFormat('Y-m-d', $vehiculoData['mantenimiento_prepagado_vencimiento'])->format('Y-m-d') ?? null) : null,
                             'image_url' => $vehiculoData['imagen_url'] ?? null,
                         ]);
-                        
+
                         $vehiculosGuardados++;
                         Log::debug("[VehiculoSoapService] PERSISTENCIA: Nuevo vehículo creado - ID: {$vehicleId}, Placa: {$licensePlate}");
                     }
-                    
+
                 } catch (\Exception $e) {
-                    Log::error("[VehiculoSoapService] PERSISTENCIA: Error al procesar vehículo individual: " . $e->getMessage(), [
-                        'vehiculo_data' => $vehiculoData
+                    Log::error('[VehiculoSoapService] PERSISTENCIA: Error al procesar vehículo individual: '.$e->getMessage(), [
+                        'vehiculo_data' => $vehiculoData,
                     ]);
+
                     continue;
                 }
             }
-            
+
             Log::info("[VehiculoSoapService] PERSISTENCIA: Completada exitosamente. Nuevos: {$vehiculosGuardados}, Actualizados: {$vehiculosActualizados}");
-            
+
         } catch (\Exception $e) {
-            Log::error("[VehiculoSoapService] PERSISTENCIA: Error crítico durante persistencia: " . $e->getMessage());
+            Log::error('[VehiculoSoapService] PERSISTENCIA: Error crítico durante persistencia: '.$e->getMessage());
         }
     }
 }

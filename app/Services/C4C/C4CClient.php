@@ -68,6 +68,7 @@ class C4CClient
                     return new SoapClient($wsdl, $options);
                 } catch (\Exception $e) {
                     Log::error('Error al conectar directamente al servicio remoto: '.$e->getMessage());
+
                     return null;
                 }
             }
@@ -129,6 +130,7 @@ class C4CClient
 
         // Fallback: HTTP request directo como Python
         Log::info('Intentando HTTP request directo como Python...');
+
         return self::makeHttpSoapRequest($wsdl, $method, $params);
     }
 
@@ -150,14 +152,14 @@ class C4CClient
             $headers = [
                 'Content-Type: text/xml; charset=utf-8',
                 'SOAPAction: ""',
-                'Authorization: Basic ' . base64_encode(config('c4c.auth.username') . ':' . config('c4c.auth.password')),
+                'Authorization: Basic '.base64_encode(config('c4c.auth.username').':'.config('c4c.auth.password')),
                 'User-Agent: Laravel-C4C-Client/1.0',
             ];
 
             Log::info('Enviando HTTP SOAP request como Python', [
                 'url' => $url,
                 'headers' => $headers,
-                'body_preview' => substr($soapBody, 0, 200) . '...'
+                'body_preview' => substr($soapBody, 0, 200).'...',
             ]);
 
             // Configurar timeout específico para citas (más tiempo)
@@ -189,10 +191,11 @@ class C4CClient
             curl_close($ch);
 
             if ($error) {
-                Log::error('cURL Error: ' . $error);
+                Log::error('cURL Error: '.$error);
+
                 return [
                     'success' => false,
-                    'error' => 'cURL Error: ' . $error,
+                    'error' => 'cURL Error: '.$error,
                     'data' => null,
                 ];
             }
@@ -200,7 +203,7 @@ class C4CClient
             Log::info('HTTP SOAP Response recibida', [
                 'http_code' => $httpCode,
                 'response_length' => strlen($response),
-                'response_preview' => substr($response, 0, 500) . '...'
+                'response_preview' => substr($response, 0, 500).'...',
             ]);
 
             if ($httpCode === 200) {
@@ -215,13 +218,14 @@ class C4CClient
             } else {
                 return [
                     'success' => false,
-                    'error' => 'HTTP Error: ' . $httpCode,
+                    'error' => 'HTTP Error: '.$httpCode,
                     'data' => null,
                 ];
             }
 
         } catch (\Exception $e) {
-            Log::error('Error en HTTP SOAP request: ' . $e->getMessage());
+            Log::error('Error en HTTP SOAP request: '.$e->getMessage());
+
             return [
                 'success' => false,
                 'error' => $e->getMessage(),
@@ -281,17 +285,17 @@ class C4CClient
     <soapenv:Body>
         <glob:CustomerByElementsQuery_sync>
             <CustomerSelectionByElements>
-                <' . $searchField . '>
+                <'.$searchField.'>
                     <SelectionByText>
                         <InclusionExclusionCode>I</InclusionExclusionCode>
                         <IntervalBoundaryTypeCode>1</IntervalBoundaryTypeCode>
-                        <LowerBoundaryName>' . htmlspecialchars($searchValue) . '</LowerBoundaryName>
+                        <LowerBoundaryName>'.htmlspecialchars($searchValue).'</LowerBoundaryName>
                         <UpperBoundaryName/>
                     </SelectionByText>
-                </' . $searchField . '>
+                </'.$searchField.'>
             </CustomerSelectionByElements>
             <ProcessingConditions>
-                <QueryHitsMaximumNumberValue>' . $maxResults . '</QueryHitsMaximumNumberValue>
+                <QueryHitsMaximumNumberValue>'.$maxResults.'</QueryHitsMaximumNumberValue>
                 <QueryHitsUnlimitedIndicator>false</QueryHitsUnlimitedIndicator>
             </ProcessingConditions>
         </glob:CustomerByElementsQuery_sync>
@@ -304,7 +308,7 @@ class C4CClient
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
     <soapenv:Header/>
     <soapenv:Body>
-        <' . $method . '/>
+        <'.$method.'/>
     </soapenv:Body>
 </soapenv:Envelope>';
     }
@@ -319,7 +323,7 @@ class C4CClient
         try {
             Log::info('Parseando respuesta XML...', [
                 'xml_length' => strlen($xmlResponse),
-                'xml_preview' => substr($xmlResponse, 0, 300) . '...'
+                'xml_preview' => substr($xmlResponse, 0, 300).'...',
             ]);
 
             // Limpiar namespaces para simplificar el parsing
@@ -330,14 +334,15 @@ class C4CClient
 
             if ($xml === false) {
                 Log::error('Error al parsear XML response');
-                return (object)[];
+
+                return (object) [];
             }
 
             // Convertir a objeto como lo haría SoapClient
             $result = json_decode(json_encode($xml), false);
 
             Log::info('XML parseado exitosamente', [
-                'result_preview' => json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+                'result_preview' => json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
             ]);
 
             // Verificar si hay datos de Customer en la estructura correcta
@@ -346,23 +351,21 @@ class C4CClient
             } else {
                 Log::warning('❌ No se encontró Customer en la estructura esperada');
                 Log::info('Estructura disponible:', [
-                    'keys' => array_keys((array)$result)
+                    'keys' => array_keys((array) $result),
                 ]);
             }
 
             return $result;
 
         } catch (\Exception $e) {
-            Log::error('Error al parsear respuesta XML: ' . $e->getMessage());
-            return (object)[];
+            Log::error('Error al parsear respuesta XML: '.$e->getMessage());
+
+            return (object) [];
         }
     }
 
     /**
      * Build SOAP body for appointment management operations.
-     *
-     * @param array $params
-     * @return string
      */
     private static function buildAppointmentManagementSoapBody(array $params): string
     {
@@ -400,44 +403,44 @@ class C4CClient
     <soapenv:Header/>
     <soapenv:Body>
         <glob:AppointmentActivityBundleMaintainRequest_sync_V1>
-            <AppointmentActivity actionCode="' . htmlspecialchars($actionCode) . '">';
+            <AppointmentActivity actionCode="'.htmlspecialchars($actionCode).'">';
 
         // Para UPDATE y DELETE, incluir UUID
-        if (!empty($uuid) && ($actionCode === '04' || $actionCode === '06')) {
+        if (! empty($uuid) && ($actionCode === '04' || $actionCode === '06')) {
             $xmlBody .= '
-                <UUID>' . htmlspecialchars($uuid) . '</UUID>';
+                <UUID>'.htmlspecialchars($uuid).'</UUID>';
         }
 
         // Campos básicos (siempre incluidos para CREATE, opcionales para UPDATE/DELETE)
-        if ($actionCode === '01' || ($actionCode === '04' && !empty($businessPartnerId))) {
+        if ($actionCode === '01' || ($actionCode === '04' && ! empty($businessPartnerId))) {
             $xmlBody .= '
                 <DocumentTypeCode>0001</DocumentTypeCode>
                 <LifeCycleStatusCode>1</LifeCycleStatusCode>
                 <MainActivityParty>
-                    <BusinessPartnerInternalID>' . htmlspecialchars($businessPartnerId) . '</BusinessPartnerInternalID>
+                    <BusinessPartnerInternalID>'.htmlspecialchars($businessPartnerId).'</BusinessPartnerInternalID>
                 </MainActivityParty>
                 <AttendeeParty>
-                    <EmployeeID>' . htmlspecialchars($employeeId) . '</EmployeeID>
+                    <EmployeeID>'.htmlspecialchars($employeeId).'</EmployeeID>
                 </AttendeeParty>
-                <StartDateTime timeZoneCode="UTC-5">' . htmlspecialchars($startDateTime) . '</StartDateTime>
-                <EndDateTime timeZoneCode="UTC-5">' . htmlspecialchars($endDateTime) . '</EndDateTime>
-                <Text actionCode="' . htmlspecialchars($actionCode) . '">
+                <StartDateTime timeZoneCode="UTC-5">'.htmlspecialchars($startDateTime).'</StartDateTime>
+                <EndDateTime timeZoneCode="UTC-5">'.htmlspecialchars($endDateTime).'</EndDateTime>
+                <Text actionCode="'.htmlspecialchars($actionCode).'">
                     <TextTypeCode>10002</TextTypeCode>
-                    <ContentText>' . htmlspecialchars($observation) . '</ContentText>
+                    <ContentText>'.htmlspecialchars($observation).'</ContentText>
                 </Text>';
         }
 
         // Campos personalizados (para CREATE y UPDATE)
         if ($actionCode === '01' || $actionCode === '04') {
             $xmlBody .= '
-                <y6s:zClienteComodin>' . htmlspecialchars($clientName) . '</y6s:zClienteComodin>
-                <y6s:zFechaHoraProbSalida>' . htmlspecialchars($exitDate) . '</y6s:zFechaHoraProbSalida>
-                <y6s:zHoraProbSalida>' . htmlspecialchars($exitTime) . '</y6s:zHoraProbSalida>
-                <y6s:zIDCentro>' . htmlspecialchars($centerId) . '</y6s:zIDCentro>
-                <y6s:zPlaca>' . htmlspecialchars($licensePlate) . '</y6s:zPlaca>
-                <y6s:zEstadoCita>' . htmlspecialchars($appointmentStatus) . '</y6s:zEstadoCita>
+                <y6s:zClienteComodin>'.htmlspecialchars($clientName).'</y6s:zClienteComodin>
+                <y6s:zFechaHoraProbSalida>'.htmlspecialchars($exitDate).'</y6s:zFechaHoraProbSalida>
+                <y6s:zHoraProbSalida>'.htmlspecialchars($exitTime).'</y6s:zHoraProbSalida>
+                <y6s:zIDCentro>'.htmlspecialchars($centerId).'</y6s:zIDCentro>
+                <y6s:zPlaca>'.htmlspecialchars($licensePlate).'</y6s:zPlaca>
+                <y6s:zEstadoCita>'.htmlspecialchars($appointmentStatus).'</y6s:zEstadoCita>
                 <y6s:zVieneHCP>X</y6s:zVieneHCP>
-                <y6s:zExpress>' . htmlspecialchars($isExpress) . '</y6s:zExpress>';
+                <y6s:zExpress>'.htmlspecialchars($isExpress).'</y6s:zExpress>';
         }
 
         // Para DELETE, solo campos mínimos
@@ -459,9 +462,6 @@ class C4CClient
 
     /**
      * Build SOAP body for appointment query operations.
-     *
-     * @param array $params
-     * @return string
      */
     private static function buildAppointmentQuerySoapBody(array $params): string
     {
@@ -488,23 +488,23 @@ class C4CClient
                 <SelectionByTypeCode>
                     <InclusionExclusionCode>I</InclusionExclusionCode>
                     <IntervalBoundaryTypeCode>1</IntervalBoundaryTypeCode>
-                    <LowerBoundaryTypeCode>' . htmlspecialchars($typeCode) . '</LowerBoundaryTypeCode>
+                    <LowerBoundaryTypeCode>'.htmlspecialchars($typeCode).'</LowerBoundaryTypeCode>
                 </SelectionByTypeCode>
                 <SelectionByPartyID>
                     <InclusionExclusionCode>I</InclusionExclusionCode>
                     <IntervalBoundaryTypeCode>1</IntervalBoundaryTypeCode>
-                    <LowerBoundaryPartyID>' . htmlspecialchars($partyId) . '</LowerBoundaryPartyID>
+                    <LowerBoundaryPartyID>'.htmlspecialchars($partyId).'</LowerBoundaryPartyID>
                     <UpperBoundaryPartyID/>
                 </SelectionByPartyID>
                 <SelectionByzEstadoCita_5PEND6QL5482763O1SFB05YP5>
                     <InclusionExclusionCode>I</InclusionExclusionCode>
                     <IntervalBoundaryTypeCode>3</IntervalBoundaryTypeCode>
-                    <LowerBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5>' . htmlspecialchars($lowerStatus) . '</LowerBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5>
-                    <UpperBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5>' . htmlspecialchars($upperStatus) . '</UpperBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5>
+                    <LowerBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5>'.htmlspecialchars($lowerStatus).'</LowerBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5>
+                    <UpperBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5>'.htmlspecialchars($upperStatus).'</UpperBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5>
                 </SelectionByzEstadoCita_5PEND6QL5482763O1SFB05YP5>
             </ActivitySimpleSelectionBy>
             <ProcessingConditions>
-                <QueryHitsMaximumNumberValue>' . htmlspecialchars($maxResults) . '</QueryHitsMaximumNumberValue>
+                <QueryHitsMaximumNumberValue>'.htmlspecialchars($maxResults).'</QueryHitsMaximumNumberValue>
                 <QueryHitsUnlimitedIndicator/>
                 <LastReturnedObjectID/>
             </ProcessingConditions>
@@ -515,9 +515,6 @@ class C4CClient
 
     /**
      * Build SOAP body for appointment creation (simplified method like the example).
-     *
-     * @param array $params
-     * @return string
      */
     private static function buildAppointmentCreateSoapBody(array $params): string
     {
@@ -555,28 +552,28 @@ class C4CClient
             <DocumentTypeCode>0001</DocumentTypeCode>
             <LifeCycleStatusCode>1</LifeCycleStatusCode>
             <MainActivityParty>
-               <BusinessPartnerInternalID>' . htmlspecialchars($businessPartnerId) . '</BusinessPartnerInternalID>
+               <BusinessPartnerInternalID>'.htmlspecialchars($businessPartnerId).'</BusinessPartnerInternalID>
             </MainActivityParty>
             <AttendeeParty>
-               <EmployeeID>' . htmlspecialchars($employeeId) . '</EmployeeID>
+               <EmployeeID>'.htmlspecialchars($employeeId).'</EmployeeID>
             </AttendeeParty>
-            <StartDateTime>' . htmlspecialchars($startDateTime) . '</StartDateTime>
-            <EndDateTime>' . htmlspecialchars($endDateTime) . '</EndDateTime>
-            <Text>' . htmlspecialchars($text) . '</Text>
-            <zPlaca>' . htmlspecialchars($licensePlate) . '</zPlaca>
-            <zIDCentro>' . htmlspecialchars($centerId) . '</zIDCentro>
-            <zEstadoCita>' . htmlspecialchars($appointmentStatus) . '</zEstadoCita>
-            <zFechaHoraProbSalida>' . htmlspecialchars($exitDate) . '</zFechaHoraProbSalida>
-            <zHoraProbSalida>' . htmlspecialchars($exitTime) . '</zHoraProbSalida>
-            <zNombresConductor>' . htmlspecialchars($driverName) . '</zNombresConductor>
-            <zTelefonoCliente>' . htmlspecialchars($clientPhone) . '</zTelefonoCliente>
-            <zVIN>' . htmlspecialchars($vin) . '</zVIN>
-            <zModeloVeh>' . htmlspecialchars($vehicleModel) . '</zModeloVeh>
-            <zDesModeloVeh>' . htmlspecialchars($vehicleDescription) . '</zDesModeloVeh>
-            <zKilometrajeVeh>' . htmlspecialchars($mileage) . '</zKilometrajeVeh>
-            <zAnnioVeh>' . htmlspecialchars($vehicleYear) . '</zAnnioVeh>
-            <zColorVeh>' . htmlspecialchars($vehicleColor) . '</zColorVeh>
-            <zSolicitarTaxi>' . htmlspecialchars($requestTaxi) . '</zSolicitarTaxi>
+            <StartDateTime>'.htmlspecialchars($startDateTime).'</StartDateTime>
+            <EndDateTime>'.htmlspecialchars($endDateTime).'</EndDateTime>
+            <Text>'.htmlspecialchars($text).'</Text>
+            <zPlaca>'.htmlspecialchars($licensePlate).'</zPlaca>
+            <zIDCentro>'.htmlspecialchars($centerId).'</zIDCentro>
+            <zEstadoCita>'.htmlspecialchars($appointmentStatus).'</zEstadoCita>
+            <zFechaHoraProbSalida>'.htmlspecialchars($exitDate).'</zFechaHoraProbSalida>
+            <zHoraProbSalida>'.htmlspecialchars($exitTime).'</zHoraProbSalida>
+            <zNombresConductor>'.htmlspecialchars($driverName).'</zNombresConductor>
+            <zTelefonoCliente>'.htmlspecialchars($clientPhone).'</zTelefonoCliente>
+            <zVIN>'.htmlspecialchars($vin).'</zVIN>
+            <zModeloVeh>'.htmlspecialchars($vehicleModel).'</zModeloVeh>
+            <zDesModeloVeh>'.htmlspecialchars($vehicleDescription).'</zDesModeloVeh>
+            <zKilometrajeVeh>'.htmlspecialchars($mileage).'</zKilometrajeVeh>
+            <zAnnioVeh>'.htmlspecialchars($vehicleYear).'</zAnnioVeh>
+            <zColorVeh>'.htmlspecialchars($vehicleColor).'</zColorVeh>
+            <zSolicitarTaxi>'.htmlspecialchars($requestTaxi).'</zSolicitarTaxi>
          </Appointment>
       </glob:AppointmentCreateRequest_sync>
    </soapenv:Body>

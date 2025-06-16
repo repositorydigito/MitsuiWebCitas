@@ -11,12 +11,9 @@ export default {
   theme: {
     extend: {
       colors: {
-        danger: colors.rose,
-        primary: colors.blue,
-        success: colors.green,
-        warning: colors.yellow,
-        info: colors.sky,
-        secondary: colors.gray,
+        ...colors,
+        primary: '#0075BF',
+        secondary: '#073568',
       },
     },
   },

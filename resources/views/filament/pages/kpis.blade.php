@@ -53,23 +53,6 @@
                 </div>
             </div>
 
-            {{-- Filtro de tipo --}}
-            <div class="w-auto">
-                <label for="tipo" class="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
-                <div class="relative">
-                    <select
-                        id="tipo"
-                        wire:model.live="tipoSeleccionado"
-                        class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                        style="min-width: 160px;"
-                    >
-                        @foreach ($tipos as $tipo)
-                            <option value="{{ $tipo }}">{{ $tipo }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-
             {{-- Botón para descargar --}}
             <div class="ml-auto">
                 <button

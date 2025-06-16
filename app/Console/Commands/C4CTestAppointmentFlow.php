@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Services\C4C\CustomerService;
 use App\Services\C4C\AppointmentService;
+use App\Services\C4C\CustomerService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 
@@ -48,8 +48,9 @@ class C4CTestAppointmentFlow extends Command
         $this->info("\n📋 PASO 1: Buscando cliente...");
         $customer = $this->findCustomer($documentType, $documentNumber);
 
-        if (!$customer) {
+        if (! $customer) {
             $this->error('❌ No se pudo encontrar el cliente. Terminando flujo.');
+
             return 1;
         }
 
@@ -64,13 +65,13 @@ class C4CTestAppointmentFlow extends Command
             $this->info("✅ Consulta exitosa - {$appointmentCount} citas pendientes encontradas");
 
             if ($appointmentCount > 0) {
-                $this->info("📋 Resumen de citas pendientes:");
+                $this->info('📋 Resumen de citas pendientes:');
                 foreach ($appointments as $index => $appointment) {
-                    $this->info("  - Cita " . ($index + 1) . ": " . ($appointment['start_date_time'] ?? 'N/A') . " (Estado: " . ($appointment['appointment_status'] ?? 'N/A') . ")");
+                    $this->info('  - Cita '.($index + 1).': '.($appointment['start_date_time'] ?? 'N/A').' (Estado: '.($appointment['appointment_status'] ?? 'N/A').')');
                 }
             }
         } else {
-            $this->warn("⚠️ No se pudieron consultar las citas pendientes");
+            $this->warn('⚠️ No se pudieron consultar las citas pendientes');
         }
 
         // PASO 3: Crear cita de prueba (opcional)
@@ -79,40 +80,37 @@ class C4CTestAppointmentFlow extends Command
             $newAppointment = $this->createTestAppointment($customer);
 
             if ($newAppointment) {
-                $this->info("✅ Cita de prueba creada exitosamente");
-                $this->info("   UUID: " . ($newAppointment['uuid'] ?? 'N/A'));
-                $this->info("   ID: " . ($newAppointment['id'] ?? 'N/A'));
-                $this->info("   Change State ID: " . ($newAppointment['change_state_id'] ?? 'N/A'));
+                $this->info('✅ Cita de prueba creada exitosamente');
+                $this->info('   UUID: '.($newAppointment['uuid'] ?? 'N/A'));
+                $this->info('   ID: '.($newAppointment['id'] ?? 'N/A'));
+                $this->info('   Change State ID: '.($newAppointment['change_state_id'] ?? 'N/A'));
             } else {
-                $this->warn("⚠️ No se pudo crear la cita de prueba");
+                $this->warn('⚠️ No se pudo crear la cita de prueba');
             }
         }
 
         // RESUMEN FINAL
         $this->info("\n🎯 RESUMEN DEL FLUJO:");
         $this->info("✅ Cliente encontrado: {$customer['name']}");
-        $this->info("✅ Citas consultadas: " . ($appointments !== null ? 'Sí' : 'No'));
+        $this->info('✅ Citas consultadas: '.($appointments !== null ? 'Sí' : 'No'));
         if ($this->option('create-appointment')) {
-            $this->info("✅ Cita de prueba: " . (isset($newAppointment) && $newAppointment ? 'Creada' : 'Error'));
+            $this->info('✅ Cita de prueba: '.(isset($newAppointment) && $newAppointment ? 'Creada' : 'Error'));
         }
 
         $this->info("\n🎉 Flujo completado exitosamente!");
+
         return 0;
     }
 
     /**
      * Find customer by document.
-     *
-     * @param string $documentType
-     * @param string $documentNumber
-     * @return array|null
      */
     private function findCustomer(string $documentType, string $documentNumber): ?array
     {
         try {
-            $customerService = new CustomerService();
+            $customerService = new CustomerService;
 
-            $result = match($documentType) {
+            $result = match ($documentType) {
                 'DNI' => $customerService->findByDNI($documentNumber),
                 'RUC' => $customerService->findByRUC($documentNumber),
                 'CE' => $customerService->findByCE($documentNumber),
@@ -120,8 +118,9 @@ class C4CTestAppointmentFlow extends Command
                 default => null
             };
 
-            if ($result && $result['success'] && !empty($result['data'])) {
+            if ($result && $result['success'] && ! empty($result['data'])) {
                 $customer = $result['data'][0];
+
                 return [
                     'internal_id' => $customer['internal_id'] ?? null,
                     'external_id' => $customer['external_id'] ?? null,
@@ -132,21 +131,19 @@ class C4CTestAppointmentFlow extends Command
 
             return null;
         } catch (\Exception $e) {
-            $this->error("Error al buscar cliente: " . $e->getMessage());
+            $this->error('Error al buscar cliente: '.$e->getMessage());
+
             return null;
         }
     }
 
     /**
      * Query pending appointments for customer.
-     *
-     * @param string $clientId
-     * @return array|null
      */
     private function queryPendingAppointments(string $clientId): ?array
     {
         try {
-            $appointmentService = new AppointmentService();
+            $appointmentService = new AppointmentService;
             $result = $appointmentService->queryPendingAppointments($clientId);
 
             if ($result['success']) {
@@ -155,21 +152,19 @@ class C4CTestAppointmentFlow extends Command
 
             return null;
         } catch (\Exception $e) {
-            $this->error("Error al consultar citas: " . $e->getMessage());
+            $this->error('Error al consultar citas: '.$e->getMessage());
+
             return null;
         }
     }
 
     /**
      * Create test appointment for customer.
-     *
-     * @param array $customer
-     * @return array|null
      */
     private function createTestAppointment(array $customer): ?array
     {
         try {
-            $appointmentService = new AppointmentService();
+            $appointmentService = new AppointmentService;
 
             $startDateTime = Carbon::now()->addHours(2);
             $endDateTime = $startDateTime->copy()->addMinutes(30);
@@ -180,7 +175,7 @@ class C4CTestAppointmentFlow extends Command
                 'start_date' => $startDateTime->format('Y-m-d H:i:s'),
                 'end_date' => $endDateTime->format('Y-m-d H:i:s'),
                 'center_id' => 'M013',
-                'vehicle_plate' => 'TEST-' . rand(100, 999),
+                'vehicle_plate' => 'TEST-'.rand(100, 999),
                 'customer_name' => $customer['name'],
                 'notes' => 'Cita de prueba creada desde flujo de testing Laravel',
                 'express' => 'false',
@@ -194,7 +189,8 @@ class C4CTestAppointmentFlow extends Command
 
             return null;
         } catch (\Exception $e) {
-            $this->error("Error al crear cita: " . $e->getMessage());
+            $this->error('Error al crear cita: '.$e->getMessage());
+
             return null;
         }
     }

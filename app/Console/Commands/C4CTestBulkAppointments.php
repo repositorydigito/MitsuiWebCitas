@@ -42,7 +42,7 @@ class C4CTestBulkAppointments extends Command
             $this->info('Usando clientes por defecto del ejemplo Python');
         }
 
-        $this->info("Verificando " . count($clientIds) . " clientes: " . implode(', ', $clientIds));
+        $this->info('Verificando '.count($clientIds).' clientes: '.implode(', ', $clientIds));
         $this->line('');
 
         // Ejecutar verificación masiva
@@ -75,7 +75,7 @@ class C4CTestBulkAppointments extends Command
         ]);
 
         // Mostrar porcentajes
-        $successRate = $result['total_clients_checked'] > 0 
+        $successRate = $result['total_clients_checked'] > 0
             ? round(($result['successful_checks'] / $result['total_clients_checked']) * 100, 1)
             : 0;
 
@@ -109,7 +109,7 @@ class C4CTestBulkAppointments extends Command
                 $status,
                 $appointments,
                 $result['success'] ? ($result['has_appointments'] ? 'Sí' : 'No') : '-',
-                $error
+                $error,
             ];
         }
 
@@ -118,15 +118,15 @@ class C4CTestBulkAppointments extends Command
             'Estado',
             'Citas Pendientes',
             'Tiene Citas',
-            'Error'
+            'Error',
         ], $tableData);
 
         // Mostrar detalles de citas si hay
         foreach ($results as $result) {
-            if ($result['success'] && $result['has_appointments'] && !empty($result['appointments_data'])) {
+            if ($result['success'] && $result['has_appointments'] && ! empty($result['appointments_data'])) {
                 $this->line('');
                 $this->info("📅 Citas del cliente {$result['client_id']}:");
-                
+
                 $appointmentTableData = [];
                 foreach ($result['appointments_data'] as $appointment) {
                     $appointmentTableData[] = [
@@ -145,7 +145,7 @@ class C4CTestBulkAppointments extends Command
                     'Fin',
                     'Estado',
                     'Centro',
-                    'Placa'
+                    'Placa',
                 ], $appointmentTableData);
             }
         }

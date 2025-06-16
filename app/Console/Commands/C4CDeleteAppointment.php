@@ -30,19 +30,21 @@ class C4CDeleteAppointment extends Command
     public function handle()
     {
         $uuid = $this->argument('uuid');
-        
+
         // Validar que el UUID sea válido
         if (empty($uuid)) {
             $this->error('El UUID de la cita es requerido');
+
             return 1;
         }
 
         $this->info("Eliminando cita con UUID: {$uuid}");
 
         // Confirmación de seguridad
-        if (!$this->option('confirm')) {
-            if (!$this->confirm('¿Está seguro de que desea eliminar esta cita? Esta acción no se puede deshacer.')) {
+        if (! $this->option('confirm')) {
+            if (! $this->confirm('¿Está seguro de que desea eliminar esta cita? Esta acción no se puede deshacer.')) {
                 $this->info('Operación cancelada por el usuario.');
+
                 return 0;
             }
         }
@@ -54,37 +56,37 @@ class C4CDeleteAppointment extends Command
         }
 
         try {
-            $appointmentService = new AppointmentService();
+            $appointmentService = new AppointmentService;
             $result = $appointmentService->delete($uuid);
 
             if ($result['success']) {
                 $this->info('✅ ¡Cita eliminada exitosamente!');
-                
+
                 if (isset($result['data'])) {
                     $appointment = $result['data'];
-                    
+
                     $this->info("\n<fg=green;options=bold>--- Confirmación de Eliminación ---</>");
-                    $this->info('Estado: ' . ($appointment['status'] ?? 'Eliminada'));
-                    
+                    $this->info('Estado: '.($appointment['status'] ?? 'Eliminada'));
+
                     if (isset($appointment['uuid'])) {
-                        $this->info('UUID: ' . $appointment['uuid']);
+                        $this->info('UUID: '.$appointment['uuid']);
                     }
                     if (isset($appointment['id'])) {
-                        $this->info('ID: ' . $appointment['id']);
+                        $this->info('ID: '.$appointment['id']);
                     }
                     if (isset($appointment['change_state_id'])) {
-                        $this->info('Change State ID: ' . $appointment['change_state_id']);
+                        $this->info('Change State ID: '.$appointment['change_state_id']);
                     }
                     if (isset($appointment['message'])) {
-                        $this->info('Mensaje: ' . $appointment['message']);
+                        $this->info('Mensaje: '.$appointment['message']);
                     }
                 }
 
                 // Mostrar warnings si existen
-                if (isset($result['warnings']) && !empty($result['warnings'])) {
+                if (isset($result['warnings']) && ! empty($result['warnings'])) {
                     $this->info("\n<fg=yellow;options=bold>⚠️ Advertencias:</>");
                     foreach ($result['warnings'] as $warning) {
-                        $this->warn('  - ' . $warning);
+                        $this->warn('  - '.$warning);
                     }
                 }
 
@@ -93,8 +95,8 @@ class C4CDeleteAppointment extends Command
                 return 0;
             } else {
                 $this->error('❌ Error al eliminar la cita');
-                $this->error('Error: ' . ($result['error'] ?? 'Error desconocido'));
-                
+                $this->error('Error: '.($result['error'] ?? 'Error desconocido'));
+
                 if (isset($result['details'])) {
                     $this->info('Detalles adicionales:');
                     $this->info(json_encode($result['details'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
@@ -103,8 +105,9 @@ class C4CDeleteAppointment extends Command
                 return 1;
             }
         } catch (\Exception $e) {
-            $this->error('❌ Excepción al eliminar la cita: ' . $e->getMessage());
-            $this->error('Trace: ' . $e->getTraceAsString());
+            $this->error('❌ Excepción al eliminar la cita: '.$e->getMessage());
+            $this->error('Trace: '.$e->getTraceAsString());
+
             return 1;
         }
     }

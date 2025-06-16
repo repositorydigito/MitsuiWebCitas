@@ -15,14 +15,14 @@ use Livewire\WithFileUploads;
 
 class GestionPopUp extends Page
 {
-    use WithFileUploads, HasPageShield;
+    use HasPageShield, WithFileUploads;
 
     protected static ?string $navigationIcon = 'heroicon-o-photo';
 
     protected static ?string $navigationLabel = 'Gestión Pop up';
-    
+
     protected static ?string $navigationGroup = '📢 Marketing';
-    
+
     protected static ?int $navigationSort = 4;
 
     protected static ?string $title = 'Gestión Pop up';
@@ -32,7 +32,7 @@ class GestionPopUp extends Page
     // Propiedades para la tabla
     public Collection $popups;
 
-    public int $perPage = 5;
+    public int $perPage = 10;
 
     public int $currentPage = 1;
 
@@ -126,6 +126,7 @@ class GestionPopUp extends Page
         if ($popupsFiltrados->count() > 0 && $this->currentPage > ceil($popupsFiltrados->count() / $this->perPage)) {
             $this->currentPage = 1;
         }
+
         return new LengthAwarePaginator(
             $popupsFiltrados->forPage($this->currentPage, $this->perPage),
             $popupsFiltrados->count(),
@@ -148,6 +149,7 @@ class GestionPopUp extends Page
                 if ($popup['id'] === $id) {
                     $popup['is_active'] = $this->estadoPopups[$id];
                 }
+
                 return $popup;
             });
 
@@ -387,7 +389,7 @@ class GestionPopUp extends Page
             $popup = PopUp::findOrFail($id);
 
             // Eliminar la imagen del almacenamiento si existe
-            if (!empty($popup->image_path)) {
+            if (! empty($popup->image_path)) {
                 try {
                     // Intentar eliminar el archivo físico
                     $rutaImagen = str_replace('storage/', '', $popup->image_path);
@@ -396,7 +398,7 @@ class GestionPopUp extends Page
                     }
                 } catch (\Exception $e) {
                     // Log del error pero continuar con la eliminación del registro
-                    \Illuminate\Support\Facades\Log::warning("Error al eliminar imagen del popup {$id}: " . $e->getMessage());
+                    \Illuminate\Support\Facades\Log::warning("Error al eliminar imagen del popup {$id}: ".$e->getMessage());
                 }
             }
 
@@ -417,7 +419,7 @@ class GestionPopUp extends Page
             // Mostrar notificación de error
             \Filament\Notifications\Notification::make()
                 ->title('Error al eliminar popup')
-                ->body('Ha ocurrido un error al eliminar el popup: ' . $e->getMessage())
+                ->body('Ha ocurrido un error al eliminar el popup: '.$e->getMessage())
                 ->danger()
                 ->send();
         }

@@ -4,12 +4,13 @@ namespace App\Filament\Pages;
 
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class MiCuenta extends Page
 {
     use HasPageShield;
+
     protected static ?string $navigationIcon = 'heroicon-o-user-circle';
 
     protected static ?string $navigationLabel = 'Mi cuenta';
@@ -64,7 +65,7 @@ class MiCuenta extends Page
     public function getUserData(): array
     {
         $user = Auth::user();
-        
+
         return [
             'nombres' => $this->splitName($user->name)['nombres'],
             'apellidos' => $this->splitName($user->name)['apellidos'],
@@ -78,21 +79,21 @@ class MiCuenta extends Page
     // Método auxiliar para dividir el nombre completo
     private function splitName(?string $fullName): array
     {
-        if (!$fullName) {
+        if (! $fullName) {
             return ['nombres' => '', 'apellidos' => ''];
         }
 
         $parts = explode(' ', trim($fullName));
-        
+
         // Si solo hay una palabra, va a nombres
         if (count($parts) === 1) {
             return ['nombres' => $parts[0], 'apellidos' => ''];
         }
-        
+
         // Si hay dos o más palabras, la primera va a nombres, el resto a apellidos
         $nombres = $parts[0];
         $apellidos = implode(' ', array_slice($parts, 1));
-        
+
         return ['nombres' => $nombres, 'apellidos' => $apellidos];
     }
 
@@ -143,10 +144,10 @@ class MiCuenta extends Page
     public function guardarCambios(): void
     {
         $user = Auth::user();
-        
+
         // Combinar nombres y apellidos para el campo name
-        $fullName = trim($this->datosEdicion['nombres'] . ' ' . $this->datosEdicion['apellidos']);
-        
+        $fullName = trim($this->datosEdicion['nombres'].' '.$this->datosEdicion['apellidos']);
+
         // Actualizar el usuario en la base de datos
         $user->update([
             'name' => $fullName,
@@ -181,6 +182,6 @@ class MiCuenta extends Page
         $this->pasoActual = 1;
 
         // Redirigir a la página de Cita de servicio
-        $this->redirect('/admin/vehiculos');
+        $this->redirect('/admin/home');
     }
 }

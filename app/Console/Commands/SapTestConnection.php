@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
+use Exception;
 use Illuminate\Console\Command;
 use SoapClient;
-use Exception;
 
 class SapTestConnection extends Command
 {
@@ -33,12 +33,12 @@ class SapTestConnection extends Command
         $this->newLine();
 
         // Verificar configuración
-        if (!$this->verificarConfiguracion()) {
+        if (! $this->verificarConfiguracion()) {
             return 1;
         }
 
         // Probar conexión SOAP
-        if (!$this->probarConexionSoap()) {
+        if (! $this->probarConexionSoap()) {
             return 1;
         }
 
@@ -64,22 +64,25 @@ class SapTestConnection extends Command
 
         if (empty($wsdlUrl)) {
             $this->error('❌ SAP_3P_WSDL_URL no está configurado en .env');
+
             return false;
         }
 
         if (empty($usuario)) {
             $this->error('❌ SAP_3P_USUARIO no está configurado en .env');
+
             return false;
         }
 
         if (empty($password)) {
             $this->error('❌ SAP_3P_PASSWORD no está configurado en .env');
+
             return false;
         }
 
         $this->info("✅ WSDL URL: {$wsdlUrl}");
         $this->info("✅ Usuario: {$usuario}");
-        $this->info("✅ Password: " . str_repeat('*', strlen($password)));
+        $this->info('✅ Password: '.str_repeat('*', strlen($password)));
 
         return true;
     }
@@ -111,7 +114,7 @@ class SapTestConnection extends Command
             ];
 
             if ($this->option('detailed')) {
-                $this->info("🔧 Opciones SOAP: " . json_encode($options, JSON_PRETTY_PRINT));
+                $this->info('🔧 Opciones SOAP: '.json_encode($options, JSON_PRETTY_PRINT));
             }
 
             // Crear cliente SOAP
@@ -129,10 +132,10 @@ class SapTestConnection extends Command
             return true;
 
         } catch (Exception $e) {
-            $this->error("❌ Error de conexión SOAP: " . $e->getMessage());
+            $this->error('❌ Error de conexión SOAP: '.$e->getMessage());
 
             if ($this->option('detailed')) {
-                $this->error("Detalles del error: " . $e->getTraceAsString());
+                $this->error('Detalles del error: '.$e->getTraceAsString());
             }
 
             return false;
@@ -146,8 +149,9 @@ class SapTestConnection extends Command
     {
         $this->info('📋 Verificando métodos SAP disponibles...');
 
-        if (!isset($this->soapClient)) {
+        if (! isset($this->soapClient)) {
             $this->warn('⚠️ No se puede verificar métodos sin conexión SOAP');
+
             return;
         }
 
@@ -155,7 +159,7 @@ class SapTestConnection extends Command
             // Obtener funciones disponibles
             $functions = $this->soapClient->__getFunctions();
 
-            $this->info("📊 Total de funciones disponibles: " . count($functions));
+            $this->info('📊 Total de funciones disponibles: '.count($functions));
 
             // Métodos Z3PF que esperamos encontrar
             $metodosEsperados = [
@@ -180,7 +184,7 @@ class SapTestConnection extends Command
                     }
                 }
 
-                if (!$encontrado) {
+                if (! $encontrado) {
                     $this->warn("  ⚠️ {$metodo} - {$descripcion} (NO ENCONTRADO)");
                 }
             }
@@ -194,7 +198,7 @@ class SapTestConnection extends Command
             }
 
         } catch (Exception $e) {
-            $this->error("❌ Error al obtener funciones: " . $e->getMessage());
+            $this->error('❌ Error al obtener funciones: '.$e->getMessage());
         }
     }
 

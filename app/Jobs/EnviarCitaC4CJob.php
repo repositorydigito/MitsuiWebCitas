@@ -17,8 +17,11 @@ class EnviarCitaC4CJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public array $citaData;
+
     public array $appointmentData;
+
     public string $jobId;
+
     public int $appointmentId;
 
     /**
@@ -42,9 +45,9 @@ class EnviarCitaC4CJob implements ShouldQueue
     public function handle(): void
     {
         try {
-            Log::info("[EnviarCitaC4CJob] Iniciando envío de cita a C4C", [
+            Log::info('[EnviarCitaC4CJob] Iniciando envío de cita a C4C', [
                 'job_id' => $this->jobId,
-                'appointment_id' => $this->appointmentId
+                'appointment_id' => $this->appointmentId,
             ]);
 
             // Actualizar status a "processing"
@@ -52,25 +55,25 @@ class EnviarCitaC4CJob implements ShouldQueue
                 'status' => 'processing',
                 'progress' => 25,
                 'message' => 'Enviando cita a C4C...',
-                'updated_at' => now()
+                'updated_at' => now(),
             ], 600); // 10 minutos
 
             // Enviar a C4C
             $appointmentService = app(AppointmentService::class);
             $resultadoC4C = $appointmentService->create($this->citaData);
 
-            if (!$resultadoC4C['success']) {
-                throw new \Exception('Error al enviar cita a C4C: ' . ($resultadoC4C['error'] ?? 'Error desconocido'));
+            if (! $resultadoC4C['success']) {
+                throw new \Exception('Error al enviar cita a C4C: '.($resultadoC4C['error'] ?? 'Error desconocido'));
             }
 
-            Log::info("[EnviarCitaC4CJob] ✅ Cita enviada exitosamente a C4C", $resultadoC4C['data'] ?? []);
+            Log::info('[EnviarCitaC4CJob] ✅ Cita enviada exitosamente a C4C', $resultadoC4C['data'] ?? []);
 
             // Actualizar progress
             Cache::put("cita_job_{$this->jobId}", [
                 'status' => 'processing',
                 'progress' => 75,
                 'message' => 'Actualizando base de datos...',
-                'updated_at' => now()
+                'updated_at' => now(),
             ], 600);
 
             // Actualizar el registro en la base de datos
@@ -80,12 +83,12 @@ class EnviarCitaC4CJob implements ShouldQueue
                     'c4c_uuid' => $resultadoC4C['data']['uuid'] ?? null,
                     'is_synced' => true,
                     'synced_at' => now(),
-                    'status' => 'confirmed'
+                    'status' => 'confirmed',
                 ]);
 
-                Log::info("[EnviarCitaC4CJob] Appointment actualizado en BD", [
+                Log::info('[EnviarCitaC4CJob] Appointment actualizado en BD', [
                     'appointment_id' => $appointment->id,
-                    'c4c_uuid' => $appointment->c4c_uuid
+                    'c4c_uuid' => $appointment->c4c_uuid,
                 ]);
             }
 
@@ -95,40 +98,40 @@ class EnviarCitaC4CJob implements ShouldQueue
                 'progress' => 100,
                 'message' => '¡Cita confirmada exitosamente!',
                 'appointment_number' => $appointment->appointment_number ?? null,
-                'updated_at' => now()
+                'updated_at' => now(),
             ], 600);
 
-            Log::info("[EnviarCitaC4CJob] ✅ Job completado exitosamente", [
+            Log::info('[EnviarCitaC4CJob] ✅ Job completado exitosamente', [
                 'job_id' => $this->jobId,
-                'appointment_id' => $this->appointmentId
+                'appointment_id' => $this->appointmentId,
             ]);
 
         } catch (\Exception $e) {
             $errorMessage = $e->getMessage();
-            
-            Log::error("[EnviarCitaC4CJob] ❌ Error en job", [
+
+            Log::error('[EnviarCitaC4CJob] ❌ Error en job', [
                 'job_id' => $this->jobId,
                 'appointment_id' => $this->appointmentId,
                 'error' => $errorMessage,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             // 🚨 VERIFICAR SI ES UN ERROR FATAL (NO REINTENTABLE)
             if ($this->isFatalError($errorMessage)) {
-                Log::warning("[EnviarCitaC4CJob] ⚠️ Error fatal detectado - NO se reintentará", [
+                Log::warning('[EnviarCitaC4CJob] ⚠️ Error fatal detectado - NO se reintentará', [
                     'job_id' => $this->jobId,
-                    'error' => $errorMessage
+                    'error' => $errorMessage,
                 ]);
 
                 // Marcar como fallido permanentemente
                 Cache::put("cita_job_{$this->jobId}", [
                     'status' => 'failed',
                     'progress' => 0,
-                    'message' => 'Error de negocio: ' . $errorMessage,
+                    'message' => 'Error de negocio: '.$errorMessage,
                     'appointment_id' => $this->appointmentId,
                     'error' => $errorMessage,
                     'fatal' => true,
-                    'updated_at' => now()
+                    'updated_at' => now(),
                 ], 600);
 
                 // Actualizar appointment como fallido
@@ -136,31 +139,32 @@ class EnviarCitaC4CJob implements ShouldQueue
                     $appointment->update([
                         'status' => 'failed',
                         'c4c_error' => $errorMessage,
-                        'is_synced' => false
+                        'is_synced' => false,
                     ]);
                 }
 
                 // NO hacer throw para evitar reintentos - usar fail() en su lugar
                 $this->fail($e);
+
                 return;
             }
 
             // 🔄 ES UN ERROR TEMPORAL - SÍ se puede reintentar
-            Log::info("[EnviarCitaC4CJob] 🔄 Error temporal - se reintentará", [
+            Log::info('[EnviarCitaC4CJob] 🔄 Error temporal - se reintentará', [
                 'job_id' => $this->jobId,
                 'attempt' => $this->attempts(),
-                'max_attempts' => $this->tries
+                'max_attempts' => $this->tries,
             ]);
 
             // Actualizar estado como reintentando
             Cache::put("cita_job_{$this->jobId}", [
                 'status' => 'retrying',
                 'progress' => 0,
-                'message' => "Reintentando... (intento {$this->attempts()}/{$this->tries}): " . $errorMessage,
+                'message' => "Reintentando... (intento {$this->attempts()}/{$this->tries}): ".$errorMessage,
                 'appointment_id' => $this->appointmentId,
                 'error' => $errorMessage,
                 'attempt' => $this->attempts(),
-                'updated_at' => now()
+                'updated_at' => now(),
             ], 600);
 
             // Re-lanzar la excepción para que Laravel maneje los reintentos
@@ -173,10 +177,10 @@ class EnviarCitaC4CJob implements ShouldQueue
      */
     public function failed(\Throwable $exception): void
     {
-        Log::error("[EnviarCitaC4CJob] ❌ Job falló después de todos los intentos", [
+        Log::error('[EnviarCitaC4CJob] ❌ Job falló después de todos los intentos', [
             'job_id' => $this->jobId,
             'appointment_id' => $this->appointmentId,
-            'error' => $exception->getMessage()
+            'error' => $exception->getMessage(),
         ]);
 
         // Actualizar el appointment como fallido
@@ -184,7 +188,7 @@ class EnviarCitaC4CJob implements ShouldQueue
         if ($appointment) {
             $appointment->update([
                 'status' => 'failed',
-                'is_synced' => false
+                'is_synced' => false,
             ]);
         }
 
@@ -192,9 +196,9 @@ class EnviarCitaC4CJob implements ShouldQueue
         Cache::put("cita_job_{$this->jobId}", [
             'status' => 'failed',
             'progress' => 0,
-            'message' => 'Error al procesar la cita: ' . $exception->getMessage(),
+            'message' => 'Error al procesar la cita: '.$exception->getMessage(),
             'error' => $exception->getMessage(),
-            'updated_at' => now()
+            'updated_at' => now(),
         ], 600);
     }
 
@@ -218,50 +222,51 @@ class EnviarCitaC4CJob implements ShouldQueue
             'Invalid center code', // Código de centro inválido
             'Appointment already exists', // Cita ya existe
             'Invalid maintenance type', // Tipo de mantenimiento inválido
-            
+
             // Errores de validación
             'Validation failed', // Falla de validación
             'Invalid input', // Entrada inválida
             'Missing required field', // Campo requerido faltante
             'Invalid format', // Formato inválido
-            
+
             // Errores de permisos
             'Unauthorized', // No autorizado
             'Access denied', // Acceso denegado
             'Permission denied', // Permiso denegado
             'Invalid credentials', // Credenciales inválidas
-            
+
             // Errores de configuración
             'Service not configured', // Servicio no configurado
             'Invalid configuration', // Configuración inválida
         ];
 
         $errorLower = strtolower($errorMessage);
-        
-        Log::info("[EnviarCitaC4CJob] 🔍 Analizando error para determinar si es fatal", [
+
+        Log::info('[EnviarCitaC4CJob] 🔍 Analizando error para determinar si es fatal', [
             'job_id' => $this->jobId,
             'error_message' => $errorMessage,
-            'error_lower' => $errorLower
+            'error_lower' => $errorLower,
         ]);
-        
+
         foreach ($fatalErrorPatterns as $pattern) {
             $patternLower = strtolower($pattern);
             if (str_contains($errorLower, $patternLower)) {
-                Log::warning("[EnviarCitaC4CJob] 🚨 ERROR FATAL DETECTADO!", [
+                Log::warning('[EnviarCitaC4CJob] 🚨 ERROR FATAL DETECTADO!', [
                     'job_id' => $this->jobId,
                     'matched_pattern' => $pattern,
-                    'error_message' => $errorMessage
+                    'error_message' => $errorMessage,
                 ]);
+
                 return true;
             }
         }
 
-        Log::info("[EnviarCitaC4CJob] 🔄 Error temporal detectado - se puede reintentar", [
+        Log::info('[EnviarCitaC4CJob] 🔄 Error temporal detectado - se puede reintentar', [
             'job_id' => $this->jobId,
-            'error_message' => $errorMessage
+            'error_message' => $errorMessage,
         ]);
 
         // Si no coincide con ningún patrón fatal, es un error temporal
         return false;
     }
-} 
+}

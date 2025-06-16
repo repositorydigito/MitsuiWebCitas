@@ -14,14 +14,14 @@ use Livewire\WithPagination;
 
 class Vehiculos extends Page
 {
-    use WithPagination, HasPageShield;
+    use HasPageShield, WithPagination;
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';
 
     protected static ?string $navigationLabel = 'Mis Vehículos';
-    
+
     protected static ?string $navigationGroup = '🚗 Vehículos';
-    
+
     protected static ?int $navigationSort = 1;
 
     protected static ?string $title = 'Cita de servicio';
@@ -42,7 +42,9 @@ class Vehiculos extends Page
 
     // Estados de carga
     public bool $isLoading = false;
+
     public string $loadingMessage = '';
+
     public string $dataSource = ''; // 'webservice', 'database', 'mock'
 
     protected $queryString = ['activeTab', 'search'];
@@ -102,25 +104,25 @@ class Vehiculos extends Page
                 Log::info("[VehiculosPage] Usando documento del usuario autenticado: {$documentoCliente}");
 
                 $service = app(VehiculoSoapService::class);
-                
+
                 // Implementar timeout de 15 segundos usando set_time_limit
                 $timeoutStart = time();
                 $maxExecutionTime = 15;
-                
+
                 try {
                     // Establecer timeout específico para esta operación
                     set_time_limit($maxExecutionTime + 5); // +5 segundos de margen
-                    
+
                     $this->todosLosVehiculos = $service->getVehiculosCliente($documentoCliente, $codigosMarca);
-                    
+
                     $executionTime = time() - $timeoutStart;
                     Log::info("[VehiculosPage] Flujo completado en {$executionTime} segundos");
-                    
+
                     // Verificar la fuente real de los datos basándose en el campo fuente_datos
                     if ($this->todosLosVehiculos->isNotEmpty()) {
                         $primerVehiculo = $this->todosLosVehiculos->first();
                         $fuenteDatos = $primerVehiculo['fuente_datos'] ?? 'unknown';
-                        
+
                         switch ($fuenteDatos) {
                             case 'SAP_Z3PF':
                                 $this->dataSource = 'webservice';
@@ -143,7 +145,7 @@ class Vehiculos extends Page
                         $this->dataSource = 'empty';
                         $this->loadingMessage = 'No se encontraron vehículos en ningún sistema';
                     }
-                    
+
                 } catch (\Exception $e) {
                     $executionTime = time() - $timeoutStart;
                     if ($executionTime >= $maxExecutionTime) {
@@ -209,7 +211,7 @@ class Vehiculos extends Page
             $this->todosLosVehiculos = collect();
             $this->vehiculosAgrupados = [];
             $this->isLoading = false;
-            $this->loadingMessage = 'Error al cargar vehículos: ' . $e->getMessage();
+            $this->loadingMessage = 'Error al cargar vehículos: '.$e->getMessage();
             $this->dataSource = 'error';
 
             \Filament\Notifications\Notification::make()

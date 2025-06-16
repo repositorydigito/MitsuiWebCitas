@@ -5,20 +5,19 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Hash;
-use Filament\Support\Colors\Color;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Grid;
-use Filament\Tables\Columns\Layout\Split;
-use Filament\Tables\Columns\Layout\Stack;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Form;
 use Filament\Infolists\Components;
 use Filament\Infolists\Infolist;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Columns\Layout\Split;
+use Filament\Tables\Columns\Layout\Stack;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Hash;
 
 class UserResource extends Resource
 {
@@ -264,11 +263,11 @@ class UserResource extends Resource
                     Tables\Actions\DeleteAction::make()
                         ->color('danger'),
                 ])
-                ->label('Acciones')
-                ->icon('heroicon-m-ellipsis-vertical')
-                ->size('sm')
-                ->color('gray')
-                ->button(),
+                    ->label('Acciones')
+                    ->icon('heroicon-m-ellipsis-vertical')
+                    ->size('sm')
+                    ->color('gray')
+                    ->button(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -396,15 +395,15 @@ class UserResource extends Resource
     public static function getGlobalSearchResultDetails(Model $record): array
     {
         $details = [];
-        
+
         if ($record->email) {
             $details['Email'] = $record->email;
         }
-        
+
         if ($record->document_type && $record->document_number) {
-            $details['Documento'] = $record->document_type . ': ' . $record->document_number;
+            $details['Documento'] = $record->document_type.': '.$record->document_number;
         }
-        
+
         return $details;
     }
 }

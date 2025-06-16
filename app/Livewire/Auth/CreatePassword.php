@@ -17,22 +17,25 @@ class CreatePassword extends Component implements HasForms
     use InteractsWithForms;
 
     public ?array $data = [];
+
     public ?User $user = null;
 
     public function mount()
     {
         $userId = session('pending_user_id');
-        
-        if (!$userId) {
+
+        if (! $userId) {
             $this->redirect('/admin/login');
+
             return;
         }
 
         $this->user = User::find($userId);
-        
-        if (!$this->user) {
+
+        if (! $this->user) {
             session()->forget('pending_user_id');
             $this->redirect('/admin/login');
+
             return;
         }
 
@@ -50,7 +53,7 @@ class CreatePassword extends Component implements HasForms
                     ->required()
                     ->minLength(8)
                     ->placeholder('Mínimo 8 caracteres'),
-                
+
                 TextInput::make('password_confirmation')
                     ->label('Confirmar Contraseña')
                     ->password()
@@ -65,19 +68,19 @@ class CreatePassword extends Component implements HasForms
     public function create()
     {
         $data = $this->form->getState();
-        
+
         $authService = app(DocumentAuthService::class);
         $success = $authService->setUserPassword($this->user, $data['password']);
-        
+
         if ($success) {
             session()->forget('pending_user_id');
             Auth::login($this->user);
-            
+
             Notification::make()
                 ->title('Contraseña establecida exitosamente')
                 ->success()
                 ->send();
-                
+
             $this->redirect('/admin');
         } else {
             Notification::make()

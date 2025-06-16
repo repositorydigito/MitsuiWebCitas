@@ -18,14 +18,14 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class ServicioExpress extends Page
 {
-    use WithFileUploads, HasPageShield;
+    use HasPageShield, WithFileUploads;
 
     protected static ?string $navigationIcon = 'heroicon-o-bolt';
 
     protected static ?string $navigationLabel = 'Servicio Express';
-    
+
     protected static ?string $navigationGroup = '📅 Citas & Servicios';
-    
+
     protected static ?int $navigationSort = 4;
 
     protected static ?string $title = 'Gestión servicio express';
@@ -35,7 +35,7 @@ class ServicioExpress extends Page
     // Propiedades para la tabla
     public Collection $vehiculos;
 
-    public int $perPage = 5;
+    public int $perPage = 10;
 
     public int $currentPage = 1;
 

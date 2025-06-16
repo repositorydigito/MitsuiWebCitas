@@ -4,8 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class ShieldSeeder extends Seeder
 {
@@ -20,13 +20,13 @@ class ShieldSeeder extends Seeder
         // Crear rol de super admin
         $superAdminRole = Role::firstOrCreate([
             'name' => 'super_admin',
-            'guard_name' => 'web'
+            'guard_name' => 'web',
         ]);
 
         // Crear rol de panel user
         $panelUserRole = Role::firstOrCreate([
             'name' => 'panel_user',
-            'guard_name' => 'web'
+            'guard_name' => 'web',
         ]);
 
         // Crear algunos permisos básicos
@@ -48,7 +48,7 @@ class ShieldSeeder extends Seeder
         foreach ($permissions as $permission) {
             Permission::firstOrCreate([
                 'name' => $permission,
-                'guard_name' => 'web'
+                'guard_name' => 'web',
             ]);
         }
 
@@ -57,10 +57,10 @@ class ShieldSeeder extends Seeder
 
         // Crear usuario super admin si no existe
         $superAdmin = User::firstOrCreate([
-            'email' => 'admin@mitsui.com'
+            'email' => 'admin@mitsui.com',
         ], [
             'name' => 'Super Admin',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
 
         // Asignar rol de super admin

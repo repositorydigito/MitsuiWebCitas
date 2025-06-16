@@ -42,6 +42,7 @@ class C4CCreateAppointment extends Command
         // Validar que el business_partner_id sea válido
         if (empty($businessPartnerId)) {
             $this->error('El business_partner_id es requerido');
+
             return 1;
         }
 
@@ -97,7 +98,7 @@ class C4CCreateAppointment extends Command
         }
 
         try {
-            $appointmentService = new AppointmentService();
+            $appointmentService = new AppointmentService;
             $result = $appointmentService->create($appointmentData);
 
             if ($result['success']) {
@@ -107,34 +108,34 @@ class C4CCreateAppointment extends Command
                     $appointment = $result['data'];
 
                     $this->info("\n<fg=green;options=bold>--- Detalles de la Cita ---</>");
-                    $this->info('Estado: ' . ($appointment['status'] ?? 'N/A'));
+                    $this->info('Estado: '.($appointment['status'] ?? 'N/A'));
 
                     if (isset($appointment['uuid'])) {
-                        $this->info('UUID: ' . $appointment['uuid']);
+                        $this->info('UUID: '.$appointment['uuid']);
                     }
                     if (isset($appointment['id'])) {
-                        $this->info('ID: ' . $appointment['id']);
+                        $this->info('ID: '.$appointment['id']);
                     }
                     if (isset($appointment['change_state_id'])) {
-                        $this->info('Change State ID: ' . $appointment['change_state_id']);
+                        $this->info('Change State ID: '.$appointment['change_state_id']);
                     }
                     if (isset($appointment['message'])) {
-                        $this->info('Mensaje: ' . $appointment['message']);
+                        $this->info('Mensaje: '.$appointment['message']);
                     }
                 }
 
                 // Mostrar warnings si existen
-                if (isset($result['warnings']) && !empty($result['warnings'])) {
+                if (isset($result['warnings']) && ! empty($result['warnings'])) {
                     $this->info("\n<fg=yellow;options=bold>⚠️ Advertencias:</>");
                     foreach ($result['warnings'] as $warning) {
-                        $this->warn('  - ' . $warning);
+                        $this->warn('  - '.$warning);
                     }
                 }
 
                 return 0;
             } else {
                 $this->error('❌ Error al crear la cita');
-                $this->error('Error: ' . ($result['error'] ?? 'Error desconocido'));
+                $this->error('Error: '.($result['error'] ?? 'Error desconocido'));
 
                 if (isset($result['details'])) {
                     $this->info('Detalles adicionales:');
@@ -144,8 +145,9 @@ class C4CCreateAppointment extends Command
                 return 1;
             }
         } catch (\Exception $e) {
-            $this->error('❌ Excepción al crear la cita: ' . $e->getMessage());
-            $this->error('Trace: ' . $e->getTraceAsString());
+            $this->error('❌ Excepción al crear la cita: '.$e->getMessage());
+            $this->error('Trace: '.$e->getTraceAsString());
+
             return 1;
         }
     }

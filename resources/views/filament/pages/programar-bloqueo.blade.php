@@ -58,10 +58,12 @@
                             <select wire:model="data.start_time" class="w-full rounded-lg border {{ $errors['start_time'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3">
                                 <option value="">Hora de inicio</option>
                                 @for ($hour = 8; $hour <= 18; $hour++)
-                                    <option value="{{ sprintf('%02d', $hour) }}:00">{{ sprintf('%02d', $hour) }}:00</option>
-                                    @if ($hour < 18)
-                                        <option value="{{ sprintf('%02d', $hour) }}:30">{{ sprintf('%02d', $hour) }}:30</option>
-                                    @endif
+                                    @for ($minute = 0; $minute < 60; $minute += 15)
+                                        @if ($hour == 18 && $minute > 45)
+                                            @break
+                                        @endif
+                                        <option value="{{ sprintf('%02d:%02d', $hour, $minute) }}">{{ sprintf('%02d:%02d', $hour, $minute) }}</option>
+                                    @endfor
                                 @endfor
                             </select>
                             @if($errors['start_time'])
@@ -87,10 +89,12 @@
                             <select wire:model="data.end_time" class="w-full rounded-lg border {{ $errors['end_time'] ? 'border-red-500' : 'border-primary-500' }} text-gray-700 py-2 px-3">
                                 <option value="">Hora de fin</option>
                                 @for ($hour = 8; $hour <= 18; $hour++)
-                                    <option value="{{ sprintf('%02d', $hour) }}:00">{{ sprintf('%02d', $hour) }}:00</option>
-                                    @if ($hour < 18)
-                                        <option value="{{ sprintf('%02d', $hour) }}:30">{{ sprintf('%02d', $hour) }}:30</option>
-                                    @endif
+                                    @for ($minute = 0; $minute < 60; $minute += 15)
+                                        @if ($hour == 18 && $minute > 45)
+                                            @break
+                                        @endif
+                                        <option value="{{ sprintf('%02d:%02d', $hour, $minute) }}">{{ sprintf('%02d:%02d', $hour, $minute) }}</option>
+                                    @endfor
                                 @endfor
                             </select>
                             @if($errors['end_time'])

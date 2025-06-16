@@ -6,17 +6,17 @@ use App\Models\Local;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
 
 class Kpis extends Page
 {
     use HasPageShield;
+
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
 
     protected static ?string $navigationLabel = 'KPIs';
-    
+
     protected static ?string $navigationGroup = '📊 Reportes & KPIs';
-    
+
     protected static ?int $navigationSort = 1;
 
     protected static ?string $title = 'Indicadores de Desempeño (KPIs)';
@@ -75,10 +75,7 @@ class Kpis extends Page
             // Agregar la opción "Todos" al principio
             $this->locales = ['Todos' => 'Todos'] + $localesActivos;
 
-            Log::info('[KpisPage] Locales cargados: '.json_encode($this->locales));
         } catch (\Exception $e) {
-            Log::error('[KpisPage] Error al cargar locales: '.$e->getMessage());
-
             // Si hay un error, usar algunos valores por defecto
             $this->locales = ['Todos' => 'Todos'];
         }
@@ -92,15 +89,6 @@ class Kpis extends Page
             if ($this->localSeleccionado !== 'Todos' && isset($this->locales[$this->localSeleccionado])) {
                 $nombreLocalSeleccionado = $this->locales[$this->localSeleccionado];
             }
-
-            Log::info('[KpisPage] Cargando KPIs con filtros: ', [
-                'fechaInicio' => $this->fechaInicio,
-                'fechaFin' => $this->fechaFin,
-                'marca' => $this->marcaSeleccionada,
-                'local_codigo' => $this->localSeleccionado,
-                'local_nombre' => $nombreLocalSeleccionado,
-                'tipo' => $this->tipoSeleccionado,
-            ]);
 
             // Aquí normalmente consultarías a la base de datos
             // Por ahora, usaremos datos de ejemplo
@@ -169,26 +157,9 @@ class Kpis extends Page
                     'contribucion' => true,
                     'desviacion' => null,
                 ],
-                [
-                    'id' => 9,
-                    'nombre' => 'Tiempo promedio hora de cita vs hora atendida',
-                    'cantidad' => 15,
-                    'meta' => 10,
-                    'contribucion' => false,
-                    'desviacion' => '-5%',
-                ],
-                [
-                    'id' => 10,
-                    'nombre' => '% Usabilidad',
-                    'cantidad' => 30,
-                    'meta' => 50,
-                    'contribucion' => false,
-                    'desviacion' => '-40%',
-                ],
             ]);
 
         } catch (\Exception $e) {
-            Log::error('[KpisPage] Error al cargar KPIs: '.$e->getMessage());
             $this->kpis = collect([]);
         }
     }
