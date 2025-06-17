@@ -258,25 +258,26 @@
                 <p class="form-subtitle text-center">Ingresa tus credenciales para acceder al sistema</p>
 
                 <!-- Formulario -->
-                <x-filament-panels::form wire:submit="authenticate">
+                <x-filament-panels::form wire:submit="{{ $showPasswordField ? 'authenticate' : 'checkUser' }}">
                     {{ $this->form }}
 
                     <div class="mt-6">
-                        <x-filament-panels::form.actions
-                            :actions="$this->getCachedFormActions()"
-                            :full-width="$this->hasFullWidthFormActions()"
-                        />
+                        @if(!$showPasswordField)
+                            <!-- Botón Entrar para verificar usuario -->
+                            <button type="submit"
+                                    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2"
+                                    style="background-color: #0075BF;">
+                                Entrar
+                            </button>
+                        @else
+                            <!-- Botones normales cuando se muestra contraseña -->
+                            <x-filament-panels::form.actions
+                                :actions="$this->getCachedFormActions()"
+                                :full-width="$this->hasFullWidthFormActions()"
+                            />
+                        @endif
                     </div>
                 </x-filament-panels::form>
-
-                <!-- Botón Crear Cuenta -->
-                <div class="mt-4">
-                    <a href="{{ route('auth.create-password') }}"
-                       class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
-                       style="color: #0075BF; border-color: #0075BF;">
-                        Crear Cuenta
-                    </a>
-                </div>
             </div>
         </div>
     </div>

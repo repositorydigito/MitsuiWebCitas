@@ -3,6 +3,7 @@
 namespace App\Filament\Pages\Auth;
 
 use App\Services\Auth\DocumentAuthService;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -13,6 +14,9 @@ use Illuminate\Validation\ValidationException;
 class Login extends BaseLogin
 {
     protected static string $view = 'filament.pages.auth.corporate-login';
+
+    public bool $showPasswordField = false;
+    public bool $userExists = false;
 
     public function form(Form $form): Form
     {
@@ -86,6 +90,12 @@ class Login extends BaseLogin
                     'PASAPORTE' => 6,
                     default => 1,
                 };
+            })
+            ->reactive()
+            ->afterStateUpdated(function ($state, callable $set, $livewire) {
+                // Resetear estado cuando cambia el número
+                $livewire->showPasswordField = false;
+                $livewire->userExists = false;
             });
     }
 
@@ -95,11 +105,55 @@ class Login extends BaseLogin
             ->label('Contraseña')
             ->password()
             ->revealable()
-            ->placeholder('Ingrese su contraseña');
+            ->placeholder('Ingrese su contraseña')
+            ->visible(fn () => $this->showPasswordField)
+            ->required(fn () => $this->showPasswordField);
+    }
+
+    public function checkUser()
+    {
+        $data = $this->form->getState();
+
+        if (empty($data['document_type']) || empty($data['document_number'])) {
+            return;
+        }
+
+        $authService = app(DocumentAuthService::class);
+        $result = $authService->authenticateByDocument(
+            $data['document_type'],
+            $data['document_number'],
+            null // Sin contraseña para solo verificar existencia
+        );
+
+        if ($result['success']) {
+            switch ($result['action']) {
+                case 'request_password':
+                    // Usuario existe, mostrar campo contraseña
+                    $this->showPasswordField = true;
+                    $this->userExists = true;
+                    break;
+
+                case 'create_password':
+                    // Usuario nuevo, redirigir a registro
+                    session(['pending_user_id' => $result['user']->id]);
+                    $this->redirect('/auth/create-password');
+                    break;
+            }
+        } else {
+            throw ValidationException::withMessages([
+                'data.document_number' => $result['message'],
+            ]);
+        }
     }
 
     protected function getCredentialsFromFormData(array $data): array
     {
+        // Si no se ha verificado el usuario primero, hacerlo
+        if (!$this->showPasswordField) {
+            $this->checkUser();
+            return [];
+        }
+
         // Usar lógica personalizada en lugar de email/password
         $authService = app(DocumentAuthService::class);
         $result = $authService->authenticateByDocument(
@@ -140,5 +194,28 @@ class Login extends BaseLogin
                     'data.document_number' => $result['message'],
                 ]);
         }
+    }
+
+    protected function getFormActions(): array
+    {
+        if (!$this->showPasswordField) {
+            // Mostrar botón "Entrar" para verificar usuario
+            return [
+                Action::make('checkUser')
+                    ->label('Entrar')
+                    ->submit('checkUser')
+                    ->keyBindings(['mod+s'])
+            ];
+        }
+
+        // Mostrar botón normal de "Iniciar Sesión" cuando se muestra contraseña
+        return [
+            $this->getAuthenticateFormAction(),
+        ];
+    }
+
+    public function checkUserAction()
+    {
+        $this->checkUser();
     }
 }
