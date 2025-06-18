@@ -15,9 +15,9 @@ class GestionServiciosAdicionales extends Page
 
     protected static ?string $navigationIcon = 'heroicon-o-plus-circle';
 
-    protected static ?string $navigationLabel = 'Servicios Adicionales';
+    protected static ?string $navigationLabel = 'Otros Servicios';
 
-    protected static ?string $title = 'Gestión de Servicios Adicionales';
+    protected static ?string $title = 'Otros Servicios';
 
     protected static string $view = 'filament.pages.gestion-servicios-adicionales';
 

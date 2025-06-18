@@ -185,8 +185,10 @@
                                     placeholder="Correo electrónico"
                                     wire:model="datosEdicion.correo"
                                     class="w-full px-3 py-2 border border-primary-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                                    pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|pe)$"
+                                    title="Ingrese un correo válido con terminación .com o .pe"
                                 >
-                                @error('datosEdicion.correo') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                @error('datosEdicion.correo') <span class="text-primary-500 text-xs">Formato inválido</span> @enderror
                             </div>
 
                             <div>
@@ -196,8 +198,12 @@
                                     placeholder="Celular"
                                     wire:model="datosEdicion.celular"
                                     class="w-full px-3 py-2 border border-primary-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                                    maxlength="9"
+                                    pattern="[0-9]{9}"
+                                    inputmode="numeric"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 9)"
                                 >
-                                @error('datosEdicion.celular') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                @error('datosEdicion.celular') <span class="text-primary-500 text-xs">Formato inválido</span> @enderror
                             </div>
 
                             <div>
@@ -210,18 +216,20 @@
                                         <option value="{{ $key }}">{{ $value }}</option>
                                     @endforeach
                                 </select>
-                                @error('datosEdicion.tipo_documento') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                @error('datosEdicion.tipo_documento') <span class="text-red-500 text-xs">Formato inválido</span> @enderror
                             </div>
 
                             <div>
                                 <input
                                     type="text"
                                     id="numero_documento"
-                                    placeholder="Número de documento"
+                                    placeholder="Número de documento (máximo 12 caracteres)"
                                     wire:model="datosEdicion.numero_documento"
                                     class="w-full px-3 py-2 border border-primary-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                                    maxlength="12"
+                                    oninput="this.value = this.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 12).toUpperCase()"
                                 >
-                                @error('datosEdicion.numero_documento') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                @error('datosEdicion.numero_documento') <span class="text-red-500 text-xs">Formato invalido</span> @enderror
                             </div>
                         </div>
                     @elseif ($pasoActual == 2)

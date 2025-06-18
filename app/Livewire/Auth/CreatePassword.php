@@ -73,6 +73,10 @@ class CreatePassword extends Component implements HasForms
         $success = $authService->setUserPassword($this->user, $data['password']);
 
         if ($success) {
+            // Asignar el rol 'Usuario' si no lo tiene
+            if (! $this->user->hasRole('Usuario')) {
+                $this->user->assignRole('Usuario');
+            }
             session()->forget('pending_user_id');
             Auth::login($this->user);
 

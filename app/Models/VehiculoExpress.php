@@ -22,6 +22,8 @@ class VehiculoExpress extends Model
      * @var array
      */
     protected $fillable = [
+        'code',
+        'type',
         'model',
         'brand',
         'year',

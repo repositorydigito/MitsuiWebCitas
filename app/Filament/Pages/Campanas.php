@@ -23,11 +23,11 @@ class Campanas extends Page
 
     protected static ?string $navigationLabel = 'Campañas';
 
-    protected static ?string $navigationGroup = '📢 Marketing';
+    protected static ?string $navigationGroup = '⚙️ Configuración';
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $title = 'Campañas';
+    protected static ?string $title = 'Campañas del mes';
 
     protected static string $view = 'filament.pages.campanas';
 

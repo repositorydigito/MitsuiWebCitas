@@ -229,6 +229,8 @@ class AgendarCita extends Page
 
     public function mount($vehiculoId = null): void
     {
+        Log::info('[AgendarCita] === MOUNT EJECUTÁNDOSE ===');
+
         // Registrar todos los parámetros recibidos para depuración
         Log::info('[AgendarCita] Parámetros recibidos en mount:', [
             'vehiculoId' => $vehiculoId,
@@ -569,6 +571,8 @@ class AgendarCita extends Page
      */
     protected function cargarServiciosAdicionales(): void
     {
+        Log::info('[AgendarCita] === INICIANDO CARGA DE SERVICIOS ADICIONALES ===');
+
         // Inicializar opciones de servicios adicionales
         $this->opcionesServiciosAdicionales = [];
 
@@ -593,6 +597,8 @@ class AgendarCita extends Page
     protected function cargarModalidadesDisponibles(): void
     {
         try {
+
+
             // Modalidad Regular siempre está disponible
             $this->modalidadesDisponibles = [
                 'Regular' => 'Regular',
@@ -602,7 +608,7 @@ class AgendarCita extends Page
             $expressDisponible = $this->esExpressDisponible();
 
             if ($expressDisponible) {
-                $this->modalidadesDisponibles['Express (Duración 1h-30 min)'] = 'Express (Duración 1h 30 min)';
+                $this->modalidadesDisponibles['Mantenimiento Express (Duración 1h-30 min)'] = 'Mantenimiento Express (Duración 1h 30 min)';
             }
         } catch (\Exception $e) {
             // En caso de error, solo mostrar Regular
@@ -720,7 +726,7 @@ class AgendarCita extends Page
 
             $vehiculoExpress = null;
             foreach ($vehiculosExpress as $vehiculo) {
-                $mantenimientos = $vehiculo->mantenimiento;
+                $mantenimientos = $vehiculo->maintenance;
 
                 // Manejar diferentes formatos de mantenimiento
                 if (is_string($mantenimientos)) {
@@ -760,9 +766,12 @@ class AgendarCita extends Page
             return $vehiculoExpress !== null;
 
         } catch (\Exception $e) {
+            Log::error("[AgendarCita] Error en esExpressDisponible: " . $e->getMessage());
             return false;
         }
     }
+
+
 
     /**
      * Cargar las campañas activas desde la base de datos
@@ -775,11 +784,11 @@ class AgendarCita extends Page
             Log::info('[AgendarCita] Vehículo seleccionado: '.json_encode($this->vehiculo ?? []));
             Log::info('[AgendarCita] Local seleccionado: '.($this->localSeleccionado ?? 'ninguno'));
 
-            // Verificar específicamente la campaña 10214 para depuración
-            $this->verificarCampanaEspecifica('10214');
+            // Verificar específicamente la campaña 1 para depuración
+            $this->verificarCampanaEspecifica('1');
 
             // Obtener campañas activas con filtros inteligentes
-            $query = Campana::where('status', 'active');
+            $query = Campana::where('status', 'Activo');
 
             // Filtrar por modelo del vehículo si está disponible
             if (! empty($this->vehiculo['modelo'])) {
@@ -807,16 +816,25 @@ class AgendarCita extends Page
                 });
             }
 
-            // Filtrar por año del vehículo si está disponible
+            // Filtrar por año del vehículo si está disponible Y si la campaña tiene años específicos
             if (! empty($this->vehiculo['anio']) && is_numeric($this->vehiculo['anio'])) {
                 $anioVehiculo = (int) $this->vehiculo['anio'];
                 Log::info("[AgendarCita] Filtrando campañas por año: {$anioVehiculo}");
 
-                $query->whereExists(function ($q) use ($anioVehiculo) {
-                    $q->select(DB::raw(1))
-                        ->from('campaign_years')
-                        ->whereColumn('campaign_years.campaign_id', 'campaigns.id')
-                        ->where('campaign_years.year', $anioVehiculo);
+                $query->where(function ($q) use ($anioVehiculo) {
+                    // Incluir campañas que no tienen años específicos (aplican a todos los años)
+                    $q->whereNotExists(function ($subQ) {
+                        $subQ->select(DB::raw(1))
+                            ->from('campaign_years')
+                            ->whereColumn('campaign_years.campaign_id', 'campaigns.id');
+                    })
+                    // O campañas que sí tienen el año específico del vehículo
+                    ->orWhereExists(function ($subQ) use ($anioVehiculo) {
+                        $subQ->select(DB::raw(1))
+                            ->from('campaign_years')
+                            ->whereColumn('campaign_years.campaign_id', 'campaigns.id')
+                            ->where('campaign_years.year', $anioVehiculo);
+                    });
                 });
             }
 
@@ -884,8 +902,8 @@ class AgendarCita extends Page
 
                 foreach ($campanas as $campana) {
                     // Verificar que la campaña esté activa
-                    if ($campana->status !== 'active') {
-                        Log::info("[AgendarCita] Campaña {$campana->id} no está activa, omitiendo");
+                    if ($campana->status !== 'Activo') {
+                        Log::info("[AgendarCita] Campaña {$campana->id} no está activa (estado: {$campana->status}), omitiendo");
 
                         continue;
                     }
@@ -896,16 +914,8 @@ class AgendarCita extends Page
                     // Construir la URL correcta para la imagen
                     if ($imagenObj && $imagenObj->route) {
                         try {
-                            // Intentar diferentes enfoques para obtener la URL de la imagen
-                            $rutaCompleta = $imagenObj->route;
-                            Log::info("[AgendarCita] Ruta completa de la imagen: {$rutaCompleta}");
-
-                            // Método 1: Usar route('imagen.campana', ['id' => $campana->id])
-                            $imagen = route('imagen.campana', ['id' => $campana->id]);
-                            Log::info("[AgendarCita] URL de imagen generada con route: {$imagen}");
-
-                            // Registrar información detallada para depuración
-                            Log::info("[AgendarCita] Campaña {$campana->id} tiene imagen: {$rutaCompleta}, URL generada: {$imagen}");
+                            $imagen = $this->getImageUrl($imagenObj);
+                            Log::info("[AgendarCita] Campaña {$campana->id} tiene imagen: {$imagenObj->route}, URL generada: {$imagen}");
                         } catch (\Exception $e) {
                             // Si hay algún error, usar una imagen por defecto
                             $imagen = asset('images/default-campaign.jpg');
@@ -1037,10 +1047,14 @@ class AgendarCita extends Page
                 Log::warning('[AgendarCita]   ✗ Modelo NO coincide');
             }
 
-            // Verificar coincidencia de año
-            $anioCoincide = in_array($anioVehiculo, $anosAsociados);
+            // Verificar coincidencia de año (si la campaña tiene años específicos)
+            $anioCoincide = empty($anosAsociados) || in_array($anioVehiculo, $anosAsociados);
             if ($anioCoincide) {
-                Log::info("[AgendarCita]   ✓ Año coincide: '{$anioVehiculo}'");
+                if (empty($anosAsociados)) {
+                    Log::info("[AgendarCita]   ✓ Año coincide: Campaña aplica para todos los años");
+                } else {
+                    Log::info("[AgendarCita]   ✓ Año coincide: '{$anioVehiculo}'");
+                }
             } else {
                 Log::warning("[AgendarCita]   ✗ Año NO coincide: '{$anioVehiculo}' no está en [".implode(', ', $anosAsociados).']');
             }
@@ -1116,7 +1130,7 @@ class AgendarCita extends Page
                 }
             }
 
-            // Verificar año del vehículo
+            // Verificar año del vehículo (solo si la campaña tiene años específicos)
             if (! empty($this->vehiculo['anio']) && is_numeric($this->vehiculo['anio'])) {
                 $anioVehiculo = (int) $this->vehiculo['anio'];
                 $anosAsociados = DB::table('campaign_years')
@@ -1124,10 +1138,12 @@ class AgendarCita extends Page
                     ->pluck('year')
                     ->toArray();
 
+                // Solo verificar si la campaña tiene años específicos configurados
                 if (! empty($anosAsociados) && ! in_array($anioVehiculo, $anosAsociados)) {
                     $aplicaCampana = false;
                     $razonesExclusion[] = "Año '{$anioVehiculo}' no está en la lista de años de campaña: ".implode(', ', $anosAsociados);
                 }
+                // Si no tiene años específicos, la campaña aplica para todos los años
             }
 
             if ($aplicaCampana) {
@@ -2552,6 +2568,7 @@ class AgendarCita extends Page
         }
 
         // Recargar las campañas
+        Log::info("[AgendarCita] === RECARGANDO CAMPAÑAS POR CAMBIO DE LOCAL ===");
         $this->cargarCampanas();
         Log::info("[AgendarCita] Campañas recargadas después de cambiar el local a: {$value}. Total: ".count($this->campanasDisponibles));
 
@@ -2603,5 +2620,28 @@ class AgendarCita extends Page
         ];
 
         return $meses[$this->mesActual] ?? '';
+    }
+
+    /**
+     * Genera la URL correcta para una imagen de campaña
+     */
+    private function getImageUrl($imagen): string
+    {
+        $rutaOriginal = $imagen->route;
+
+        // Verificar si la imagen está en la carpeta private (imágenes antiguas)
+        if (str_contains($rutaOriginal, 'private/public/')) {
+            // Para imágenes en private, crear una ruta especial
+            $nombreArchivo = basename($rutaOriginal);
+            $url = route('imagen.campana', ['idOrFilename' => $nombreArchivo]);
+
+            return $url;
+        }
+
+        // Para imágenes nuevas en public
+        $rutaLimpia = str_replace('public/', '', $rutaOriginal);
+        $url = asset('storage/'.$rutaLimpia);
+
+        return $url;
     }
 }

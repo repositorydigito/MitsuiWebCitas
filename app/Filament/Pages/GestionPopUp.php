@@ -21,7 +21,7 @@ class GestionPopUp extends Page
 
     protected static ?string $navigationLabel = 'Gestión Pop up';
 
-    protected static ?string $navigationGroup = '📢 Marketing';
+    protected static ?string $navigationGroup = '⚙️ Configuración';
 
     protected static ?int $navigationSort = 4;
 

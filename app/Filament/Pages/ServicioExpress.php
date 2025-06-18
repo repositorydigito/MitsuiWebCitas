@@ -56,6 +56,8 @@ class ServicioExpress extends Page
 
     public array $vehiculoEnEdicion = [
         'id' => null,
+        'code' => '',
+        'type' => '',
         'model' => '',
         'brand' => '',
         'year' => '',
@@ -203,6 +205,8 @@ class ServicioExpress extends Page
             // Cargar los datos del vehículo en el array de edición
             $this->vehiculoEnEdicion = [
                 'id' => $vehiculo->id,
+                'code' => $vehiculo->code,
+                'type' => $vehiculo->type,
                 'model' => $vehiculo->model,
                 'brand' => $vehiculo->brand,
                 'year' => $vehiculo->year,
@@ -243,6 +247,8 @@ class ServicioExpress extends Page
     {
         $this->vehiculoEnEdicion = [
             'id' => null,
+            'code' => '',
+            'type' => '',
             'model' => '',
             'brand' => '',
             'year' => '',
@@ -282,6 +288,8 @@ class ServicioExpress extends Page
             $vehiculo = VehiculoExpress::findOrFail($this->vehiculoEnEdicion['id']);
 
             // Actualizar los datos
+            $vehiculo->code = $this->vehiculoEnEdicion['code'];
+            $vehiculo->type = $this->vehiculoEnEdicion['type'];
             $vehiculo->model = $this->vehiculoEnEdicion['model'];
             $vehiculo->brand = $this->vehiculoEnEdicion['brand'];
             $vehiculo->year = $this->vehiculoEnEdicion['year'];
@@ -436,7 +444,7 @@ class ServicioExpress extends Page
 
             // Verificar que las cabeceras sean correctas
             $cabeceras = $rows[0];
-            $cabecerasEsperadas = ['Model', 'Brand', 'Year', 'Maintenance', 'Premises'];
+            $cabecerasEsperadas = ['Model', 'Brand', 'Year', 'Maintenance', 'Premises', 'Code', 'Type'];
 
             // Normalizar las cabeceras (eliminar espacios, convertir a minúsculas)
             $cabecerasNormalizadas = array_map(function ($cabecera) {
@@ -472,7 +480,7 @@ class ServicioExpress extends Page
                 $filasProcesadas++;
 
                 // Verificar que la fila tenga datos
-                if (empty($row[0]) && empty($row[1]) && empty($row[2]) && empty($row[3]) && empty($row[4])) {
+                if (empty($row[0]) && empty($row[1]) && empty($row[2]) && empty($row[3]) && empty($row[4]) && empty($row[5]) && empty($row[6])) {
                     $filasVacias++;
 
                     continue;
@@ -488,6 +496,8 @@ class ServicioExpress extends Page
 
                     // Crear el vehículo
                     $vehiculo = new VehiculoExpress;
+                    $vehiculo->code = $row[5] ?? null; // Nueva columna Code
+                    $vehiculo->type = $row[6] ?? null; // Nueva columna Type
                     $vehiculo->model = $row[0] ?? 'Sin modelo';
                     $vehiculo->brand = $row[1] ?? 'Sin marca';
                     $vehiculo->year = $row[2] ?? 'Sin año';
@@ -578,18 +588,31 @@ class ServicioExpress extends Page
             $spreadsheet = new Spreadsheet;
             $sheet = $spreadsheet->getActiveSheet();
 
-            // Establecer las cabeceras
+            // Establecer las cabeceras en inglés
             $sheet->setCellValue('A1', 'Model');
             $sheet->setCellValue('B1', 'Brand');
             $sheet->setCellValue('C1', 'Year');
             $sheet->setCellValue('D1', 'Maintenance');
             $sheet->setCellValue('E1', 'Premises');
+            $sheet->setCellValue('F1', 'Code');
+            $sheet->setCellValue('G1', 'Type');
+
+            // Verificar que las cabeceras se establecieron correctamente
+            $headerA1 = $sheet->getCell('A1')->getValue();
+            $headerB1 = $sheet->getCell('B1')->getValue();
+            $headerC1 = $sheet->getCell('C1')->getValue();
+            $headerD1 = $sheet->getCell('D1')->getValue();
+            $headerE1 = $sheet->getCell('E1')->getValue();
+            $headerF1 = $sheet->getCell('F1')->getValue();
+            $headerG1 = $sheet->getCell('G1')->getValue();
+
+            Log::info("[ServicioExpress] Verificación de cabeceras: A1={$headerA1}, B1={$headerB1}, C1={$headerC1}, D1={$headerD1}, E1={$headerE1}, F1={$headerF1}, G1={$headerG1}");
 
             // Dar formato a las cabeceras
-            $sheet->getStyle('A1:E1')->getFont()->setBold(true);
-            $sheet->getStyle('A1:E1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID);
-            $sheet->getStyle('A1:E1')->getFill()->getStartColor()->setARGB('FF3B82F6'); // Color primary
-            $sheet->getStyle('A1:E1')->getFont()->getColor()->setARGB('FFFFFFFF'); // Texto blanco
+            $sheet->getStyle('A1:G1')->getFont()->setBold(true);
+            $sheet->getStyle('A1:G1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID);
+            $sheet->getStyle('A1:G1')->getFill()->getStartColor()->setARGB('FF3B82F6'); // Color primary
+            $sheet->getStyle('A1:G1')->getFont()->getColor()->setARGB('FFFFFFFF'); // Texto blanco
 
             // Ajustar el ancho de las columnas
             $sheet->getColumnDimension('A')->setWidth(20);
@@ -597,6 +620,13 @@ class ServicioExpress extends Page
             $sheet->getColumnDimension('C')->setWidth(10);
             $sheet->getColumnDimension('D')->setWidth(35); // Más ancho para múltiples mantenimientos
             $sheet->getColumnDimension('E')->setWidth(20);
+            $sheet->getColumnDimension('F')->setWidth(15); // Code
+            $sheet->getColumnDimension('G')->setWidth(15); // Type
+
+            // Crear el directorio si no existe
+            if (! Storage::disk('public')->exists('plantillas')) {
+                Storage::disk('public')->makeDirectory('plantillas');
+            }
 
             // Agregar ejemplos con múltiples mantenimientos
             $sheet->setCellValue('A2', 'YARIS CROSS');
@@ -604,18 +634,24 @@ class ServicioExpress extends Page
             $sheet->setCellValue('C2', '2024');
             $sheet->setCellValue('D2', '["10,000 Km","20,000 Km","30,000 Km"]');
             $sheet->setCellValue('E2', 'Mitsui La Molina');
+            $sheet->setCellValue('F2', 'YC001');
+            $sheet->setCellValue('G2', 'Express');
 
             $sheet->setCellValue('A3', 'Corolla');
             $sheet->setCellValue('B3', 'Toyota');
             $sheet->setCellValue('C3', '2023');
             $sheet->setCellValue('D3', '["10,000 Km","20,000 Km"]');
             $sheet->setCellValue('E3', 'Mitsui Miraflores');
+            $sheet->setCellValue('F3', 'COR001');
+            $sheet->setCellValue('G3', 'Standard');
 
             $sheet->setCellValue('A4', 'RAV4');
             $sheet->setCellValue('B4', 'Toyota');
             $sheet->setCellValue('C4', '2024');
             $sheet->setCellValue('D4', '["40,000 Km","50,000 Km","60,000 Km"]');
             $sheet->setCellValue('E4', 'Mitsui Canadá');
+            $sheet->setCellValue('F4', 'RAV001');
+            $sheet->setCellValue('G4', 'Premium');
 
             // Agregar comentarios explicativos
             $sheet->setCellValue('A6', 'INSTRUCCIONES:');
@@ -635,13 +671,17 @@ class ServicioExpress extends Page
                 Storage::disk('public')->makeDirectory('plantillas');
             }
 
-            // Guardar el archivo
+            // Guardar el archivo con timestamp para evitar caché
+            $timestamp = date('Y-m-d_H-i-s');
+            $filename = "plantilla_vehiculos_express_{$timestamp}.xlsx";
             $writer = new Xlsx($spreadsheet);
-            $path = storage_path('app/public/plantillas/plantilla_vehiculos_express.xlsx');
+            $path = storage_path("app/public/plantillas/{$filename}");
             $writer->save($path);
 
+            Log::info("[ServicioExpress] Archivo guardado en: {$path}");
+
             // Generar la URL para descargar el archivo
-            $url = asset('storage/plantillas/plantilla_vehiculos_express.xlsx');
+            $url = asset("storage/plantillas/{$filename}");
 
             // Redirigir al usuario a la URL de descarga
             redirect()->away($url);

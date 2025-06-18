@@ -227,6 +227,22 @@
         </div>
     </div>
 
+    {{-- Leyenda de estados --}}
+    <div class="flex justify-center">
+        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm px-4 py-2">
+            <div class="flex items-center gap-6 text-sm">
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-gray-400"></div>
+                    <span class="text-gray-600">Sin cita</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-primary-500"></div>
+                    <span class="text-primary-500">Cita Agendada</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- Contenido de las Marcas --}}
     <div>
         @foreach ($marcasInfo as $codigo => $nombre)
@@ -248,58 +264,100 @@
                             @foreach ($currentPaginator->items() as $vehiculo)
                                 <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
                                     <div class="py-4 px-1">
-                                        <div class="flex items-center mb-3">
-                                            <div class="h-16 w-20 rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center border border-gray-200 dark:border-gray-600 mr-3">
-                                                @if(isset($vehiculo['foto_url']))
-                                                    <img src="{{ $vehiculo['foto_url'] }}" alt="Vehículo {{ $vehiculo['modver'] }}" class="h-full w-full object-cover">
-                                                @elseif(Str::contains($vehiculo['modver'], 'COROLLA CROSS'))
-                                                    <img src="{{ asset('images/CorollaCross.jpeg') }}" alt="Vehículo {{ $vehiculo['modver'] }}" class="h-full w-full object-cover">
-                                                @elseif(Str::contains($vehiculo['modver'], 'ETIOS'))
-                                                    <img src="{{ asset('images/Etios.jpeg') }}" alt="Vehículo {{ $vehiculo['modver'] }}" class="h-full w-full object-cover">
-                                                @elseif(Str::contains($vehiculo['modver'], 'YARIS CROSS'))
-                                                    <img src="{{ asset('images/YarisCross.jpeg') }}" alt="Vehículo {{ $vehiculo['modver'] }}" class="h-full w-full object-cover">
-                                                @else
-                                                    <div class="text-center p-1">
-                                                        <img src="{{ asset('images/no-image.svg') }}" alt="Sin imagen" class="h-10 w-10 mx-auto">
-                                                        <span class="text-xs text-gray-500 dark:text-gray-400 block">Sin foto</span>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                            <div class="px-4">
-                                                <h3 class="text-base font-bold text-gray-900 dark:text-white">
-                                                    {{ $vehiculo['modver'] }}
-                                                </h3>
-                                                <div class="text-sm font-medium text-gray-600 dark:text-gray-300">
-                                                    Placa: {{ $vehiculo['numpla'] ?? 'No disponible' }}
+                                        <div class="flex items-center mb-3 justify-between">
+                                            <div class="flex items-center">
+                                                <div class="h-16 w-20 rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center border border-gray-200 dark:border-gray-600 mr-3">
+                                                    @if(isset($vehiculo['foto_url']))
+                                                        <img src="{{ $vehiculo['foto_url'] }}" alt="Vehículo {{ $vehiculo['modver'] }}" class="h-full w-full object-cover">
+                                                    @elseif(Str::contains($vehiculo['modver'], 'COROLLA CROSS'))
+                                                        <img src="{{ asset('images/CorollaCross.jpeg') }}" alt="Vehículo {{ $vehiculo['modver'] }}" class="h-full w-full object-cover">
+                                                    @elseif(Str::contains($vehiculo['modver'], 'ETIOS'))
+                                                        <img src="{{ asset('images/Etios.jpeg') }}" alt="Vehículo {{ $vehiculo['modver'] }}" class="h-full w-full object-cover">
+                                                    @elseif(Str::contains($vehiculo['modver'], 'YARIS CROSS'))
+                                                        <img src="{{ asset('images/YarisCross.jpeg') }}" alt="Vehículo {{ $vehiculo['modver'] }}" class="h-full w-full object-cover">
+                                                    @else
+                                                        <div class="text-center p-1">
+                                                            <img src="{{ asset('images/no-image.svg') }}" alt="Sin imagen" class="h-10 w-10 mx-auto">
+                                                            <span class="text-xs text-gray-500 dark:text-gray-400 block">Sin foto</span>
+                                                        </div>
+                                                    @endif
                                                 </div>
-                                                <div class="text-sm text-gray-600 dark:text-gray-300">
-                                                    Año: {{ $vehiculo['aniomod'] }}
+                                                <div class="px-4">
+                                                    <h3 class="text-base font-bold text-gray-900 dark:text-white">
+                                                        {{ $vehiculo['modver'] }}
+                                                    </h3>
+                                                    <div class="text-sm font-medium text-gray-600 dark:text-gray-300">
+                                                        Placa: {{ $vehiculo['numpla'] ?? 'No disponible' }}
+                                                    </div>
+                                                    <div class="text-sm text-gray-600 dark:text-gray-300">
+                                                        Año: {{ $vehiculo['aniomod'] }}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Círculo indicador de estado de cita -->
+                                            <div class="flex-shrink-0 mr-4">
+                                                @php
+                                                    // Verificar si el vehículo tiene citas agendadas
+                                                    $tieneCitaAgendada = \App\Models\Appointment::where('vehicle_id', $vehiculo['vhclie'])
+                                                        ->whereIn('status', ['pending', 'confirmed'])
+                                                        ->where('appointment_date', '>=', now()->toDateString())
+                                                        ->exists();
+                                                @endphp
+                                                <div class="w-3 h-3 rounded-full {{ $tieneCitaAgendada ? 'bg-green-600' : 'bg-gray-400' }}"
+                                                     title="{{ $tieneCitaAgendada ? 'Cita agendada' : 'Sin cita agendada' }}">
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div class="flex flex-cols-3 justify-between gap-2 mt-3">
-                                            <a href="{{ \App\Filament\Pages\DetalleVehiculo::getUrl(['vehiculoId' => $vehiculo['vhclie'] ?? '']) }}" class="flex-1 gap-1 inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium text-primary-500 bg-white border border-primary-500 rounded hover:bg-gray-50 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">
-                                                <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
-                                                </svg>
-                                                Ver detalle
-                                            </a>
-                                            <button
-                                                wire:click="eliminarVehiculo('{{ $vehiculo['vhclie'] }}')"
-                                                onclick="return confirm('¿Estás seguro de que deseas retirar este vehículo?')"
-                                                class="flex-1 gap-1 inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium text-primary-500 bg-white border border-primary-500 rounded hover:bg-danger-50 focus:ring-2 focus:ring-danger-500 focus:ring-offset-1">
-                                                <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
-                                                </svg>
-                                                Retirar
-                                            </button>
-                                            <a href="{{ route('filament.admin.pages.agendar-cita', ['vehiculoId' => $vehiculo['vhclie'] ?? '']) }}" class="flex-1 gap-1 inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium text-white bg-primary-600 border border-transparent rounded hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">
-                                                <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fill-rule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clip-rule="evenodd" />
-                                                </svg>
-                                                Agendar cita
-                                            </a>
+                                            @if($tieneCitaAgendada)
+                                                <!-- Si tiene cita agendada: Ver detalle es primario, Agendar cita es secundario -->
+                                                <a href="{{ \App\Filament\Pages\DetalleVehiculo::getUrl(['vehiculoId' => $vehiculo['vhclie'] ?? '']) }}" class="flex-1 gap-1 inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium text-white bg-primary-600 border border-transparent rounded hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">
+                                                    <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
+                                                    </svg>
+                                                    Ver detalle
+                                                </a>
+                                                <button
+                                                    wire:click="eliminarVehiculo('{{ $vehiculo['vhclie'] }}')"
+                                                    onclick="return confirm('¿Estás seguro de que deseas retirar este vehículo?')"
+                                                    class="flex-1 gap-1 inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium text-primary-500 bg-white border border-primary-500 rounded hover:bg-danger-50 focus:ring-2 focus:ring-danger-500 focus:ring-offset-1">
+                                                    <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
+                                                    </svg>
+                                                    Retirar
+                                                </button>
+                                                <a href="{{ route('filament.admin.pages.agendar-cita', ['vehiculoId' => $vehiculo['vhclie'] ?? '']) }}" class="flex-1 gap-1 inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium text-primary-500 bg-white border border-primary-500 rounded hover:bg-gray-50 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">
+                                                    <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fill-rule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clip-rule="evenodd" />
+                                                    </svg>
+                                                    Agendar cita
+                                                </a>
+                                            @else
+                                                <!-- Si no tiene cita: Ver detalle es secundario, Agendar cita es primario -->
+                                                <a href="{{ \App\Filament\Pages\DetalleVehiculo::getUrl(['vehiculoId' => $vehiculo['vhclie'] ?? '']) }}" class="flex-1 gap-1 inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium text-primary-500 bg-white border border-primary-500 rounded hover:bg-gray-50 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">
+                                                    <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
+                                                    </svg>
+                                                    Ver detalle
+                                                </a>
+                                                <button
+                                                    wire:click="eliminarVehiculo('{{ $vehiculo['vhclie'] }}')"
+                                                    onclick="return confirm('¿Estás seguro de que deseas retirar este vehículo?')"
+                                                    class="flex-1 gap-1 inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium text-primary-500 bg-white border border-primary-500 rounded hover:bg-danger-50 focus:ring-2 focus:ring-danger-500 focus:ring-offset-1">
+                                                    <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
+                                                    </svg>
+                                                    Retirar
+                                                </button>
+                                                <a href="{{ route('filament.admin.pages.agendar-cita', ['vehiculoId' => $vehiculo['vhclie'] ?? '']) }}" class="flex-1 gap-1 inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium text-white bg-primary-600 border border-transparent rounded hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">
+                                                    <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fill-rule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clip-rule="evenodd" />
+                                                    </svg>
+                                                    Agendar cita
+                                                </a>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -328,6 +386,9 @@
                                             Año
                                         </th>
                                         <th scope="col" class="px-6 py-4 text-center text-xs font-medium text-white uppercase tracking-wider font-semibold">
+                                            Estado
+                                        </th>
+                                        <th scope="col" class="px-6 py-4 text-center text-xs font-medium text-white uppercase tracking-wider font-semibold">
                                             Acciones
                                         </th>
                                     </tr>
@@ -335,6 +396,7 @@
                                 <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
                                     @foreach ($currentPaginator->items() as $vehiculo)
                                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700 transition-colors">
+
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
                                                 <div class="h-14 w-16 rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center border border-gray-200 dark:border-gray-600">
@@ -376,30 +438,71 @@
                                                 </span>
                                             </div>
                                         </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            <!-- Círculo indicador de estado de cita -->
+                                            @php
+                                                // Verificar si el vehículo tiene citas agendadas
+                                                $tieneCitaAgendada = \App\Models\Appointment::where('vehicle_id', $vehiculo['vhclie'])
+                                                    ->whereIn('status', ['pending', 'confirmed'])
+                                                    ->where('appointment_date', '>=', now()->toDateString())
+                                                    ->exists();
+                                            @endphp
+                                            <div class="inline-flex justify-center">
+                                                <div class="w-3 h-3 rounded-full {{ $tieneCitaAgendada ? 'bg-green-600' : 'bg-gray-400' }}"
+                                                     title="{{ $tieneCitaAgendada ? 'Cita agendada' : 'Sin cita agendada' }}">
+                                                </div>
+                                            </div>
+                                        </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex flex-wrap gap-2 justify-end">
                                                 <!-- Botones de acción -->
-                                                <a href="{{ \App\Filament\Pages\DetalleVehiculo::getUrl(['vehiculoId' => $vehiculo['vhclie'] ?? '']) }}" class="inline-flex items-center justify-center w-32 px-1 py-1 text-xs font-medium text-primary-500 bg-white rounded hover:bg-gray-50 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">
-                                                    <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
-                                                    </svg>
-                                                    Ver detalle
-                                                </a>
-                                                <button
-                                                    wire:click="eliminarVehiculo('{{ $vehiculo['vhclie'] }}')"
-                                                    onclick="return confirm('¿Estás seguro de que deseas retirar este vehículo?')"
-                                                    class="inline-flex items-center justify-center w-32 px-1 py-1 text-xs font-medium text-primary-500 bg-white rounded hover:bg-danger-50 focus:ring-2 focus:ring-danger-500 focus:ring-offset-1">
-                                                    <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
-                                                    </svg>
-                                                    Retirar
-                                                </button>
-                                                <a href="{{ route('filament.admin.pages.agendar-cita', ['vehiculoId' => $vehiculo['vhclie'] ?? '']) }}" class="inline-flex items-center justify-center w-32 px-1 py-1 text-xs font-medium text-white bg-primary-600 border border-transparent rounded hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">
-                                                    <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fill-rule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-1.25H4.75z" clip-rule="evenodd" />
-                                                    </svg>
-                                                    Agendar cita
-                                                </a>
+                                                @if($tieneCitaAgendada)
+                                                    <!-- Si tiene cita agendada: Ver detalle es primario, Agendar cita es secundario -->
+                                                    <a href="{{ \App\Filament\Pages\DetalleVehiculo::getUrl(['vehiculoId' => $vehiculo['vhclie'] ?? '']) }}" class="inline-flex items-center justify-center w-32 px-1 py-1 text-xs font-medium text-white bg-primary-600 border border-transparent rounded hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">
+                                                        <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
+                                                        </svg>
+                                                        Ver detalle
+                                                    </a>
+                                                    <button
+                                                        wire:click="eliminarVehiculo('{{ $vehiculo['vhclie'] }}')"
+                                                        onclick="return confirm('¿Estás seguro de que deseas retirar este vehículo?')"
+                                                        class="inline-flex items-center justify-center w-32 px-1 py-1 text-xs font-medium text-primary-500 bg-white rounded hover:bg-danger-50 focus:ring-2 focus:ring-danger-500 focus:ring-offset-1">
+                                                        <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
+                                                        </svg>
+                                                        Retirar
+                                                    </button>
+                                                    <a href="{{ route('filament.admin.pages.agendar-cita', ['vehiculoId' => $vehiculo['vhclie'] ?? '']) }}" class="inline-flex items-center justify-center w-32 px-1 py-1 text-xs font-medium text-primary-500 bg-white rounded hover:bg-gray-50 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">
+                                                        <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fill-rule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clip-rule="evenodd" />
+                                                        </svg>
+                                                        Agendar cita
+                                                    </a>
+                                                @else
+                                                    <!-- Si no tiene cita: Ver detalle es secundario, Agendar cita es primario -->
+                                                    <a href="{{ \App\Filament\Pages\DetalleVehiculo::getUrl(['vehiculoId' => $vehiculo['vhclie'] ?? '']) }}" class="inline-flex items-center justify-center w-32 px-1 py-1 text-xs font-medium text-primary-500 bg-white rounded hover:bg-gray-50 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">
+                                                        <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
+                                                        </svg>
+                                                        Ver detalle
+                                                    </a>
+                                                    <button
+                                                        wire:click="eliminarVehiculo('{{ $vehiculo['vhclie'] }}')"
+                                                        onclick="return confirm('¿Estás seguro de que deseas retirar este vehículo?')"
+                                                        class="inline-flex items-center justify-center w-32 px-1 py-1 text-xs font-medium text-primary-500 bg-white rounded hover:bg-danger-50 focus:ring-2 focus:ring-danger-500 focus:ring-offset-1">
+                                                        <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
+                                                        </svg>
+                                                        Retirar
+                                                    </button>
+                                                    <a href="{{ route('filament.admin.pages.agendar-cita', ['vehiculoId' => $vehiculo['vhclie'] ?? '']) }}" class="inline-flex items-center justify-center w-32 px-1 py-1 text-xs font-medium text-white bg-primary-600 border border-transparent rounded hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">
+                                                        <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fill-rule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clip-rule="evenodd" />
+                                                        </svg>
+                                                        Agendar cita
+                                                    </a>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>

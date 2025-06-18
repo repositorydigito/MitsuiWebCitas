@@ -33,6 +33,12 @@
                 <thead class="bg-primary-600">
                     <tr>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                            Código
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                            Tipo
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                             Modelo
                         </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
@@ -55,6 +61,12 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse ($this->vehiculosPaginados as $index => $vehiculo)
                         <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-gray-100">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ $vehiculo['code'] ?? '-' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ $vehiculo['type'] ?? '-' }}
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ $vehiculo['model'] }}
                             </td>
@@ -115,7 +127,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+                            <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">
                                 <div class="flex flex-col items-center justify-center py-6">
                                     <svg class="w-8 h-8 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -232,6 +244,30 @@
                         </h3>
                         <div class="w-full">
                             <div class="flex flex-col space-y-4">
+                                <!-- Campo Código -->
+                                <div class="flex flex-col">
+                                    <label for="code" class="text-sm font-medium text-gray-700 mb-1">Código</label>
+                                    <input
+                                        type="text"
+                                        id="code"
+                                        wire:model.live="vehiculoEnEdicion.code"
+                                        class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                        placeholder="Ingrese el código"
+                                    >
+                                </div>
+
+                                <!-- Campo Tipo -->
+                                <div class="flex flex-col">
+                                    <label for="type" class="text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                                    <input
+                                        type="text"
+                                        id="type"
+                                        wire:model.live="vehiculoEnEdicion.type"
+                                        class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                        placeholder="Ingrese el tipo"
+                                    >
+                                </div>
+
                                 <!-- Campo Modelo -->
                                 <div class="flex flex-col">
                                     <label for="model" class="text-sm font-medium text-gray-700 mb-1">Modelo</label>

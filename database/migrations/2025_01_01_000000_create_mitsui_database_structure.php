@@ -133,6 +133,8 @@ return new class extends Migration
         // Tabla de servicios express (vehicles_express)
         Schema::create('vehicles_express', function (Blueprint $table) {
             $table->id();
+            $table->string('code')->nullable(); // Código del servicio express
+            $table->string('type')->nullable(); // Tipo del servicio express
             $table->string('model'); // Modelo del vehículo
             $table->string('brand'); // Marca del vehículo
             $table->year('year'); // Año del vehículo

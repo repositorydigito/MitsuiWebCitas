@@ -26,7 +26,7 @@
         /* Panel izquierdo - Branding */
         .left-panel {
             flex: 1;
-            background-image: url('{{ asset('images/cover.jpg') }}');
+            background-image: url('{{ asset('images/portadaMitsui.png') }}');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -178,7 +178,7 @@
             }
 
             .left-panel {
-                flex: 0 0 200px;
+                display:none;
             }
 
             .right-panel {

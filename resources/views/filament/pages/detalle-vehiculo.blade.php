@@ -168,26 +168,29 @@
                             <!-- Sección Datos -->
                             <div class="mb-4 md:mb-0 md:w-1/3">
                                 <div class="bg-blue-50 p-3 rounded-lg">
-                                    <div class="text-xs font-medium text-blue-800 mb-4">Datos de la cita</div>
+                                    <!-- <div class="text-xs font-medium text-blue-800 mb-4">Datos de la cita</div> -->
                                     <div class="space-y-2">
                                         <div class="flex justify-between">
-                                            <span class="text-xs font-medium text-blue-800">Probable entrega:</span>
+                                            <span class="text-xs font-medium text-blue-800">Fecha probable de entrega:</span>
                                             <span class="text-xs text-gray-600">-</span>
                                         </div>
+                                        
+                                        <div class="flex justify-between">
+                                            <span class="text-xs font-medium text-blue-800">Hora estimada:</span>
+                                            <span class="text-xs text-gray-600">-</span>
+                                        </div>
+                                        
+                                        <div class="flex justify-between">
+                                            <span class="text-xs font-medium text-blue-800">Sede:</span>
+                                            <span class="text-xs text-gray-600">-</span>
+                                        </div>
+                                        <br>
                                         <div class="flex justify-between">
                                             <span class="text-xs font-medium text-blue-800">Asesor:</span>
                                             <span class="text-xs text-gray-600">-</span>
                                         </div>
                                         <div class="flex justify-between">
-                                            <span class="text-xs font-medium text-blue-800">Hora:</span>
-                                            <span class="text-xs text-gray-600">-</span>
-                                        </div>
-                                        <div class="flex justify-between">
                                             <span class="text-xs font-medium text-blue-800">WhatsApp:</span>
-                                            <span class="text-xs text-gray-600">-</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span class="text-xs font-medium text-blue-800">Sede:</span>
                                             <span class="text-xs text-gray-600">-</span>
                                         </div>
                                         <div class="flex justify-between">

@@ -279,7 +279,7 @@
                                 wire:model.live="tipoMantenimiento"
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50"
                             >
-                                <option value="">Seleccione un mantenimiento</option>
+                                <option value="">Selecciona un mantenimiento</option>
                                 @foreach($tiposMantenimientoDisponibles as $id => $nombre)
                                     <option value="{{ $nombre }}">{{ $nombre }}</option>
                                 @endforeach
@@ -296,6 +296,7 @@
                                     </div>
                                 @endforeach
                             </div>
+
                         </div>
                     @else
                         <div class="mt-6 mb-4">
@@ -305,7 +306,7 @@
                                 disabled
                                 class="w-full rounded-md border-gray-300 shadow-sm bg-gray-100 text-gray-400 cursor-not-allowed"
                             >
-                                <option value="">Seleccione un mantenimiento</option>
+                                <option value="">Selecciona un mantenimiento</option>
                             </select>
                         </div>
 
@@ -334,8 +335,8 @@
                             >
                         </div>
                         <div class="p-3">
-                            <label for="servicio-consultas-1" class="font-medium text-gray-700">Campañas / otros</label>
-                            <p class="text-gray-500 text-xs">Servicio en base a pedido del cliente (Ej: lavado)</p>
+                            <label for="servicio-consultas-1" class="font-medium text-gray-700">Otros Servicios</label>
+                            <p class="text-gray-500 text-xs">Servicio en base a pedido del cliente (Ej: lavado, lubriexpress)</p>
                         </div>
                     </div>
 
@@ -343,13 +344,13 @@
                     @if (in_array('Campañas / otros', $serviciosSeleccionados))
                         @if(count($serviciosAdicionalesDisponibles) > 0)
                             <div class="mb-6">
-                                <label for="servicioAdicional" class="block text-sm font-medium text-gray-700 mb-2">Servicios adicionales disponibles</label>
+                                <label for="servicioAdicional" class="block text-sm font-medium text-gray-700 mb-2">Elige una opción</label>
                                 <select
                                     id="servicioAdicional"
                                     wire:model.live="servicioAdicionalSeleccionado"
                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50"
                                 >
-                                    <option value="">Selecciona un adicional</option>
+                                    <option value="">Selecciona otro servicio</option>
                                     @foreach($serviciosAdicionalesDisponibles as $id => $nombre)
                                         <option value="servicio_{{ $id }}">{{ $nombre }}</option>
                                     @endforeach
@@ -359,13 +360,13 @@
                     @else
                         @if(count($serviciosAdicionalesDisponibles) > 0)
                             <div class="mb-6">
-                                <label for="servicioAdicional" class="block text-sm font-medium text-gray-400 mb-2">Servicios adicionales disponibles</label>
+                                <label for="servicioAdicional" class="block text-sm font-medium text-gray-400 mb-2">Elige una opción</label>
                                 <select
                                     id="servicioAdicional"
                                     disabled
                                     class="w-full rounded-md border-gray-300 shadow-sm bg-gray-100 text-gray-400 cursor-not-allowed"
                                 >
-                                    <option value="">Selecciona un adicional</option>
+                                    <option value="">Selecciona otro servicio</option>
                                 </select>
                             </div>
                         @endif
@@ -404,7 +405,7 @@
 
         <!-- Servicios adicionales -->
         <div class="mb-4">
-            <h2 class="text-xl font-semibold mb-4">5. Elige un servicio adicional (opcional)</h2>
+            <h2 class="text-xl font-semibold mb-4">5. Elige entre nuestras campañas del mes (opcional)</h2>
 
             <!-- Estilos para el carrusel -->
             <style>
@@ -640,7 +641,17 @@
                     <div class="space-y-3">
                         <div class="bg-gray-50 p-3 rounded-lg">
                             <div class="text-sm font-medium text-info-800 mb-1">Local</div>
-                            <div class="text-gray-800">{{ !empty($localSeleccionado) && isset($locales[$localSeleccionado]) ? $locales[$localSeleccionado]['nombre'] : 'No seleccionado' }}</div>
+                            <div class="text-gray-800 mb-2">{{ !empty($localSeleccionado) && isset($locales[$localSeleccionado]) ? $locales[$localSeleccionado]['nombre'] : 'No seleccionado' }}</div>
+                            <div class="text-sm font-medium text-primary-800 mb-1">Fecha y hora</div>
+                            <div class="text-gray-800 mb-2">{{ $fechaSeleccionada ?: 'No seleccionada' }} - {{ $horaSeleccionada ?: 'No seleccionada' }}</div>
+                            <div class="text-sm font-medium text-primary-800 mb-1">Servicios</div>
+                            <div class="text-gray-800">
+                                @if(count($serviciosSeleccionados) > 0)
+                                    {{ implode(', ', $serviciosSeleccionados) }}
+                                @else
+                                    No seleccionado
+                                @endif
+                            </div>
                         </div>
 
                         <div class="bg-gray-50 p-3 rounded-lg">

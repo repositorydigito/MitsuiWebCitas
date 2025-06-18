@@ -26,7 +26,7 @@
         /* Panel izquierdo - Branding */
         .left-panel {
             flex: 1;
-            background-image: url('{{ asset('images/cover.jpg') }}');
+            background-image: url('{{ asset('images/portadaMitsui.png') }}');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -197,10 +197,6 @@
             .left-panel {
                 display: none;
             }
-
-            .right-panel {
-                background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
-            }
         }
         
         /* Sobrescribir estilos de Filament */
@@ -258,24 +254,20 @@
                 <p class="form-subtitle text-center">Ingresa tus credenciales para acceder al sistema</p>
 
                 <!-- Formulario -->
-                <x-filament-panels::form wire:submit="{{ $showPasswordField ? 'authenticate' : 'checkUser' }}">
+                <x-filament-panels::form wire:submit="authenticate">
                     {{ $this->form }}
 
-                    <div class="mt-6">
-                        @if(!$showPasswordField)
-                            <!-- Botón Entrar para verificar usuario -->
-                            <button type="submit"
-                                    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2"
-                                    style="background-color: #0075BF;">
-                                Entrar
-                            </button>
-                        @else
-                            <!-- Botones normales cuando se muestra contraseña -->
-                            <x-filament-panels::form.actions
-                                :actions="$this->getCachedFormActions()"
-                                :full-width="$this->hasFullWidthFormActions()"
-                            />
-                        @endif
+                    <div class="mt-6 flex gap-2">
+                        <button type="submit"
+                                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2"
+                                style="background-color: #0075BF;">
+                            Entrar
+                        </button>
+                        <a href="{{ route('auth.create-password') }}"
+                           class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2"
+                           style="background-color: #6c757d; text-align:center; text-decoration:none;">
+                            Crear cuenta
+                        </a>
                     </div>
                 </x-filament-panels::form>
             </div>
@@ -311,4 +303,4 @@
             });
         });
     </script>
-</div> 
+</div>
