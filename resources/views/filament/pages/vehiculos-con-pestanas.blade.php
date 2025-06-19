@@ -264,7 +264,7 @@
                             @foreach ($currentPaginator->items() as $vehiculo)
                                 <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
                                     <div class="py-4 px-1">
-                                        <div class="flex items-center mb-3 justify-between">
+                                        <div class="flex items-start mb-3 justify-between">
                                             <div class="flex items-center">
                                                 <div class="h-16 w-20 rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center border border-gray-200 dark:border-gray-600 mr-3">
                                                     @if(isset($vehiculo['foto_url']))
@@ -296,7 +296,7 @@
                                             </div>
 
                                             <!-- Círculo indicador de estado de cita -->
-                                            <div class="flex-shrink-0 pb-6">
+                                            <div class="flex-shrink-0">
                                                 @php
                                                     // Verificar si el vehículo tiene citas agendadas
                                                     $tieneCitaAgendada = \App\Models\Appointment::where('vehicle_id', $vehiculo['vhclie'])

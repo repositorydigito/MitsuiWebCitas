@@ -292,11 +292,20 @@
                                 @foreach($modalidadesDisponibles as $value => $label)
                                     <div class="flex items-center">
                                         <input type="radio" id="modalidad-{{ $loop->index }}" name="modalidad" value="{{ $value }}" wire:model="modalidadServicio" class="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500">
-                                        <label for="modalidad-{{ $loop->index }}" class="p-2 text-sm text-gray-700">{{ $label }}</label>
+                                        <label for="modalidad-{{ $loop->index }}" class="p-2 text-sm text-gray-700">
+                                            @if($value === 'Mantenimiento Express')
+                                                Mantenimiento Express
+                                                @if($tipoExpress)
+                                                    <br>
+                                                    <span class="text-xs text-gray-500">({{ $tipoExpress }})</span>
+                                                @endif
+                                            @else
+                                                {{ $label }}
+                                            @endif
+                                        </label>
                                     </div>
                                 @endforeach
                             </div>
-
                         </div>
                     @else
                         <div class="mt-6 mb-4">
@@ -352,7 +361,9 @@
                                 >
                                     <option value="">Selecciona otro servicio</option>
                                     @foreach($serviciosAdicionalesDisponibles as $id => $nombre)
-                                        <option value="servicio_{{ $id }}">{{ $nombre }}</option>
+                                        @if (stripos($nombre, 'campaña') === false && stripos($nombre, 'campana') === false)
+                                            <option value="servicio_{{ $id }}">{{ $nombre }}</option>
+                                        @endif
                                     @endforeach
                                 </select>
                             </div>
@@ -474,27 +485,29 @@
                         activeSlide: 0,
                         totalSlides: {{ count($campanasDisponibles) }},
                         slidesPerView: window.innerWidth < 768 ? 1 : 3,
-
+                        campanaSeleccionada: @entangle('campanaSeleccionada'),
+                        campanas: @js($campanasDisponibles),
+                        getTituloSeleccionado() {
+                            const campana = this.campanas.find(c => c.id == this.campanaSeleccionada);
+                            return campana ? campana.titulo : 'Ninguna';
+                        },
                         init() {
                             window.addEventListener('resize', () => {
                                 this.slidesPerView = window.innerWidth < 768 ? 1 : 3;
                             });
                         },
-
                         next() {
                             if (this.activeSlide < this.totalSlides - this.slidesPerView) {
                                 this.activeSlide++;
                                 this.scrollToSlide();
                             }
                         },
-
                         prev() {
                             if (this.activeSlide > 0) {
                                 this.activeSlide--;
                                 this.scrollToSlide();
                             }
                         },
-
                         scrollToSlide() {
                             const container = this.$refs.carousel;
                             const slideWidth = container.offsetWidth / this.slidesPerView;
@@ -506,22 +519,15 @@
                     }" x-init="init()" class="carousel-container">
                         <div x-ref="carousel" class="carousel-items">
                             @foreach($campanasDisponibles as $index => $campana)
-                                <div class="carousel-item" x-data="{ selected: {{ in_array('campana_'.$campana['id'], $serviciosAdicionales) ? 'true' : 'false' }} }" wire:key="campana-{{ $campana['id'] }}">
+                                <div class="carousel-item" wire:key="campana-{{ $campana['id'] }}">
                                     <div
                                         class="border rounded-lg overflow-hidden cursor-pointer"
-                                        :class="selected ? 'border-primary-500 border-2' : 'border-gray-300'"
-                                        @click="
-                                            selected = !selected;
-                                            if (selected) {
-                                                $wire.serviciosAdicionales = [...$wire.serviciosAdicionales, 'campana_{{ $campana['id'] }}'];
-                                            } else {
-                                                $wire.serviciosAdicionales = $wire.serviciosAdicionales.filter(item => item !== 'campana_{{ $campana['id'] }}');
-                                            }
-                                        "
+                                        :class="campanaSeleccionada == '{{ $campana['id'] }}' ? 'border-primary-500 border-2' : 'border-gray-300'"
+                                        @click="campanaSeleccionada = '{{ $campana['id'] }}'"
                                     >
                                         <img src="{{ $campana['imagen'] }}" alt="{{ $campana['titulo'] }}" class="w-full h-96 object-cover" loading="lazy">
-                                        <div class="p-2" :class="selected ? 'bg-primary-100' : ''">
-                                            <h4 class="text-sm font-medium" :class="selected ? 'text-primary-800' : ''">{{ $campana['titulo'] }}</h4>
+                                        <div class="p-2" :class="campanaSeleccionada == '{{ $campana['id'] }}' ? 'bg-primary-100' : ''">
+                                            <h4 class="text-sm font-medium" :class="campanaSeleccionada == '{{ $campana['id'] }}' ? 'text-primary-800' : ''">{{ $campana['titulo'] }}</h4>
                                             <p class="text-xs text-gray-400 mt-1">
                                                 @if(isset($campana['fecha_fin']))
                                                     Válido hasta: {{ \Carbon\Carbon::parse($campana['fecha_fin'])->format('d/m/Y') }}
@@ -529,21 +535,11 @@
                                                     Campaña permanente
                                                 @endif
                                             </p>
-                                        </div>
-                                        <div
-                                            class="absolute top-2 left-2 bg-primary-500 text-white rounded-full p-1"
-                                            x-show="selected"
-                                            style="display: none;"
-                                        >
-                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                            </svg>
-                                        </div>
+                                        </div>                                        
                                     </div>
                                 </div>
                             @endforeach
                         </div>
-
                         <!-- Botones de navegación -->
                         <div @click="prev()" x-show="activeSlide > 0" class="carousel-nav carousel-nav-left">
                             <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -554,6 +550,10 @@
                             <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                             </svg>
+                        </div>
+                        <div class="mt-4 text-center">
+                            <span class="font-semibold">Campaña seleccionada: </span>
+                            <span class="text-primary-700" x-text="getTituloSeleccionado()"></span>
                         </div>
                     </div>
                 </div>
@@ -604,15 +604,9 @@
 
                     <div class="space-y-3">
                         <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="text-gray-800">{{ $nombreCliente }} {{ $apellidoCliente }}</div>
-                        </div>
-
-                        <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="text-gray-800">{{ $celularCliente }}</div>
-                        </div>
-
-                        <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="text-gray-800">{{ $emailCliente }}</div>
+                            <div class="text-gray-800 mb-1">{{ $nombreCliente }} {{ $apellidoCliente }}</div>
+                            <div class="text-gray-800 mb-1">{{ $celularCliente }}</div>
+                            <div class="text-gray-800 mb-1">{{ $emailCliente }}</div>
                         </div>
                     </div>
                 </div>
@@ -623,12 +617,9 @@
 
                     <div class="space-y-3">
                         <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="text-sm font-medium text-success-800 mb-1">Modelo</div>
-                            <div class="text-gray-800">{{ $vehiculo['modelo'] ?: 'No especificado' }}</div>
-                        </div>
-
-                        <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="text-sm font-medium text-success-800 mb-1">Placa</div>
+                            <div class="text-sm font-bold text-success-800 mb-1">Modelo</div>
+                            <div class="text-gray-800 mb-2">{{ $vehiculo['modelo'] ?: 'No especificado' }}</div>
+                            <div class="text-sm font-bold text-success-800 mb-1">Placa</div>
                             <div class="text-gray-800">{{ $vehiculo['placa'] ?: 'No especificado' }}</div>
                         </div>
                     </div>
@@ -640,51 +631,53 @@
 
                     <div class="space-y-3">
                         <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="text-sm font-medium text-info-800 mb-1">Local</div>
-                            <div class="text-gray-800 mb-2">{{ !empty($localSeleccionado) && isset($locales[$localSeleccionado]) ? $locales[$localSeleccionado]['nombre'] : 'No seleccionado' }}</div>
-                            <div class="text-sm font-medium text-primary-800 mb-1">Fecha y hora</div>
+                            <div class="text-sm font-bold text-info-800 mb-1">Local</div>
+                            <div class="text-gray-800 mb-2">
+                                @php
+                                    $indiceLocal = (isset($localSeleccionado) && is_scalar($localSeleccionado) && $localSeleccionado !== '' && $localSeleccionado !== null) ? $localSeleccionado : null;
+                                @endphp
+                                @if($indiceLocal !== null && isset($locales[$indiceLocal]['nombre']))
+                                    {{ $locales[$indiceLocal]['nombre'] }}
+                                @else
+                                    No seleccionado
+                                @endif
+                            </div>
+                            <div class="text-sm font-bold text-primary-800 mb-1">Fecha y hora</div>
                             <div class="text-gray-800 mb-2">{{ $fechaSeleccionada ?: 'No seleccionada' }} - {{ $horaSeleccionada ?: 'No seleccionada' }}</div>
-                            <div class="text-sm font-medium text-primary-800 mb-1">Servicios</div>
-                            <div class="text-gray-800">
+                            <div class="text-sm font-bold text-primary-800 mb-1">Servicios</div>
+                            <div class="text-gray-800 mb-2">
                                 @if(count($serviciosSeleccionados) > 0)
                                     {{ implode(', ', $serviciosSeleccionados) }}
                                 @else
                                     No seleccionado
                                 @endif
                             </div>
-                        </div>
+                            @if (in_array('Mantenimiento periódico', $serviciosSeleccionados))
+                                <div class="bg-gray-50">
+                                    <div class="text-sm font-bold text-primary-800 mb-1">Tipo de Mantenimiento</div>
+                                    <div class="text-gray-800 mb-2">{{ $tipoMantenimiento ?: 'No seleccionado' }}</div>
+                                </div>
 
-                        <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="text-sm font-medium text-primary-800 mb-1">Fecha y hora</div>
-                            <div class="text-gray-800">{{ $fechaSeleccionada ?: 'No seleccionada' }} - {{ $horaSeleccionada ?: 'No seleccionada' }}</div>
-                        </div>
+                                <div class="bg-gray-50">
+                                    <div class="text-sm font-bold text-primary-800 mb-1">Modalidad</div>
+                                    <div class="text-gray-800 mb-2">{{ $modalidadServicio ?: 'No seleccionado' }}</div>
+                                </div>
+                            @endif
 
-                        <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="text-sm font-medium text-primary-800 mb-1">Servicios</div>
-                            <div class="text-gray-800">
-                                @if(count($serviciosSeleccionados) > 0)
-                                    {{ implode(', ', $serviciosSeleccionados) }}
+                            <div class="text-sm font-bold text-primary-800 mb-1">Campaña seleccionada</div>
+                            <div class="text-gray-800 mb-2">
+                                @if(!empty($campanaSeleccionada))
+                                    @php
+                                        $campana = collect($campanasDisponibles)->firstWhere('id', $campanaSeleccionada);
+                                    @endphp
+                                    {{ $campana['titulo'] ?? 'No seleccionado' }}
                                 @else
                                     No seleccionado
                                 @endif
                             </div>
-                        </div>
 
-                        @if (in_array('Mantenimiento periódico', $serviciosSeleccionados))
-                            <div class="bg-gray-50 p-3 rounded-lg">
-                                <div class="text-sm font-medium text-primary-800 mb-1">Tipo de Mantenimiento</div>
-                                <div class="text-gray-800">{{ $tipoMantenimiento ?: 'No seleccionado' }}</div>
-                            </div>
-
-                            <div class="bg-gray-50 p-3 rounded-lg">
-                                <div class="text-sm font-medium text-primary-800 mb-1">Modalidad</div>
-                                <div class="text-gray-800">{{ $modalidadServicio ?: 'No seleccionado' }}</div>
-                            </div>
-                        @endif
-
-                        <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="text-sm font-medium text-primary-800 mb-1">Adicionales</div>
-                            <div class="text-gray-800">
+                            <div class="text-sm font-bold text-primary-800 mb-1">Adicionales</div>
+                            <div class="text-gray-800 mb-2">
                                 @if(count($serviciosAdicionales) > 0)
                                     @foreach ($serviciosAdicionales as $servicio)
                                         {{ $opcionesServiciosAdicionales[$servicio] ?? $servicio }}@if (!$loop->last), @endif
@@ -693,11 +686,10 @@
                                     Ninguno
                                 @endif
                             </div>
-                        </div>
 
-                        <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="text-sm font-medium text-primary-800 mb-1">Comentario</div>
-                            <div class="text-gray-800">{{ $comentarios ?: 'Sin comentarios' }}</div>
+                            <div class="text-sm font-bold text-primary-800 mb-1">Comentario</div>
+                            <div class="text-gray-800 mb-2">{{ $comentarios ?: 'Sin comentarios' }}</div>
+                           
                         </div>
                     </div>
                 </div>
@@ -750,31 +742,22 @@
 
                     <div class="space-y-3">
                         <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="text-gray-800">{{ $nombreCliente }} {{ $apellidoCliente }}</div>
-                        </div>
-
-                        <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="text-gray-800">{{ $celularCliente }}</div>
-                        </div>
-
-                        <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="text-gray-800">{{ $emailCliente }}</div>
+                            <div class="text-gray-800 mb-1">{{ $nombreCliente }} {{ $apellidoCliente }}</div>
+                            <div class="text-gray-800 mb-1">{{ $celularCliente }}</div>
+                            <div class="text-gray-800 mb-1">{{ $emailCliente }}</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Datos del vehículo -->
                 <div class="mb-4">
-                    <h3 class="font-medium text-primary-700 text-lg border-b border-gray-200 pb-2 mb-4">Datos del vehículo</h3>
+                    <h3 class="font-medium text-success-700 text-lg border-b border-gray-200 pb-2 mb-4">Datos del vehículo</h3>
 
                     <div class="space-y-3">
                         <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="text-sm font-medium text-primary-800 mb-1">Modelo</div>
-                            <div class="text-gray-800">{{ $vehiculo['modelo'] ?: 'No especificado' }}</div>
-                        </div>
-
-                        <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="text-sm font-medium text-primary-800 mb-1">Placa</div>
+                            <div class="text-sm font-bold text-success-800 mb-1">Modelo</div>
+                            <div class="text-gray-800 mb-2">{{ $vehiculo['modelo'] ?: 'No especificado' }}</div>
+                            <div class="text-sm font-bold text-success-800 mb-1">Placa</div>
                             <div class="text-gray-800">{{ $vehiculo['placa'] ?: 'No especificado' }}</div>
                         </div>
                     </div>
@@ -782,45 +765,57 @@
 
                 <!-- Datos de la cita -->
                 <div class="mb-4">
-                    <h3 class="font-medium text-primary-700 text-lg border-b border-gray-200 pb-2 mb-4">Datos de la cita</h3>
+                    <h3 class="font-medium text-info-700 text-lg border-b border-gray-200 pb-2 mb-4">Datos de la cita</h3>
 
                     <div class="space-y-3">
                         <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="text-sm font-medium text-primary-800 mb-1">Local</div>
-                            <div class="text-gray-800">{{ !empty($localSeleccionado) && isset($locales[$localSeleccionado]) ? $locales[$localSeleccionado]['nombre'] : 'No seleccionado' }}</div>
-                        </div>
-
-                        <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="text-sm font-medium text-primary-800 mb-1">Fecha y hora</div>
-                            <div class="text-gray-800">{{ $fechaSeleccionada ?: 'No seleccionada' }} - {{ $horaSeleccionada ?: 'No seleccionada' }}</div>
-                        </div>
-
-                        <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="text-sm font-medium text-primary-800 mb-1">Servicios</div>
-                            <div class="text-gray-800">
+                            <div class="text-sm font-bold text-info-800 mb-1">Local</div>
+                            <div class="text-gray-800 mb-2">
+                                @php
+                                    $indiceLocal = (isset($localSeleccionado) && is_scalar($localSeleccionado) && $localSeleccionado !== '' && $localSeleccionado !== null) ? $localSeleccionado : null;
+                                @endphp
+                                @if($indiceLocal !== null && isset($locales[$indiceLocal]['nombre']))
+                                    {{ $locales[$indiceLocal]['nombre'] }}
+                                @else
+                                    No seleccionado
+                                @endif
+                            </div>
+                            <div class="text-sm font-bold text-primary-800 mb-1">Fecha y hora</div>
+                            <div class="text-gray-800 mb-2">{{ $fechaSeleccionada ?: 'No seleccionada' }} - {{ $horaSeleccionada ?: 'No seleccionada' }}</div>
+                            <div class="text-sm font-bold text-primary-800 mb-1">Servicios</div>
+                            <div class="text-gray-800 mb-2">
                                 @if(count($serviciosSeleccionados) > 0)
                                     {{ implode(', ', $serviciosSeleccionados) }}
                                 @else
                                     No seleccionado
                                 @endif
                             </div>
-                        </div>
+                            @if (in_array('Mantenimiento periódico', $serviciosSeleccionados))
+                                <div class="bg-gray-50">
+                                    <div class="text-sm font-bold text-primary-800 mb-1">Tipo de Mantenimiento</div>
+                                    <div class="text-gray-800 mb-2">{{ $tipoMantenimiento ?: 'No seleccionado' }}</div>
+                                </div>
 
-                        @if (in_array('Mantenimiento periódico', $serviciosSeleccionados))
-                            <div class="bg-gray-50 p-3 rounded-lg">
-                                <div class="text-sm font-medium text-primary-800 mb-1">Tipo de Mantenimiento</div>
-                                <div class="text-gray-800">{{ $tipoMantenimiento ?: 'No seleccionado' }}</div>
+                                <div class="bg-gray-50">
+                                    <div class="text-sm font-bold text-primary-800 mb-1">Modalidad</div>
+                                    <div class="text-gray-800 mb-2">{{ $modalidadServicio ?: 'No seleccionado' }}</div>
+                                </div>
+                            @endif
+
+                            <div class="text-sm font-bold text-primary-800 mb-1">Campaña seleccionada</div>
+                            <div class="text-gray-800 mb-2">
+                                @if(!empty($campanaSeleccionada))
+                                    @php
+                                        $campana = collect($campanasDisponibles)->firstWhere('id', $campanaSeleccionada);
+                                    @endphp
+                                    {{ $campana['titulo'] ?? 'No seleccionado' }}
+                                @else
+                                    No seleccionado
+                                @endif
                             </div>
 
-                            <div class="bg-gray-50 p-3 rounded-lg">
-                                <div class="text-sm font-medium text-primary-800 mb-1">Modalidad</div>
-                                <div class="text-gray-800">{{ $modalidadServicio ?: 'No seleccionado' }}</div>
-                            </div>
-                        @endif
-
-                        <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="text-sm font-medium text-primary-800 mb-1">Adicionales</div>
-                            <div class="text-gray-800">
+                            <div class="text-sm font-bold text-primary-800 mb-1">Adicionales</div>
+                            <div class="text-gray-800 mb-2">
                                 @if(count($serviciosAdicionales) > 0)
                                     @foreach ($serviciosAdicionales as $servicio)
                                         {{ $opcionesServiciosAdicionales[$servicio] ?? $servicio }}@if (!$loop->last), @endif
@@ -829,11 +824,10 @@
                                     Ninguno
                                 @endif
                             </div>
-                        </div>
 
-                        <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="text-sm font-medium text-primary-800 mb-1">Comentario</div>
-                            <div class="text-gray-800">{{ $comentarios ?: 'Sin comentarios' }}</div>
+                            <div class="text-sm font-bold text-primary-800 mb-1">Comentario</div>
+                            <div class="text-gray-800 mb-2">{{ $comentarios ?: 'Sin comentarios' }}</div>
+                           
                         </div>
                     </div>
                 </div>
@@ -996,7 +990,6 @@
                     
                     <!-- Título más atractivo -->
                     <h3 class="text-xl font-bold text-gray-900 mb-2">🚗 Confirmando tu cita</h3>
-                    <p class="text-sm text-gray-600 mb-6 leading-relaxed">{{ $citaMessage }}</p>
                     
                     <!-- Barra de progreso moderna -->
                     <div class="w-full bg-gray-200 rounded-full h-3 mb-4 shadow-inner">
@@ -1184,19 +1177,19 @@
                             <ul class="text-xs text-blue-700 space-y-1 text-left">
                                 <li class="flex items-center">
                                     <svg class="w-3 h-3 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                                    </svg>
-                                    Recibirás una confirmación por WhatsApp
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L9.414 11H13a1 1 0 100-2H9.414l1.293-1.293z" clip-rule="evenodd"></path>
+                                </svg>
+                                Recibirás una confirmación por WhatsApp
                                 </li>
                                 <li class="flex items-center">
                                     <svg class="w-3 h-3 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L9.414 11H13a1 1 0 100-2H9.414l1.293-1.293z" clip-rule="evenodd"></path>
                                     </svg>
                                     Te recordaremos 1 día antes de tu cita
                                 </li>
                                 <li class="flex items-center">
                                     <svg class="w-3 h-3 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L9.414 11H13a1 1 0 100-2H9.414l1.293-1.293z" clip-rule="evenodd"></path>
                                     </svg>
                                     Lleva tu vehículo en la fecha programada
                                 </li>

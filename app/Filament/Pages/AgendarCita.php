@@ -126,6 +126,9 @@ class AgendarCita extends Page
     // Campañas disponibles
     public array $campanasDisponibles = [];
 
+    // Campaña seleccionada (solo una)
+    public $campanaSeleccionada = null;
+
     // Modalidades disponibles
     public array $modalidadesDisponibles = [];
 
@@ -135,6 +138,9 @@ class AgendarCita extends Page
     public array $serviciosAdicionalesDisponibles = [];
 
     public string $servicioAdicionalSeleccionado = '';
+
+    // Nueva propiedad para el tipo de vehículo Express
+    public ?string $tipoExpress = null;
 
     /**
      * Carga los pop-ups disponibles desde la base de datos
@@ -597,18 +603,73 @@ class AgendarCita extends Page
     protected function cargarModalidadesDisponibles(): void
     {
         try {
-
-
             // Modalidad Regular siempre está disponible
             $this->modalidadesDisponibles = [
                 'Regular' => 'Regular',
             ];
 
             // Verificar si Express está disponible para este vehículo y local
+            $this->tipoExpress = null; // Reset
             $expressDisponible = $this->esExpressDisponible();
 
             if ($expressDisponible) {
-                $this->modalidadesDisponibles['Mantenimiento Express (Duración 1h-30 min)'] = 'Mantenimiento Express (Duración 1h 30 min)';
+                // --- Lógica igual a esExpressDisponible para obtener el type correcto ---
+                $nombreLocal = '';
+                try {
+                    $localObj = \App\Models\Local::where('code', $this->localSeleccionado)->first();
+                    $nombreLocal = $localObj ? $localObj->name : '';
+                } catch (\Exception $e) {}
+
+                $formatosABuscar = [$this->tipoMantenimiento];
+                if (strpos($this->tipoMantenimiento, 'Mantenimiento') !== false) {
+                    $formato1 = str_replace('Mantenimiento ', '', $this->tipoMantenimiento);
+                    $formato2 = str_replace('000 Km', ',000 Km', $formato1);
+                    $formatosABuscar[] = $formato1;
+                    $formatosABuscar[] = $formato2;
+                }
+
+                $vehiculosExpress = \App\Models\VehiculoExpress::where('is_active', true)
+                    ->where('model', 'like', "%{$this->vehiculo['modelo']}%")
+                    ->where('brand', 'like', "%{$this->vehiculo['marca']}%")
+                    ->where('year', $this->vehiculo['anio'])
+                    ->where(function ($query) use ($nombreLocal) {
+                        $query->where('premises', $this->localSeleccionado)
+                            ->orWhere('premises', $nombreLocal);
+                    })
+                    ->get();
+
+                $vehiculoExpress = null;
+                foreach ($vehiculosExpress as $vehiculo) {
+                    $mantenimientos = $vehiculo->maintenance;
+                    if (is_string($mantenimientos)) {
+                        if (str_starts_with($mantenimientos, '[') || str_starts_with($mantenimientos, '{')) {
+                            $decoded = json_decode($mantenimientos, true);
+                            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                                $mantenimientos = $decoded;
+                            } else {
+                                $mantenimientos = [$mantenimientos];
+                            }
+                        } else {
+                            $mantenimientos = [$mantenimientos];
+                        }
+                    } elseif (! is_array($mantenimientos)) {
+                        $mantenimientos = [$mantenimientos];
+                    }
+                    foreach ($formatosABuscar as $formato) {
+                        foreach ($mantenimientos as $mantenimientoVehiculo) {
+                            if ($formato === $mantenimientoVehiculo ||
+                                stripos($mantenimientoVehiculo, $formato) !== false ||
+                                stripos($formato, $mantenimientoVehiculo) !== false) {
+                                $vehiculoExpress = $vehiculo;
+                                break 3;
+                            }
+                        }
+                    }
+                }
+                $this->tipoExpress = $vehiculoExpress?->type ?? null;
+                // --- Fin lógica ---
+
+                $this->modalidadesDisponibles['Mantenimiento Express'] = 'Mantenimiento Express';
             }
         } catch (\Exception $e) {
             // En caso de error, solo mostrar Regular
