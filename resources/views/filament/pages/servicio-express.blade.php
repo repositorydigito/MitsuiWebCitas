@@ -155,10 +155,10 @@
         <div class="fixed inset-0 bg-black/50" aria-hidden="true" wire:click="cerrarModal"></div>
 
         <!-- Contenedor para centrar vertical y horizontalmente -->
-        <div class="flex items-center justify-center min-h-screen px-4 py-6 text-center">
+        <div class="flex items-center justify-center px-4 py-6 text-center min-h-screen" style="align-items: flex-start; margin-top: 100px;">
 
             <!-- Modal -->
-            <div class="relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all max-w-lg w-full z-[9999]" @click.stop>
+            <div class="relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all max-w-lg z-[9999]" @click.stop>
                 <!-- Contenido del modal -->
                 <div class="bg-white px-6 pt-6 pb-6 relative">
                     <!-- Botón de cerrar en la esquina superior derecha -->
@@ -222,12 +222,13 @@
         <div class="fixed inset-0 bg-black/50" aria-hidden="true" wire:click="cerrarModalEdicion"></div>
 
         <!-- Contenedor para centrar vertical y horizontalmente -->
-        <div class="flex items-center justify-center min-h-screen px-4 py-6 text-center">
+        <div class="flex items-center justify-center px-4 py-6 text-center min-h-screen" style="align-items: flex-start; margin-top: 100px;">
 
             <!-- Modal -->
-            <div class="relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all max-w-lg w-full z-[9999]" @click.stop>
+            <div class="relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all max-w-7xl w-full z-[9999]"
+                style="max-height: 65vh; display: flex; flex-direction: column;">
                 <!-- Contenido del modal -->
-                <div class="bg-white px-6 pt-6 pb-6 relative">
+                <div class="bg-white px-6 pt-6 pb-6 relative flex-1 overflow-y-auto">
                     <!-- Botón de cerrar en la esquina superior derecha -->
                     <div class="absolute top-0 right-0 pt-3 pr-3 z-[10000]">
                         <button type="button" wire:click="cerrarModalEdicion" class="bg-white rounded-md text-gray-600 hover:text-gray-900 focus:outline-none">
@@ -243,127 +244,109 @@
                             Editar vehículo
                         </h3>
                         <div class="w-full">
-                            <div class="flex flex-col space-y-4">
-                                <!-- Campo Código -->
-                                <div class="flex flex-col">
-                                    <label for="code" class="text-sm font-medium text-gray-700 mb-1">Código</label>
-                                    <input
-                                        type="text"
-                                        id="code"
-                                        wire:model.live="vehiculoEnEdicion.code"
-                                        class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                        placeholder="Ingrese el código"
-                                    >
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <!-- Primera columna: todos los campos del formulario -->
+                                <div class="flex flex-col space-y-4 col-span-1">
+                                    <!-- Campo Código -->
+                                    <div class="flex flex-col">
+                                        <label for="code" class="text-sm font-medium text-gray-700 mb-1">Código</label>
+                                        <input
+                                            type="text"
+                                            id="code"
+                                            wire:model.live="vehiculoEnEdicion.code"
+                                            class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                            placeholder="Ingrese el código"
+                                        >
+                                    </div>
+                                    <!-- Campo Tipo -->
+                                    <div class="flex flex-col">
+                                        <label for="type" class="text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                                        <input
+                                            type="text"
+                                            id="type"
+                                            wire:model.live="vehiculoEnEdicion.type"
+                                            class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                            placeholder="Ingrese el tipo"
+                                        >
+                                    </div>
+                                    <!-- Campo Modelo -->
+                                    <div class="flex flex-col">
+                                        <label for="model" class="text-sm font-medium text-gray-700 mb-1">Modelo</label>
+                                        <input
+                                            type="text"
+                                            id="model"
+                                            wire:model.live="vehiculoEnEdicion.model"
+                                            class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                            placeholder="Ingrese el modelo"
+                                        >
+                                    </div>
+                                    <!-- Campo Marca -->
+                                    <div class="flex flex-col">
+                                        <label for="brand" class="text-sm font-medium text-gray-700 mb-1">Marca</label>
+                                        <input
+                                            type="text"
+                                            id="brand"
+                                            wire:model.live="vehiculoEnEdicion.brand"
+                                            class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                            placeholder="Ingrese la marca"
+                                        >
+                                    </div>
+                                    <!-- Campo Año -->
+                                    <div class="flex flex-col">
+                                        <label for="year" class="text-sm font-medium text-gray-700 mb-1">Año</label>
+                                        <input
+                                            type="text"
+                                            id="year"
+                                            wire:model.live="vehiculoEnEdicion.year"
+                                            class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                            placeholder="Ingrese el año"
+                                        >
+                                    </div>
+                                    <!-- Campo Local -->
+                                    <div class="flex flex-col">
+                                        <label for="premises" class="text-sm font-medium text-gray-700 mb-1">Local</label>
+                                        <select
+                                            id="premises"
+                                            wire:model.live="vehiculoEnEdicion.premises"
+                                            class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                        >
+                                            <option value="">Seleccione un local</option>
+                                            @foreach($localesDisponibles as $codigo => $nombre)
+                                                <option value="{{ $nombre }}">{{ $nombre }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
                                 </div>
-
-                                <!-- Campo Tipo -->
-                                <div class="flex flex-col">
-                                    <label for="type" class="text-sm font-medium text-gray-700 mb-1">Tipo</label>
-                                    <input
-                                        type="text"
-                                        id="type"
-                                        wire:model.live="vehiculoEnEdicion.type"
-                                        class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                        placeholder="Ingrese el tipo"
-                                    >
-                                </div>
-
-                                <!-- Campo Modelo -->
-                                <div class="flex flex-col">
-                                    <label for="model" class="text-sm font-medium text-gray-700 mb-1">Modelo</label>
-                                    <input
-                                        type="text"
-                                        id="model"
-                                        wire:model.live="vehiculoEnEdicion.model"
-                                        class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                        placeholder="Ingrese el modelo"
-                                    >
-                                </div>
-
-                                <!-- Campo Marca -->
-                                <div class="flex flex-col">
-                                    <label for="brand" class="text-sm font-medium text-gray-700 mb-1">Marca</label>
-                                    <input
-                                        type="text"
-                                        id="brand"
-                                        wire:model.live="vehiculoEnEdicion.brand"
-                                        class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                        placeholder="Ingrese la marca"
-                                    >
-                                </div>
-
-                                <!-- Campo Año -->
-                                <div class="flex flex-col">
-                                    <label for="year" class="text-sm font-medium text-gray-700 mb-1">Año</label>
-                                    <input
-                                        type="text"
-                                        id="year"
-                                        wire:model.live="vehiculoEnEdicion.year"
-                                        class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                        placeholder="Ingrese el año"
-                                    >
-                                </div>
-
-                                <!-- Campo Mantenimiento -->
-                                <div class="flex flex-col">
+                                <!-- Tipos de Mantenimiento: abarca las otras columnas -->
+                                <div class="flex flex-col col-span-1 md:col-span-2">
                                     <label class="text-sm font-medium text-gray-700 mb-1">Tipos de Mantenimiento</label>
-                                    <div class="space-y-2 max-h-32 overflow-y-auto border border-gray-300 rounded-md p-2">
-                                        @php
-                                            $tiposMantenimiento = [
-                                                '10,000 Km',
-                                                '20,000 Km',
-                                                '30,000 Km',
-                                                '40,000 Km',
-                                                '50,000 Km',
-                                                '60,000 Km',
-                                                '70,000 Km',
-                                                '80,000 Km',
-                                                '90,000 Km',
-                                                '100,000 Km'
-                                            ];
-                                        @endphp
-                                        @foreach($tiposMantenimiento as $tipo)
-                                            <div class="flex items-center">
+                                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 max-h-64 overflow-y-auto border border-gray-300 rounded-md p-2">
+                                        @foreach($tiposMantenimientoDisponibles as $id => $nombre)
+                                            <div class="flex items-center gap-2">
                                                 <input
                                                     type="checkbox"
-                                                    id="maintenance_{{ $loop->index }}"
-                                                    value="{{ $tipo }}"
+                                                    id="maintenance_{{ $id }}"
+                                                    value="{{ $nombre }}"
                                                     wire:model="vehiculoEnEdicion.maintenance"
                                                     class="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                                                 >
-                                                <label for="maintenance_{{ $loop->index }}" class="ml-2 text-sm text-gray-700">
-                                                    {{ $tipo }}
+                                                <label for="maintenance_{{ $id }}" class="ml-2 text-sm text-gray-700">
+                                                    {{ $nombre }}
                                                 </label>
                                             </div>
                                         @endforeach
                                     </div>
                                     <p class="mt-1 text-xs text-gray-500">Selecciona uno o más tipos de mantenimiento</p>
                                 </div>
-
-                                <!-- Campo Local -->
-                                <div class="flex flex-col">
-                                    <label for="premises" class="text-sm font-medium text-gray-700 mb-1">Local</label>
-                                    <select
-                                        id="premises"
-                                        wire:model.live="vehiculoEnEdicion.premises"
-                                        class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                    >
-                                        <option value="">Seleccione un local</option>
-                                        @foreach($localesDisponibles as $codigo => $nombre)
-                                            <option value="{{ $nombre }}">{{ $nombre }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <!-- Botón de guardar -->
-                                <button
-                                    type="button"
-                                    wire:click="guardarCambios"
-                                    class="w-full inline-flex justify-center items-center px-4 py-3 bg-primary-600 text-white font-medium rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 mt-4"
-                                >
-                                    Guardar cambios
-                                </button>
                             </div>
+                            <!-- Botón de guardar -->
+                            <button
+                                type="button"
+                                wire:click="guardarCambios"
+                                class="w-full inline-flex justify-center items-center px-4 py-3 bg-primary-600 text-white font-medium rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 mt-4"
+                            >
+                                Guardar cambios
+                            </button>
                         </div>
                     </div>
                 </div>

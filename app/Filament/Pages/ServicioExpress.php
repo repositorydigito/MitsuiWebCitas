@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\Local;
 use App\Models\VehiculoExpress;
+use App\Models\MaintenanceType;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -68,11 +69,15 @@ class ServicioExpress extends Page
     // Lista de locales disponibles para el selector
     public array $localesDisponibles = [];
 
+    // Lista de tipos de mantenimiento disponibles para el selector
+    public array $tiposMantenimientoDisponibles = [];
+
     public function mount(): void
     {
-        $this->currentPage = request()->query('page', 1);
+        $this->currentPage = (int) request()->query('page', 1);
         $this->cargarVehiculos();
         $this->cargarLocalesDisponibles();
+        $this->cargarTiposMantenimientoDisponibles();
     }
 
     /**
@@ -93,6 +98,18 @@ class ServicioExpress extends Page
         }
     }
 
+    /**
+     * Cargar los tipos de mantenimiento disponibles para el selector
+     */
+    private function cargarTiposMantenimientoDisponibles(): void
+    {
+        try {
+            $this->tiposMantenimientoDisponibles = MaintenanceType::getActivosParaSelector();
+        } catch (\Exception $e) {
+            $this->tiposMantenimientoDisponibles = [];
+        }
+    }
+
     public function cargarVehiculos(): void
     {
         try {
@@ -105,6 +122,8 @@ class ServicioExpress extends Page
             foreach ($vehiculosDB as $vehiculo) {
                 $this->vehiculos->push([
                     'id' => $vehiculo->id,
+                    'code' => $vehiculo->code,
+                    'type' => $vehiculo->type,
                     'model' => $vehiculo->model,
                     'brand' => $vehiculo->brand,
                     'year' => $vehiculo->year,

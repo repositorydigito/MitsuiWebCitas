@@ -296,7 +296,7 @@
                                             </div>
 
                                             <!-- Círculo indicador de estado de cita -->
-                                            <div class="flex-shrink-0 mr-4">
+                                            <div class="flex-shrink-0 pb-6">
                                                 @php
                                                     // Verificar si el vehículo tiene citas agendadas
                                                     $tieneCitaAgendada = \App\Models\Appointment::where('vehicle_id', $vehiculo['vhclie'])
@@ -304,7 +304,7 @@
                                                         ->where('appointment_date', '>=', now()->toDateString())
                                                         ->exists();
                                                 @endphp
-                                                <div class="w-3 h-3 rounded-full {{ $tieneCitaAgendada ? 'bg-green-600' : 'bg-gray-400' }}"
+                                                <div class="w-3 h-3 rounded-full {{ $tieneCitaAgendada ? 'bg-primary-600' : 'bg-gray-400' }}"
                                                      title="{{ $tieneCitaAgendada ? 'Cita agendada' : 'Sin cita agendada' }}">
                                                 </div>
                                             </div>

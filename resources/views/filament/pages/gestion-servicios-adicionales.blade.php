@@ -126,7 +126,7 @@
         <!-- Paginación -->
         @if($this->serviciosPaginados->hasPages())
             <div class="flex justify-center">
-                <nav class="flex items-center space-x-2">
+                <nav class="flex items-center gap-2">
                     @if($this->serviciosPaginados->onFirstPage())
                         <span class="px-3 py-2 text-gray-400">Anterior</span>
                     @else
@@ -141,7 +141,7 @@
 
                     @foreach($this->serviciosPaginados->getUrlRange(1, $this->serviciosPaginados->lastPage()) as $page => $url)
                         @if($page == $this->serviciosPaginados->currentPage())
-                            <span class="px-3 py-2 bg-blue-500 text-white rounded">{{ $page }}</span>
+                            <span class="px-3 py-2 bg-primary-500 text-white rounded">{{ $page }}</span>
                         @else
                             <x-filament::button
                                 wire:click="gotoPage({{ $page }})"

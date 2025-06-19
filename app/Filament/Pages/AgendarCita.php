@@ -2483,7 +2483,6 @@ class AgendarCita extends Page
 
             // Si la fecha ya está seleccionada, deseleccionarla
             if ($this->fechaSeleccionada === $fecha) {
-                Log::info("[AgendarCita] Deseleccionando fecha: {$fecha}");
                 $this->fechaSeleccionada = '';
                 $this->horariosDisponibles = [];
                 $this->horaSeleccionada = '';
@@ -2493,8 +2492,6 @@ class AgendarCita extends Page
 
             // Actualizar la fecha seleccionada
             $this->fechaSeleccionada = $fecha;
-            Log::info("[AgendarCita] Fecha seleccionada: {$this->fechaSeleccionada}");
-
             // Regenerar el calendario para actualizar la visualización
             $this->generarCalendario();
 
@@ -2513,22 +2510,16 @@ class AgendarCita extends Page
      */
     public function seleccionarHora(string $hora): void
     {
-        Log::info("[AgendarCita] Intentando seleccionar hora: {$hora}");
-        Log::info('[AgendarCita] Horarios disponibles: '.json_encode($this->horariosDisponibles));
-
         // Verificar si la hora está disponible
         if (in_array($hora, $this->horariosDisponibles)) {
             // Si ya está seleccionada, deseleccionarla
             if ($this->horaSeleccionada === $hora) {
-                Log::info("[AgendarCita] Deseleccionando hora: {$hora}");
                 $this->horaSeleccionada = '';
             } else {
                 // Actualizar la hora seleccionada
-                $this->horaSeleccionada = $hora;
-                Log::info("[AgendarCita] Hora seleccionada: {$this->horaSeleccionada}");
+                $this->horaSeleccionada = $hora; 
             }
         } else {
-            Log::warning("[AgendarCita] Intento de seleccionar hora no disponible: {$hora}");
             // Notificar al usuario
             $this->notify('error', 'La hora seleccionada no está disponible');
         }
@@ -2545,13 +2536,8 @@ class AgendarCita extends Page
         ]);
     }
 
-    /**
-     * Actualiza los horarios cuando cambia el local seleccionado
-     */
     public function updatedLocalSeleccionado($value): void
     {
-        Log::info("[AgendarCita] Local seleccionado cambiado a: {$value}");
-
         // Limpiar la hora seleccionada
         $this->horaSeleccionada = '';
 
@@ -2563,14 +2549,11 @@ class AgendarCita extends Page
 
         // Si hay una fecha seleccionada, cargar los horarios disponibles para el nuevo local
         if (! empty($this->fechaSeleccionada)) {
-            Log::info("[AgendarCita] Recargando horarios para fecha: {$this->fechaSeleccionada} y local: {$value}");
             $this->cargarHorariosDisponibles();
         }
 
         // Recargar las campañas
-        Log::info("[AgendarCita] === RECARGANDO CAMPAÑAS POR CAMBIO DE LOCAL ===");
         $this->cargarCampanas();
-        Log::info("[AgendarCita] Campañas recargadas después de cambiar el local a: {$value}. Total: ".count($this->campanasDisponibles));
 
         // Recargar las modalidades disponibles para el nuevo local
         $this->cargarModalidadesDisponibles();
@@ -2578,7 +2561,6 @@ class AgendarCita extends Page
         // Si la modalidad actual ya no está disponible, cambiar a Regular
         if (! array_key_exists($this->modalidadServicio, $this->modalidadesDisponibles)) {
             $this->modalidadServicio = 'Regular';
-            Log::info('[AgendarCita] Modalidad cambiada a Regular porque la anterior no está disponible en el nuevo local');
         }
 
         // Forzar la actualización de la vista
