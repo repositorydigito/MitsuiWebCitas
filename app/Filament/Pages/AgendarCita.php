@@ -1134,36 +1134,15 @@ class AgendarCita extends Page
                     $this->tiposMantenimientoDisponibles = $mantenimientosPorTipoValorTrabajo;
                     Log::info("[AgendarCita] ✅ Usando mantenimientos específicos por tipo_valor_trabajo ({$tipoValorTrabajo}): " . count($this->tiposMantenimientoDisponibles));
                 } else {
-                    // PRIORIDAD 2: Si no hay mantenimientos específicos por tipo_valor_trabajo, buscar por modelo (fallback)
-                    $modeloVehiculo = trim($this->vehiculo['modelo'] ?? '');
-                    $mantenimientosPorModelo = [];
-                    
-                    if (!empty($modeloVehiculo)) {
-                        $mantenimientosPorModelo = \App\Models\ModelMaintenance::where('is_active', true)
-                            ->where('brand', $marcaVehiculo)
-                            ->where('model', $modeloVehiculo)
-                            ->orderBy('kilometers')
-                            ->pluck('name', 'id')
-                            ->toArray();
-                            
-                        Log::info("[AgendarCita] Mantenimientos específicos por modelo (fallback) encontrados: " . count($mantenimientosPorModelo));
-                    }
-                    
-                    if (!empty($mantenimientosPorModelo)) {
-                        // PRIORIDAD 2: Usar mantenimientos por modelo como fallback
-                        $this->tiposMantenimientoDisponibles = $mantenimientosPorModelo;
-                        Log::info("[AgendarCita] ⚠️ Usando mantenimientos específicos por modelo como fallback ({$modeloVehiculo}): " . count($this->tiposMantenimientoDisponibles));
-                    } else {
-                        // PRIORIDAD 3: Si no hay mantenimientos específicos, usar los generales por marca
-                        $tiposMantenimiento = MaintenanceType::where('is_active', true)
-                            ->where('brand', $marcaVehiculo)
-                            ->orderBy('kilometers')
-                            ->pluck('name', 'id')
-                            ->toArray();
-                            
-                        $this->tiposMantenimientoDisponibles = $tiposMantenimiento;
-                        Log::info("[AgendarCita] ⚠️ No hay mantenimientos específicos, usando mantenimientos generales por marca: " . count($this->tiposMantenimientoDisponibles));
-                    }
+                    // PRIORIDAD 2: Si no hay mantenimientos específicos por tipo_valor_trabajo, usar los generales por marca
+                    $tiposMantenimiento = MaintenanceType::where('is_active', true)
+                        ->where('brand', $marcaVehiculo)
+                        ->orderBy('kilometers')
+                        ->pluck('name', 'id')
+                        ->toArray();
+                        
+                    $this->tiposMantenimientoDisponibles = $tiposMantenimiento;
+                    Log::info("[AgendarCita] ⚠️ No hay mantenimientos específicos por tipo_valor_trabajo, usando mantenimientos generales por marca: " . count($this->tiposMantenimientoDisponibles));
                 }
             } else {
                 // Si no hay marca del vehículo, cargar todos los mantenimientos generales

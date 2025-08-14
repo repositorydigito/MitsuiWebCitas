@@ -101,10 +101,10 @@ class CustomPasswordController extends Controller
                 'string',
                 'min:8',
                 'confirmed',
-                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/',
+                'regex:/^(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]*$/',
             ],
         ], [
-            'password.regex' => 'La contraseña debe contener al menos una mayúscula, una minúscula, un número y un carácter especial.',
+            'password.regex' => 'La contraseña debe contener al menos una mayúscula y un número.',
         ]);
 
         if ($validator->fails()) {

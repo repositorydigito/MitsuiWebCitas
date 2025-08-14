@@ -15,7 +15,6 @@ class ModelMaintenance extends Model
         'name',
         'code',
         'brand',
-        'model', // Mantener por compatibilidad
         'tipo_valor_trabajo',
         'kilometers',
         'description',
@@ -34,7 +33,7 @@ class ModelMaintenance extends Model
     {
         return self::where('is_active', true)
             ->orderBy('brand')
-            ->orderBy('model')
+            ->orderBy('tipo_valor_trabajo')
             ->orderBy('kilometers')
             ->pluck('name', 'id')
             ->toArray();
@@ -80,21 +79,7 @@ class ModelMaintenance extends Model
         return $query->where('tipo_valor_trabajo', 'LIKE', '%' . $tipoValorTrabajo . '%');
     }
 
-    /**
-     * Scope para filtrar por modelo (mantener por compatibilidad)
-     */
-    public function scopePorModelo($query, $model)
-    {
-        return $query->where('model', $model);
-    }
 
-    /**
-     * Scope para filtrar por modelo con coincidencia parcial (mantener por compatibilidad)
-     */
-    public function scopePorModeloParcial($query, $model)
-    {
-        return $query->where('model', 'LIKE', '%' . $model . '%');
-    }
 
     /**
      * Obtener mantenimientos por marca y tipo_valor_trabajo específico
@@ -108,17 +93,7 @@ class ModelMaintenance extends Model
             ->get();
     }
 
-    /**
-     * Obtener mantenimientos por marca y modelo específico (mantener por compatibilidad)
-     */
-    public static function getPorMarcaYModelo($brand, $model)
-    {
-        return self::where('brand', $brand)
-            ->where('model', $model)
-            ->activos()
-            ->ordenadoPorModelo()
-            ->get();
-    }
+
 
     /**
      * Obtener todos los tipos_valor_trabajo únicos por marca
@@ -134,19 +109,7 @@ class ModelMaintenance extends Model
         return $query->orderBy('tipo_valor_trabajo')->pluck('tipo_valor_trabajo')->toArray();
     }
 
-    /**
-     * Obtener todos los modelos únicos por marca (mantener por compatibilidad)
-     */
-    public static function getModelosPorMarca($brand = null)
-    {
-        $query = self::select('model')->distinct();
-        
-        if ($brand) {
-            $query->where('brand', $brand);
-        }
-        
-        return $query->orderBy('model')->pluck('model')->toArray();
-    }
+
 
     /**
      * Verificar si existe un mantenimiento para marca, tipo_valor_trabajo y kilómetros específicos
@@ -164,19 +127,5 @@ class ModelMaintenance extends Model
         return $query->exists();
     }
 
-    /**
-     * Verificar si existe un mantenimiento para marca, modelo y kilómetros específicos (mantener por compatibilidad)
-     */
-    public static function existeMantenimiento($brand, $model, $kilometers, $excludeId = null)
-    {
-        $query = self::where('brand', $brand)
-            ->where('model', $model)
-            ->where('kilometers', $kilometers);
-            
-        if ($excludeId) {
-            $query->where('id', '!=', $excludeId);
-        }
-        
-        return $query->exists();
-    }
+
 }

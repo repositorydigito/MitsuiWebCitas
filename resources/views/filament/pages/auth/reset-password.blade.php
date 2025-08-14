@@ -15,11 +15,7 @@
         
         /* Contenedor principal */
         .login-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            min-height: 100vh;
             display: flex;
             flex-direction: row;
         }
@@ -35,6 +31,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            min-height: 100vh;
         }
 
         /* Panel derecho - Formulario */
@@ -45,6 +42,8 @@
             align-items: center;
             justify-content: center;
             padding: 2rem;
+            min-height: 100vh;
+            overflow-y: auto;
         }
 
         .form-container {
@@ -181,48 +180,175 @@
             margin-bottom: 0.25rem;
         }
         
-        /* Responsive */
+        /* Responsive para laptops pequeñas */
+        @media (max-width: 1366px) and (max-height: 768px) {
+            .right-panel {
+                padding: 1rem;
+            }
+            
+            .form-container {
+                max-width: 350px;
+            }
+            
+            .brand-logo {
+                width: 150px;
+                padding-bottom: 1rem;
+            }
+            
+            .form-title {
+                font-size: 1.25rem;
+                margin-bottom: 1rem;
+            }
+            
+            .form-subtitle {
+                font-size: 0.9rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .password-requirements {
+                padding: 0.75rem;
+                margin-bottom: 1rem;
+                font-size: 0.8rem;
+            }
+            
+            .form-group {
+                margin-bottom: 1rem;
+            }
+            
+            .form-input {
+                padding: 0.6rem 0.8rem;
+                font-size: 0.85rem;
+            }
+            
+            .submit-button {
+                padding: 0.6rem 1rem;
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Responsive para tablets y móviles */
         @media (max-width: 1024px) {
+            .login-container {
+                flex-direction: column;
+            }
+            
             .left-panel {
                 display: none;
             }
 
+            .right-panel {
+                min-height: 100vh;
+                padding: 2rem 1rem;
+            }
+
             .form-container{
-                max-width: 50rem;
+                max-width: 500px;
             }
             
             .brand-logo {
-                width: 350px;
-                height: auto;
-                padding-bottom: 1rem;
-                margin: 0 auto;
+                width: 250px;
+                padding-bottom: 1.5rem;
             }
 
             .form-title {
-                font-size: 3.5rem;
-                font-weight: 700;
-                color: #111827;
-                margin-bottom: 5rem;
+                font-size: 2rem;
+                margin-bottom: 2rem;
             }
-
-            .form-label{
-                font-size: 2.5rem;
+            
+            .form-subtitle {
+                font-size: 1.2rem;
                 margin-bottom: 2rem;
             }
 
+            .form-label{
+                font-size: 1.1rem;
+                margin-bottom: 0.8rem;
+            }
+
             .form-input{
-                font-size: 2.5rem;
-                padding: 2rem 1rem;
+                font-size: 1.1rem;
+                padding: 1rem;
             }
 
             .submit-button {
-                font-size: 2.5rem;
-                padding: 2rem 1rem;
-                margin: 2rem 0;
+                font-size: 1.1rem;
+                padding: 1rem;
+                margin: 1.5rem 0;
             }
 
             .form-link{
-                font-size: 2.5rem;
+                font-size: 1.1rem;
+            }
+            
+            .password-requirements {
+                font-size: 1rem;
+                padding: 1.2rem;
+            }
+        }
+        
+        /* Responsive para móviles grandes */
+        @media (max-width: 768px) {
+            .right-panel {
+                padding: 1.5rem 1rem;
+            }
+            
+            .form-container {
+                max-width: 400px;
+            }
+            
+            .brand-logo {
+                width: 200px;
+            }
+            
+            .form-title {
+                font-size: 1.8rem;
+            }
+            
+            .form-subtitle {
+                font-size: 1.1rem;
+            }
+        }
+
+        /* Responsive para móviles pequeños */
+        @media (max-width: 480px) {
+            .right-panel {
+                padding: 1rem 0.5rem;
+            }
+            
+            .form-container {
+                max-width: 100%;
+                padding: 0 1rem;
+            }
+            
+            .brand-logo {
+                width: 180px;
+            }
+            
+            .form-title {
+                font-size: 1.5rem;
+            }
+            
+            .form-subtitle {
+                font-size: 1rem;
+            }
+            
+            .form-input {
+                font-size: 1rem;
+                padding: 0.8rem;
+            }
+            
+            .submit-button {
+                font-size: 1rem;
+                padding: 0.8rem;
+            }
+            
+            .form-link {
+                font-size: 1rem;
+            }
+            
+            .password-requirements {
+                font-size: 0.9rem;
+                padding: 1rem;
             }
         }
     </style>
@@ -284,9 +410,7 @@
                         <ul>
                             <li>Mínimo 8 caracteres</li>
                             <li>Al menos una letra mayúscula</li>
-                            <li>Al menos una letra minúscula</li>
                             <li>Al menos un número</li>
-                            <li>Al menos un carácter especial (!@#$%^&*)</li>
                         </ul>
                     </div>
 
