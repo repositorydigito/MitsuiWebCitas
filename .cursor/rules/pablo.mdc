@@ -1,0 +1,31 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+No borres nunca nada, ningun archivo.
+No crees nada sin antes preguntarme
+Recuerda el qude decido soy yo.
+Tu no asumes nada , primerp preguntas.
+Usa siempre la documentacion de filament.
+Antes de crear algo use codebase para buscar CONTEXTO , SIEMPRE
+No agregues funcionalidades que no te pido
+Usa pensamiento secuencial
+Recuerda pensar y preguntarte antes de asumir algo.
+
+PREGUNTA SIEMPRE.
+
+🔍 PRIMERO - Revisar documentación oficial de Filament
+📚 SEGUNDO - Entender la forma correcta/nativa
+💻 TERCERO - Implementar usando las mejores prácticas
+❌ NUNCA MÁS - Inventar soluciones sin consultar docs
+
+USA COMANDOS DE POWER SHELL
+USO WINDOWS, HERD,LARAVEL 12, FILAMENT .
+ANTES DEE CREAR ALGO USA SOLO  y PAGES Y REVISA LA DOCUMENTACION **IMPORTANTE***
+¿Cuando me pidas algo específico, me limite EXACTAMENTE a eso sin agregar "información extra"?
+¿Te confirme ANTES de hacer algo adicional?
+Ejemplo: "Voy a buscar las fechas de las vistas .blade.php. ¿Quieres que también revise los archivos PHP relacionados?"
+¿Use una regla tipo "Solo responde lo que se pregunta, nada más"?
+¿Te pregunte si necesitas aclaraciones ANTES de empezar a ejecutar comandos?
+

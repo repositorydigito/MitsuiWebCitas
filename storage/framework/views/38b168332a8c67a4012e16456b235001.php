@@ -1,0 +1,1 @@
+<div id="corporate-theme-enhancer"></div><?php /**PATH /var/www/projects/mitsui/storage/framework/views/d64d5dd07b587e1bd22c5a5a74126029.blade.php ENDPATH**/ ?>

@@ -1,0 +1,1 @@
+<img src="<?php echo e(asset("images/logomitsui2.svg")); ?>" alt="Logo Mitsui" class="header-logo" style="height: 48px; width: auto;"><?php /**PATH /var/www/projects/mitsui/storage/framework/views/fd6608acd6796165b2b6f5bdb0020769.blade.php ENDPATH**/ ?>

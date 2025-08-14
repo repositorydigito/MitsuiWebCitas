@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:y6s="http://0002961282-one-off.sap.com/Y6SAJ0KGY_" xmlns:n0="http://sap.com/xi/SAPGlobal20/Global" xmlns:tns="http://sap.com/xi/SAPGlobal20/Global" targetNamespace="http://sap.com/xi/SAPGlobal20/Global">
+  <wsdl:types>
+    <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://0002961282-one-off.sap.com/Y6SAJ0KGY_">
+      <xs:element name="zDNI_EA8AE8AUBVHCSXVYS0FJ1R3ON" type="y6s:SelectionByText"/>
+      <xs:element name="zRuc_EA8AE8AUBVHCSXVYS0FJ1R3ON" type="y6s:SelectionByText"/>
+      <xs:element name="zCE_EA8AE8AUBVHCSXVYS0FJ1R3ON" type="y6s:SelectionByText"/>
+      <xs:element name="zPasaporte_EA8AE8AUBVHCSXVYS0FJ1R3ON" type="y6s:SelectionByText"/>
+      <xs:complexType name="SelectionByText">
+        <xs:sequence>
+          <xs:element name="SelectionByText" minOccurs="0">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="InclusionExclusionCode" type="xs:string"/>
+                <xs:element name="IntervalBoundaryTypeCode" type="xs:string"/>
+                <xs:element name="LowerBoundaryName" type="xs:string"/>
+                <xs:element name="UpperBoundaryName" type="xs:string" minOccurs="0"/>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+      </xs:complexType>
+    </xs:schema>
+    <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://sap.com/xi/SAPGlobal20/Global">
+      <xs:import namespace="http://0002961282-one-off.sap.com/Y6SAJ0KGY_"/>
+      <xs:element name="CustomerByElementsQuery_sync">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="CustomerSelectionByElements" minOccurs="0">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element ref="y6s:zDNI_EA8AE8AUBVHCSXVYS0FJ1R3ON" minOccurs="0"/>
+                  <xs:element ref="y6s:zRuc_EA8AE8AUBVHCSXVYS0FJ1R3ON" minOccurs="0"/>
+                  <xs:element ref="y6s:zCE_EA8AE8AUBVHCSXVYS0FJ1R3ON" minOccurs="0"/>
+                  <xs:element ref="y6s:zPasaporte_EA8AE8AUBVHCSXVYS0FJ1R3ON" minOccurs="0"/>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+            <xs:element name="ProcessingConditions" minOccurs="0">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name="QueryHitsMaximumNumberValue" type="xs:int"/>
+                  <xs:element name="QueryHitsUnlimitedIndicator" type="xs:boolean"/>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="CustomerByElementsResponse_sync">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Customer" minOccurs="0" maxOccurs="unbounded">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name="ChangeStateID" type="xs:string" minOccurs="0"/>
+                  <xs:element name="UUID" type="xs:string" minOccurs="0"/>
+                  <xs:element name="InternalID" type="xs:string" minOccurs="0"/>
+                  <xs:element name="ExternalID" type="xs:string" minOccurs="0"/>
+                  <xs:element name="SystemAdministrativeData" minOccurs="0">
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name="CreationDateTime" type="xs:dateTime" minOccurs="0"/>
+                        <xs:element name="CreationIdentityUUID" type="xs:string" minOccurs="0"/>
+                        <xs:element name="LastChangeDateTime" type="xs:dateTime" minOccurs="0"/>
+                        <xs:element name="LastChangeIdentityUUID" type="xs:string" minOccurs="0"/>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                  <xs:element name="CategoryCode" type="xs:string" minOccurs="0"/>
+                  <xs:element name="CustomerIndicator" type="xs:boolean" minOccurs="0"/>
+                  <xs:element name="LifeCycleStatusCode" type="xs:string" minOccurs="0"/>
+                  <xs:element name="Organisation" minOccurs="0">
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name="FirstLineName" type="xs:string" minOccurs="0"/>
+                        <xs:element name="LastLineName" type="xs:string" minOccurs="0"/>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                  <xs:element name="LegalCompetenceIndicator" type="xs:boolean" minOccurs="0"/>
+                  <xs:element name="AddressInformation" minOccurs="0">
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name="Address" minOccurs="0">
+                          <xs:complexType>
+                            <xs:sequence>
+                              <xs:element name="CountryCode" type="xs:string" minOccurs="0"/>
+                              <xs:element name="CityName" type="xs:string" minOccurs="0"/>
+                              <xs:element name="StreetName" type="xs:string" minOccurs="0"/>
+                              <xs:element name="StreetPostalCode" type="xs:string" minOccurs="0"/>
+                            </xs:sequence>
+                          </xs:complexType>
+                        </xs:element>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+            <xs:element name="ProcessingConditions" minOccurs="0">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name="ReturnedQueryHitsNumberValue" type="xs:int" minOccurs="0"/>
+                  <xs:element name="MoreHitsAvailableIndicator" type="xs:boolean" minOccurs="0"/>
+                  <xs:element name="LastReturnedObjectID" type="xs:string" minOccurs="0"/>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:schema>
+  </wsdl:types>
+  <wsdl:message name="CustomerByElementsQuery_sync">
+    <wsdl:part name="parameters" element="tns:CustomerByElementsQuery_sync"/>
+  </wsdl:message>
+  <wsdl:message name="CustomerByElementsResponse_sync">
+    <wsdl:part name="parameters" element="tns:CustomerByElementsResponse_sync"/>
+  </wsdl:message>
+  <wsdl:portType name="QueryCustomerIn">
+    <wsdl:operation name="CustomerByElementsQuery_sync">
+      <wsdl:input message="tns:CustomerByElementsQuery_sync"/>
+      <wsdl:output message="tns:CustomerByElementsResponse_sync"/>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="QueryCustomerInBinding" type="tns:QueryCustomerIn">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="CustomerByElementsQuery_sync">
+      <soap:operation soapAction="http://sap.com/xi/SAPGlobal20/Global/CustomerByElementsQuery_sync"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="QueryCustomerInService">
+    <wsdl:port name="QueryCustomerInPort" binding="tns:QueryCustomerInBinding">
+      <soap:address location="https://my317791.crm.ondemand.com/sap/bc/srt/scs/sap/querycustomerin1"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

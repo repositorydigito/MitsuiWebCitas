@@ -1,0 +1,12 @@
+[0;1;32m●[0m laravel-queue.service - Laravel Queue Worker (default, products, offers, appointment-processing, package-updates)
+     Loaded: loaded (]8;;file://sv-dmK7Sa9Qf3j5cDLrMZxq.cloud.elastika.pe/etc/systemd/system/laravel-queue.service/etc/systemd/system/laravel-queue.service]8;;; [0;1;32menabled[0m; preset: [0;1;32menabled[0m)
+     Active: [0;1;32mactive (running)[0m since Thu 2025-07-24 05:44:57 -05; 7s ago
+   Main PID: 1975033 (php)
+      Tasks: 1 (limit: 4490)
+     Memory: 50.2M (peak: 50.5M)
+        CPU: 723ms
+     CGroup: /system.slice/laravel-queue.service
+             └─[0;38;5;245m1975033 /usr/bin/php artisan queue:work --queue=default,products,offers,appointment-processing,package-updates,c4c-delete --tries=3 --timeout=300[0m
+
+Jul 24 05:44:57 sv-dmK7Sa9Qf3j5cDLrMZxq.cloud.elastika.pe systemd[1]: Started laravel-queue.service - Laravel Queue Worker (default, products, offers, appointment-processing, package-updates).
+Jul 24 05:45:03 sv-dmK7Sa9Qf3j5cDLrMZxq.cloud.elastika.pe laravel-queue[1975033]:   2025-07-24 10:45:03 App\Jobs\UpdateComodinUsersC4CIdJob ............ RUNNING
