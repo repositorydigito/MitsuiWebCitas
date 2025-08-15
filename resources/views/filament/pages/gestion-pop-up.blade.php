@@ -174,7 +174,7 @@
 
     <!-- Modal para ver imagen -->
     @if($isModalOpen)
-    <div class="fixed inset-0 z-[9999] overflow-hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <!-- Overlay de fondo oscuro (clic para cerrar) -->
         <div class="fixed inset-0 bg-black/50" aria-hidden="true" wire:click="cerrarModal"></div>
 
