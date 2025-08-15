@@ -19,7 +19,7 @@
                 <!-- Buscador por nombre -->
                 <div class="flex-1">
                     <label for="search-name" class="block text-sm font-medium text-gray-700 mb-2">
-                        Buscar por nombre
+                        Buscar por nombre de modelo
                     </label>
                     <div class="relative">
                         <input
