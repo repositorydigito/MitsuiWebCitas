@@ -104,7 +104,7 @@
 <body>
     <div class="container">
         <div class="header">
-        <img src="{{ \App\Helpers\EmailImageHelper::imageToBase64('images/Logo_Mitsui_blanco.png') ?: url('images/Logo_Mitsui_blanco.png') }}" alt="logoMitsui" style="margin-right:20px; width: 12rem; height: auto;">
+        <img src="{{ \App\Helpers\EmailImageHelper::imageToBase64('images/logo_Mitsui_Blanco.png') ?: url('images/logo_Mitsui_Blanco.png') }}" alt="logoMitsui" style="margin-right:20px; width: 12rem; height: auto;">
             <h1 class="title">Restablece tu contraseña</h1>
         </div>
         
