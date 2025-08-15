@@ -925,14 +925,9 @@ class Vehiculos extends Page
             // UNA SOLA consulta WSCitas para el usuario
             $citasPendientes = $this->consultarCitasPendientes($user);
 
-            // También consultar citas desde la base de datos local como fallback
-            $citasLocales = $this->consultarCitasLocales($user);
-
-            // Combinar ambas fuentes de citas
-            $todasLasCitas = array_merge($citasPendientes, $citasLocales);
-
+            // La consulta ahora se hace únicamente al endpoint, no a la base de datos local.
             // Crear índice para búsqueda O(1)
-            $indiceCitas = $this->indexarCitasPorPlaca($todasLasCitas);
+            $indiceCitas = $this->indexarCitasPorPlaca($citasPendientes);
 
             // Enriquecer cada vehículo con información de citas
             $vehiculosConCitas = 0;

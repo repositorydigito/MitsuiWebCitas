@@ -360,19 +360,18 @@ class DetalleVehiculo extends Page
                 $this->citasAgendadas = [];
             }
 
-            // FALLBACK: Si no hay citas de WSCitas, cargar citas locales pendientes
+            // Si no hay citas de WSCitas, no se cargan citas locales.
             if (empty($this->citasAgendadas)) {
-                Log::info("[DetalleVehiculo] Cargando citas locales como fallback para vehículo ID: {$vehiculoId}");
-                $this->cargarCitasLocalesPendientes($vehiculoId);
+                Log::info("[DetalleVehiculo] No se encontraron citas en WSCitas y el fallback local está deshabilitado.");
             }
 
         } catch (\Exception $e) {
             Log::error('[DetalleVehiculo] Error al cargar citas desde WSCitas: ' . $e->getMessage());
             Log::error('[DetalleVehiculo] Stack trace: ' . $e->getTraceAsString());
 
-            // En caso de error, cargar citas locales como fallback
-            Log::info("[DetalleVehiculo] Cargando citas locales como fallback debido a error en WSCitas");
-            $this->cargarCitasLocalesPendientes($vehiculoId);
+            // En caso de error con WSCitas, no se usará el fallback local.
+            $this->citasAgendadas = [];
+            Log::info("[DetalleVehiculo] Fallback a citas locales deshabilitado tras error en WSCitas.");
         }
     }
 
