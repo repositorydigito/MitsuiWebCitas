@@ -26,6 +26,7 @@ class UpdateComodinUsersC4CIdJob implements ShouldQueue
         $comodinUsers = User::where('c4c_internal_id', '1200166011')
             ->where('is_comodin', true)
             ->whereNotNull('document_number')
+            ->limit(5)
             ->get();
 
         Log::info('UpdateComodinUsersC4CIdJob: Procesando ' . $comodinUsers->count() . ' usuarios comodín');
