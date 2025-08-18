@@ -444,7 +444,7 @@ class AppointmentService
 
         // ✅ NUEVO: Intentar obtener datos de la cita desde BD local para incluir información real
         $appointmentData = $this->getAppointmentDataForUpdate($uuid);
-        
+
         // Construir parámetros con datos reales de la cita si están disponibles
         $params = [
             'AppointmentActivity' => [
@@ -467,11 +467,40 @@ class AppointmentService
             if (!empty($appointmentData['center_code'])) {
                 $params['AppointmentActivity']['y6s:zIDCentro'] = $appointmentData['center_code'];
             }
-            
+
+            // ✅ INCLUIR FECHAS ORIGINALES (mismo patrón que cancel() y create())
+            if (!empty($appointmentData['start_date'])) {
+                // StartDateTime con conversión UTC (mismo patrón que cancel())
+                $startDateTime = Carbon::parse($appointmentData['start_date'])->addHours(5)->format('Y-m-d\TH:i:s\Z');
+                $params['AppointmentActivity']['StartDateTime'] = [
+                    '_' => $startDateTime,
+                    'timeZoneCode' => 'UTC-5',
+                ];
+
+                // Campos de inicio locales (mismo patrón que create())
+                $params['AppointmentActivity']['y6s:zFechaInicio'] = Carbon::parse($appointmentData['start_date'])->format('Y-m-d');
+                $params['AppointmentActivity']['y6s:zHoraInicio'] = Carbon::parse($appointmentData['start_date'])->format('H:i:s');
+            }
+
+            if (!empty($appointmentData['end_date'])) {
+                // EndDateTime con conversión UTC
+                $endDateTime = Carbon::parse($appointmentData['end_date'])->addHours(5)->format('Y-m-d\TH:i:s\Z');
+                $params['AppointmentActivity']['EndDateTime'] = [
+                    '_' => $endDateTime,
+                    'timeZoneCode' => 'UTC-5',
+                ];
+
+                // Campos de salida (mismo patrón que create())
+                $params['AppointmentActivity']['y6s:zFechaHoraProbSalida'] = Carbon::parse($appointmentData['end_date'])->format('Y-m-d');
+                $params['AppointmentActivity']['y6s:zHoraProbSalida'] = Carbon::parse($appointmentData['end_date'])->format('H:i:s');
+            }
+
             Log::info('✅ Datos originales de cita incluidos en actualización', [
                 'vehicle_plate' => $appointmentData['vehicle_plate'] ?? 'N/A',
-                'customer_name' => $appointmentData['customer_name'] ?? 'N/A', 
-                'center_code' => $appointmentData['center_code'] ?? 'N/A'
+                'customer_name' => $appointmentData['customer_name'] ?? 'N/A',
+                'center_code' => $appointmentData['center_code'] ?? 'N/A',
+                'start_date' => $appointmentData['start_date'] ?? 'N/A',
+                'end_date' => $appointmentData['end_date'] ?? 'N/A'
             ]);
         } else {
             Log::warning('⚠️ No se encontraron datos locales para la cita, usando actualización mínima');
@@ -551,7 +580,7 @@ class AppointmentService
 
         // ✅ OBTENER FECHAS ORIGINALES DE LA BD LOCAL
         $appointmentData = $this->getAppointmentDataForUpdate($uuid);
-        
+
         Log::info('🔍 [AppointmentService::cancel] INICIO CANCELACIÓN - Datos recuperados de BD', [
             'uuid' => $uuid,
             'appointment_data_exists' => $appointmentData ? 'SÍ' : 'NO',
@@ -559,13 +588,13 @@ class AppointmentService
             'end_date' => $appointmentData['end_date'] ?? 'NO DISPONIBLE',
             'appointment_id' => $appointmentData['id'] ?? 'NO DISPONIBLE',
         ]);
-        
+
         // Construir parámetros para CANCELAR (actionCode="04" como ATRIBUTO)
         $params = [
             'AppointmentActivity' => [
                 '@actionCode' => $data['action_code'] ?? '04', // Modificar - COMO ATRIBUTO
                 'UUID' => $uuid,
-                'LifeCycleStatusCode' => $data['lifecycle_status'] ?? '2', 
+                'LifeCycleStatusCode' => $data['lifecycle_status'] ?? '2',
                 'y6s:zEstadoCita' => $data['estado_cita'] ?? '6', // Estado cancelado
                 'y6s:zVieneHCP' => $data['viene_hcp'] ?? 'X',
             ],
@@ -578,7 +607,7 @@ class AppointmentService
                 '_' => $startDateTime,
                 'timeZoneCode' => 'UTC-5',
             ];
-            
+
             Log::info('📅 [AppointmentService::cancel] Fecha START incluida en cancelación', [
                 'fecha_original' => $appointmentData['start_date'],
                 'fecha_enviada' => $startDateTime,
@@ -594,7 +623,7 @@ class AppointmentService
                 '_' => $endDateTime,
                 'timeZoneCode' => 'UTC-5',
             ];
-            
+
             Log::info('📅 [AppointmentService::cancel] Fecha END incluida en cancelación', [
                 'fecha_original' => $appointmentData['end_date'],
                 'fecha_enviada' => $endDateTime,
@@ -616,7 +645,7 @@ class AppointmentService
 
         Log::info('🚀 [AppointmentService::cancel] Enviando request a C4C con WSDL: ' . $this->createWsdl);
         $result = C4CClient::call($this->createWsdl, $this->createMethod, $params);
-        
+
         Log::info('📥 [AppointmentService::cancel] RESPUESTA COMPLETA DE C4C', [
             'success' => $result['success'],
             'error' => $result['error'] ?? 'none',
@@ -708,7 +737,7 @@ class AppointmentService
 
         Log::info('🚀 [AppointmentService::delete] Enviando request a C4C...');
         $result = C4CClient::call($this->createWsdl, $this->createMethod, $params);
-        
+
         Log::info('📥 [AppointmentService::delete] Respuesta recibida de C4C', [
             'success' => $result['success'],
             'error' => $result['error'] ?? 'none',
@@ -1171,7 +1200,7 @@ class AppointmentService
         try {
             // Buscar appointment en BD local por UUID de C4C
             $appointment = \App\Models\Appointment::where('c4c_uuid', $uuid)->first();
-            
+
             if ($appointment) {
                 Log::info('📋 Datos de cita encontrados en BD local', [
                     'appointment_id' => $appointment->id,
@@ -1183,20 +1212,20 @@ class AppointmentService
 
                 // Preparar datos para inclusión en request C4C
                 $customerFullName = trim(($appointment->customer_name ?? '') . ' ' . ($appointment->customer_last_name ?? ''));
-                
+
                 // ✅ CONSTRUIR FECHAS COMPLETAS PARA CANCELACIÓN
                 $startDate = null;
                 $endDate = null;
-                
+
                 if ($appointment->appointment_date && $appointment->appointment_time) {
                     // Extraer solo la fecha (YYYY-MM-DD) y la hora (HH:MM:SS)
                     $dateOnly = substr($appointment->appointment_date, 0, 10); // "2025-07-19"
                     $timeOnly = substr($appointment->appointment_time, 11) ?: $appointment->appointment_time; // "09:45:00"
-                    
+
                     $startDate = $dateOnly . ' ' . $timeOnly; // "2025-07-19 09:45:00"
                     $endDate = $startDate; // Usar la misma fecha para start_date y end_date
                 }
-                
+
                 return [
                     'vehicle_plate' => $appointment->vehicle_plate,
                     'customer_name' => $customerFullName ?: $appointment->customer_name,
