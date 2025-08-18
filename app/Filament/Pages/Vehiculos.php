@@ -73,18 +73,18 @@ class Vehiculos extends Page
     public function mount(): void
     {
         Log::info("[VehiculosPage] === INICIANDO MOUNT ===");
-        
+
         // Forzar carga inmediata de vehículos al entrar a la página
         $this->isLoading = true;
         $this->loadingMessage = 'Cargando vehículos...';
-        
+
         try {
             $this->cargarVehiculos();
             $this->cargarPuntosClubMitsui();
-            
+
             // Verificar si se viene de agendar cita para actualizar estado
             $this->verificarActualizacionDesdeAgendarCita();
-            
+
             Log::info("[VehiculosPage] Mount completado exitosamente. Total vehículos: " . $this->todosLosVehiculos->count());
         } catch (\Exception $e) {
             Log::error("[VehiculosPage] Error en mount: " . $e->getMessage());
@@ -93,7 +93,7 @@ class Vehiculos extends Page
             // Asegurar que los vehículos se muestren inmediatamente
             $this->isLoading = false;
         }
-        
+
         Log::info("[VehiculosPage] === MOUNT FINALIZADO ===");
     }
 
@@ -104,28 +104,28 @@ class Vehiculos extends Page
     {
         try {
             $necesitaActualizacion = false;
-            
+
             // Verificar si hay una flag en la sesión que indique que se agendó una cita
             if (session()->has('cita_agendada_recientemente')) {
                 Log::info("[VehiculosPage] Detectada cita agendada recientemente, actualizando estado...");
-                
+
                 // Limpiar la flag de la sesión
                 session()->forget('cita_agendada_recientemente');
                 $necesitaActualizacion = true;
             }
-            
+
             // Verificar si hay una flag en la sesión que indique que se agregó un vehículo
             if (session()->has('vehiculo_agregado_recientemente')) {
                 Log::info("[VehiculosPage] Detectado vehículo agregado recientemente, recargando vehículos...");
-                
+
                 // Limpiar la flag de la sesión
                 session()->forget('vehiculo_agregado_recientemente');
-                
+
                 // Para vehículos nuevos, necesitamos recargar completamente
                 $this->cargarVehiculos();
                 return; // Ya se recargó todo, no necesitamos hacer más
             }
-            
+
             // Si solo se agendó una cita, solo actualizar el estado de citas
             if ($necesitaActualizacion) {
                 $this->enriquecerVehiculosConEstadoCitas();
@@ -143,11 +143,11 @@ class Vehiculos extends Page
     public function actualizarEstadoVehiculos(): void
     {
         Log::info("[VehiculosPage] Actualizando estado de vehículos...");
-        
+
         // Solo actualizar el enriquecimiento con citas, no recargar todo
         $this->enriquecerVehiculosConEstadoCitas();
         $this->agruparYPaginarVehiculos();
-        
+
         Log::info("[VehiculosPage] Estado de vehículos actualizado");
     }
 
@@ -157,18 +157,18 @@ class Vehiculos extends Page
     public function refrescarEstadoCitas(): void
     {
         Log::info("[VehiculosPage] Refrescando estado de citas por solicitud externa...");
-        
+
         // Limpiar cualquier caché de citas pendientes
         $user = \Illuminate\Support\Facades\Auth::user();
         if ($user && $user->c4c_internal_id) {
             $cacheKey = "citas_pendientes_{$user->c4c_internal_id}";
             \Illuminate\Support\Facades\Cache::forget($cacheKey);
         }
-        
+
         // Actualizar estado
         $this->enriquecerVehiculosConEstadoCitas();
         $this->agruparYPaginarVehiculos();
-        
+
         Log::info("[VehiculosPage] Estado de citas refrescado");
     }
 
@@ -192,7 +192,7 @@ class Vehiculos extends Page
             $citasFormateadas = [];
             foreach ($citasLocales as $cita) {
                 $placa = $cita->vehicle_plate ?? '';
-                
+
                 if ($placa) {
                     $citasFormateadas[] = [
                         'vehicle' => [
@@ -230,39 +230,56 @@ class Vehiculos extends Page
                 return;
             }
 
+            // ✅ CIRCUIT BREAKER: Si SAP ya falló, no intentar cargar puntos
+            $circuitBreakerKey = 'sap_circuit_breaker';
+            if (\Illuminate\Support\Facades\Cache::has($circuitBreakerKey)) {
+                Log::info("[VehiculosPage] Circuit breaker activo - Saltando carga de puntos Club Mitsui");
+                $this->puntosClubMitsui = null;
+                return;
+            }
+
             $user = \Illuminate\Support\Facades\Auth::user();
             $documento = $user?->document_number;
             if (!$documento) {
                 $this->puntosClubMitsui = null;
                 return;
             }
-            // Crear cliente SOAP igual que en SapTestCustomer
-            // Usar el mismo WSDL local que VehiculoSoapService para evitar problemas de WS-Policy
+
+            // ✅ TIMEOUT REDUCIDO: 5 segundos máximo para puntos
             $wsdlUrl = storage_path('wsdl/vehiculos.wsdl');
             $usuario = config('services.sap_3p.usuario');
             $password = config('services.sap_3p.password');
             $options = [
                 'login' => $usuario,
                 'password' => $password,
-                'connection_timeout' => 10,
+                'connection_timeout' => 5, // Reducido de 10 a 5 segundos
                 'trace' => true,
                 'exceptions' => true,
                 'cache_wsdl' => WSDL_CACHE_NONE,
+                'stream_context' => stream_context_create([
+                    'http' => [
+                        'timeout' => 5, // Timeout HTTP también reducido
+                    ],
+                ]),
             ];
+
             $soapClient = new \SoapClient($wsdlUrl, $options);
             $parametros = [
                 'PI_NUMDOCCLI' => $documento,
             ];
             $respuesta = $soapClient->Z3PF_GETDATOSCLIENTE($parametros);
             $this->puntosClubMitsui = isset($respuesta->PE_PUNCLU) ? $respuesta->PE_PUNCLU : null;
-        \Log::info('[VehiculosPage] Puntos Club Mitsui obtenidos', [
-            'documento' => $documento,
-            'puntos' => $this->puntosClubMitsui,
-            'respuesta_raw' => $respuesta,
-            'respuesta_campos' => is_object($respuesta) ? array_keys(get_object_vars($respuesta)) : null
-        ]);
+
+            Log::info('[VehiculosPage] Puntos Club Mitsui obtenidos', [
+                'documento' => $documento,
+                'puntos' => $this->puntosClubMitsui,
+            ]);
         } catch (\Exception $e) {
-            \Log::error('[VehiculosPage] Error al obtener puntos Club Mitsui: ' . $e->getMessage());
+            Log::error('[VehiculosPage] Error al obtener puntos Club Mitsui: ' . $e->getMessage());
+
+            // ✅ ACTIVAR CIRCUIT BREAKER si falla la carga de puntos también
+            \Illuminate\Support\Facades\Cache::put($circuitBreakerKey, true, 120);
+
             $this->puntosClubMitsui = null;
         }
     }
@@ -293,7 +310,7 @@ class Vehiculos extends Page
 
         try {
             $user = \Illuminate\Support\Facades\Auth::user();
-            
+
             Log::info("[VehiculosPage] === INICIANDO CARGA DE VEHÍCULOS ===");
             Log::info("[VehiculosPage] Usuario ID: " . ($user?->id ?? 'null'));
             Log::info("[VehiculosPage] Document number: " . ($user?->document_number ?? 'null'));
@@ -306,12 +323,11 @@ class Vehiculos extends Page
 
             if ($webserviceEnabled && !empty($user?->document_number)) {
                 $vehiculosSAP = $this->consultarVehiculosSAP($user, $codigosMarca);
-                
-                // Si SAP falló pero tenemos pocos vehículos locales, intentar una vez más
-                if ($vehiculosSAP->isEmpty() && $vehiculosDB->count() < 3) {
-                    Log::info("[VehiculosPage] SAP falló y pocos vehículos locales, reintentando SAP...");
-                    sleep(1); // Pequeña pausa antes del retry
-                    $vehiculosSAP = $this->consultarVehiculosSAP($user, $codigosMarca);
+
+                // ✅ ELIMINADO RETRY AUTOMÁTICO - El circuit breaker maneja los fallos
+                // Si SAP falló, confiar en los datos locales sin reintentar
+                if ($vehiculosSAP->isEmpty()) {
+                    Log::info("[VehiculosPage] SAP no devolvió vehículos, usando solo datos locales");
                 }
             } else {
                 if (empty($user?->document_number)) {
@@ -325,9 +341,9 @@ class Vehiculos extends Page
             $vehiculosDB = Vehicle::where('user_id', $user->id)
                 ->where('status', 'active')
                 ->get();
-                
+
             Log::info("[VehiculosPage] Vehículos BD encontrados para user_id {$user->id}: " . $vehiculosDB->count());
-            
+
             $vehiculosDB = $vehiculosDB->map(function ($vehicle) {
                     return [
                         'vhclie' => $vehicle->vehicle_id,
@@ -353,11 +369,11 @@ class Vehiculos extends Page
 
             // Log detallado para diagnóstico
             Log::info("[VehiculosPage] Vehículos obtenidos - SAP: " . $vehiculosSAP->count() . ", BD Local: " . $vehiculosDB->count());
-            
+
             if ($vehiculosSAP->count() > 0) {
                 Log::info("[VehiculosPage] Primeros vehículos SAP:", $vehiculosSAP->take(3)->toArray());
             }
-            
+
             if ($vehiculosDB->count() > 0) {
                 Log::info("[VehiculosPage] Primeros vehículos BD:", $vehiculosDB->take(3)->toArray());
             }
@@ -378,14 +394,14 @@ class Vehiculos extends Page
             $this->enriquecerVehiculosConEstadoCitas();
             $this->enriquecerVehiculosConImagenModelo();
             $this->agruparYPaginarVehiculos();
-            
+
             // Asegurar que se muestre la pestaña correcta
             if (empty($this->vehiculosAgrupados) && !empty($this->marcasInfo)) {
                 $this->activeTab = array_key_first($this->marcasInfo);
             } elseif (!isset($this->vehiculosAgrupados[$this->activeTab]) && !empty($this->vehiculosAgrupados)) {
                 $this->activeTab = array_key_first($this->vehiculosAgrupados);
             }
-            
+
             $this->isLoading = false;
         } catch (\Exception $e) {
             Log::error('[VehiculosPage] Error crítico al obtener vehículos: '.$e->getMessage());
@@ -412,44 +428,58 @@ class Vehiculos extends Page
     {
         try {
             $this->isLoading = true;
-            $this->loadingMessage = 'Sincronizando con SAP (15s timeout)...';
+            $this->loadingMessage = 'Sincronizando con SAP (8s timeout)...';
 
             // Obtener el documento del usuario autenticado
             $documentoCliente = $user?->document_number;
-            
+
             // Si no hay documento válido, no consultar SAP
             if (empty($documentoCliente)) {
                 Log::warning("[VehiculosPage] Usuario sin document_number válido, saltando consulta SAP");
                 return collect();
             }
-            
+
+            // ✅ CIRCUIT BREAKER: Verificar si SAP ya falló recientemente
+            $circuitBreakerKey = 'sap_circuit_breaker';
+            if (\Illuminate\Support\Facades\Cache::has($circuitBreakerKey)) {
+                Log::warning("[VehiculosPage] Circuit breaker activo - SAP marcado como no disponible, saltando consulta");
+                $this->loadingMessage = 'SAP no disponible, usando datos locales...';
+                return collect();
+            }
+
             Log::info("[VehiculosPage] Consultando SAP con documento: {$documentoCliente}");
 
             $service = app(VehiculoSoapService::class);
 
-            // Implementar timeout de 15 segundos
+            // ✅ TIMEOUT REDUCIDO: 8 segundos máximo
             $timeoutStart = time();
-            $maxExecutionTime = 15;
+            $maxExecutionTime = 8;
 
             // Establecer timeout específico para esta operación
-            set_time_limit($maxExecutionTime + 5); // +5 segundos de margen
+            set_time_limit($maxExecutionTime + 3); // +3 segundos de margen
 
             $vehiculosSAP = $service->getVehiculosCliente($documentoCliente, $codigosMarca);
 
             $executionTime = time() - $timeoutStart;
             Log::info("[VehiculosPage] Consulta SAP completada en {$executionTime} segundos");
 
+            // ✅ RESETEAR CIRCUIT BREAKER si la consulta fue exitosa
+            \Illuminate\Support\Facades\Cache::forget($circuitBreakerKey);
+
             return $vehiculosSAP;
 
         } catch (\Exception $e) {
             $executionTime = time() - ($timeoutStart ?? time());
             Log::error("[VehiculosPage] Error al consultar SAP: " . $e->getMessage());
-            Log::error("[VehiculosPage] Traza del error: " . $e->getTraceAsString());
+
+            // ✅ ACTIVAR CIRCUIT BREAKER por 2 minutos si hay error
+            \Illuminate\Support\Facades\Cache::put($circuitBreakerKey, true, 120);
 
             if ($executionTime >= $maxExecutionTime) {
-                Log::warning("[VehiculosPage] Timeout SAP alcanzado ({$executionTime}s)");
+                Log::warning("[VehiculosPage] Timeout SAP alcanzado ({$executionTime}s) - Circuit breaker activado");
                 $this->loadingMessage = 'Timeout en SAP, usando datos locales...';
             } else {
+                Log::warning("[VehiculosPage] Error en SAP - Circuit breaker activado");
                 $this->loadingMessage = 'Error en SAP, usando datos locales...';
             }
 
@@ -1007,21 +1037,21 @@ class Vehiculos extends Page
     public function forzarRecarga(): void
     {
         Log::info('[VehiculosPage] === FORZANDO RECARGA COMPLETA ===');
-        
+
         $this->isLoading = true;
         $this->loadingMessage = 'Forzando recarga completa...';
-        
+
         try {
             // Limpiar datos actuales
             $this->todosLosVehiculos = collect();
             $this->vehiculosAgrupados = [];
             $this->marcaCounts = [];
-            
+
             // Recargar todo
             $this->cargarVehiculos();
-            
+
             Log::info('[VehiculosPage] Recarga forzada completada. Total vehículos: ' . $this->todosLosVehiculos->count());
-            
+
             \Filament\Notifications\Notification::make()
                 ->title('Recarga completa exitosa')
                 ->body('Se han recargado ' . $this->todosLosVehiculos->count() . ' vehículos')
@@ -1029,7 +1059,7 @@ class Vehiculos extends Page
                 ->send();
         } catch (\Exception $e) {
             Log::error('[VehiculosPage] Error en recarga forzada: ' . $e->getMessage());
-            
+
             \Filament\Notifications\Notification::make()
                 ->title('Error en recarga')
                 ->body('Error al forzar recarga: ' . $e->getMessage())
