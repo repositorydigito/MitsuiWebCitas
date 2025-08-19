@@ -363,14 +363,34 @@
                                             Ver comprobante
                                         </a>
                                     @endif
-                                    <button type="button" wire:click="editarCita({{ json_encode($cita, JSON_HEX_APOS | JSON_HEX_QUOT) }})" onclick="console.log('🔧 Botón Editar clickeado:', @json($cita))" class="text-primary-600 hover:text-primary-800 flex items-center justify-center md:justify-start text-sm py-2 rounded-md hover:bg-primary-50">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                        </svg>
-                                        Editar
-                                    </button>
                                     @php
-                                        $puedeAnular = in_array($cita['status_raw'] ?? '1', ['1', '2']); // Solo Generada o Confirmada
+                                        $puedeEditar = ($etapas['cita_confirmada']['completado'] ?? false) && 
+                                                      !($etapas['en_trabajo']['completado'] ?? false) && 
+                                                      !($etapas['trabajo_concluido']['completado'] ?? false);
+                                    @endphp
+
+                                    @if($puedeEditar)
+                                        <button type="button" wire:click="editarCita({{ json_encode($cita, JSON_HEX_APOS | JSON_HEX_QUOT) }})" onclick="console.log('🔧 Botón Editar clickeado:', @json($cita))" class="text-primary-600 hover:text-primary-800 flex items-center justify-center md:justify-start text-sm py-2 rounded-md hover:bg-primary-50">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                            </svg>
+                                            Editar
+                                        </button>
+                                    @else
+                                        <button type="button" 
+                                                disabled
+                                                class="text-gray-400 flex items-center justify-center md:justify-start text-sm py-2 px-3 rounded-md cursor-not-allowed opacity-50"
+                                                title="Solo se puede editar cuando la cita está confirmada y no ha iniciado el trabajo">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                            </svg>
+                                            No se puede editar
+                                        </button>
+                                    @endif
+                                    @php
+                                        $puedeAnular = ($etapas['cita_confirmada']['completado'] ?? false) && 
+                                                      !($etapas['en_trabajo']['completado'] ?? false) && 
+                                                      !($etapas['trabajo_concluido']['completado'] ?? false);
                                     @endphp
 
                                     @if($puedeAnular)
@@ -386,7 +406,7 @@
                                         <button type="button" 
                                                 disabled
                                                 class="text-gray-400 flex items-center justify-center md:justify-start text-sm py-2 px-3 rounded-md cursor-not-allowed opacity-50"
-                                                title="No se puede anular una cita en estado {{ $cita['estado'] ?? 'desconocido' }}">
+                                                title="Solo se puede anular cuando la cita está confirmada y no ha iniciado el trabajo">
                                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
                                             </svg>
