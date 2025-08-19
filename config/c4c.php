@@ -18,7 +18,7 @@ return [
     */
 
     'availability' => [
-        'base_url' => env('C4C_AVAILABILITY_BASE_URL', 'https://my317791.crm.ondemand.com/sap/c4c/odata/cust/v1/cita_x_centro'),
+        'base_url' => env('C4C_AVAILABILITY_BASE_URL', 'https://my330968.crm.ondemand.com/sap/c4c/odata/cust/v1/cita_x_centro'),
         'timeout' => env('C4C_AVAILABILITY_TIMEOUT', 120),
         'cache_ttl' => env('C4C_AVAILABILITY_CACHE_TTL', 300), // 5 minutos
     ],
@@ -31,20 +31,20 @@ return [
 
     'services' => [
         'customer' => [
-            'wsdl' => env('C4C_CUSTOMER_WSDL', 'https://my317791.crm.ondemand.com/sap/bc/srt/scs/sap/querycustomerin1?sap-vhost=my317791.crm.ondemand.com'),
+            'wsdl' => env('C4C_CUSTOMER_WSDL', 'https://my330968.crm.ondemand.com/sap/bc/srt/scs/sap/querycustomerin1?sap-vhost=my330968.crm.ondemand.com'),
             'method' => 'CustomerByElementsQuery_sync',
         ],
         'appointment' => [
-            'create_wsdl' => env('C4C_APPOINTMENT_WSDL', 'https://my317791.crm.ondemand.com/sap/bc/srt/scs/sap/manageappointmentactivityin1?sap-vhost=my317791.crm.ondemand.com'),
+            'create_wsdl' => env('C4C_APPOINTMENT_WSDL', 'https://my330968.crm.ondemand.com/sap/bc/srt/scs/sap/manageappointmentactivityin1?sap-vhost=my330968.crm.ondemand.com'),
             'create_method' => 'AppointmentActivityBundleMaintainRequest_sync_V1',
-            'query_wsdl' => env('C4C_APPOINTMENT_QUERY_WSDL', 'https://my317791.crm.ondemand.com/sap/bc/srt/scs/sap/yy6saj0kgy_wscitas?sap-vhost=my317791.crm.ondemand.com'),
+            'query_wsdl' => env('C4C_APPOINTMENT_QUERY_WSDL', 'https://my330968.crm.ondemand.com/sap/bc/srt/scs/sap/yy6saj0kgy_wscitas?sap-vhost=my330968.crm.ondemand.com'),
             'query_method' => 'ActivityBOVNCitasQueryByElementsSimpleByRequest_sync',
         ],
         // ✅ NUEVA CONFIGURACIÓN: Servicios de ofertas
         'offer' => [
-            'create_wsdl' => env('C4C_OFFER_WSDL', 'https://my317791.crm.ondemand.com/sap/bc/srt/scs/sap/customerquoteprocessingmanagec'),
+            'create_wsdl' => env('C4C_OFFER_WSDL', 'https://my330968.crm.ondemand.com/sap/bc/srt/scs/sap/customerquoteprocessingmanagec'),
             'create_method' => env('C4C_OFFER_METHOD', 'CustomerQuoteBundleMaintainRequest_sync_V1'),
-            'query_wsdl' => env('C4C_OFFER_QUERY_WSDL', 'https://my317791.crm.ondemand.com/sap/bc/srt/scs/sap/yy6soffersquery'),
+            'query_wsdl' => env('C4C_OFFER_QUERY_WSDL', 'https://my330968.crm.ondemand.com/sap/bc/srt/scs/sap/yy6soffersquery'),
             'query_method' => env('C4C_OFFER_QUERY_METHOD', 'CustomerQuoteByElementsQueryRequest_sync'),
         ],
     ],

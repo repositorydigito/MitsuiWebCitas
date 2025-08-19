@@ -290,17 +290,17 @@ class VehiculoSoapService
         $sapEnabledEnv = env('SAP_ENABLED', false);
         $sapWebserviceEnabled = env('SAP_WEBSERVICE_ENABLED', false);
         $useMockServices = env('USE_MOCK_SERVICES', false);
-        
+
         // Control exhaustivo: SAP solo se habilita si TODAS las condiciones se cumplen
         $sapEnabled = $webserviceEnabled && $sapEnabledEnv && $sapWebserviceEnabled && !$useMockServices;
-        
+
         Log::info("[VehiculoSoapService] 🔧 CONTROL COMPLETO DE CONFIGURACIÓN SAP:");
         Log::info("[VehiculoSoapService] - vehiculos_webservice.enabled: " . ($webserviceEnabled ? 'true' : 'false'));
         Log::info("[VehiculoSoapService] - SAP_ENABLED (env): " . ($sapEnabledEnv ? 'true' : 'false'));
         Log::info("[VehiculoSoapService] - SAP_WEBSERVICE_ENABLED (env): " . ($sapWebserviceEnabled ? 'true' : 'false'));
         Log::info("[VehiculoSoapService] - USE_MOCK_SERVICES (env): " . ($useMockServices ? 'true' : 'false'));
         Log::info("[VehiculoSoapService] - RESULTADO FINAL SAP: " . ($sapEnabled ? '✅ HABILITADO' : '❌ DESHABILITADO'));
-        
+
         if ($sapEnabled) {
             Log::info('[VehiculoSoapService] NIVEL 1: Intentando obtener vehículos desde SAP Z3PF_GETLISTAVEHICULOS');
 
@@ -319,7 +319,7 @@ class VehiculoSoapService
             if (!$sapEnabledEnv) $razones[] = 'SAP_ENABLED=false';
             if (!$sapWebserviceEnabled) $razones[] = 'SAP_WEBSERVICE_ENABLED=false';
             if ($useMockServices) $razones[] = 'USE_MOCK_SERVICES=true';
-            
+
             $razonesTexto = implode(', ', $razones);
             Log::warning("[VehiculoSoapService] NIVEL 1: SAP deshabilitado. Razones: {$razonesTexto}. Saltando a NIVEL 2 (BD Local).");
         }
@@ -355,22 +355,22 @@ class VehiculoSoapService
 
         // Si no se obtuvieron vehículos en ningún nivel, NO usar datos simulados para usuarios reales
         Log::info('[VehiculoSoapService] No se encontraron vehículos en los niveles 1 y 2 (SAP y BD Local).');
-        
+
         // Solo usar datos mock en entorno de desarrollo y para documentos específicos de prueba
         $documentosDePrueba = ['73061637', '12345678', '87654321']; // Documentos específicos para testing
         $esEntornoDesarrollo = app()->environment(['local', 'testing']);
-        
+
         if ($esEntornoDesarrollo && in_array($documentoCliente, $documentosDePrueba)) {
             Log::info('[VehiculoSoapService] Usando datos simulados para documento de prueba en entorno de desarrollo.');
             $vehiculosMock = $this->mockService->getVehiculosCliente($documentoCliente, $marcas);
-            
+
             if (! $vehiculosMock->isEmpty()) {
                 $this->persistirVehiculosEnBD($vehiculosMock, $documentoCliente);
             }
-            
+
             return $vehiculosMock;
         }
-        
+
         Log::info('[VehiculoSoapService] Usuario sin vehículos. Devolviendo colección vacía.');
         return collect();
     }
@@ -446,6 +446,23 @@ class VehiculoSoapService
                     if ($timeElapsed > $timeoutReal) {
                         throw new \Exception("Timeout manual: llamada tardó {$timeElapsed}s (límite {$timeoutReal}s)");
                     }
+
+
+                        // Log XML request/response en éxito si está habilitado por configuración
+                        if (config('vehiculos_webservice.log_xml', false)) {
+                            try {
+                                $lastRequest = method_exists($cliente, '__getLastRequest') ? $cliente->__getLastRequest() : null;
+                                $lastResponse = method_exists($cliente, '__getLastResponse') ? $cliente->__getLastResponse() : null;
+                                if ($lastRequest) {
+                                    Log::debug('[VehiculoSoapService][SOAP REQUEST Z3PF_GETLISTAVEHICULOS]', ['xml' => $lastRequest]);
+                                }
+                                if ($lastResponse) {
+                                    Log::debug('[VehiculoSoapService][SOAP RESPONSE Z3PF_GETLISTAVEHICULOS]', ['xml' => $lastResponse]);
+                                }
+                            } catch (\Throwable $t) {
+                                Log::warning('[VehiculoSoapService] No se pudo obtener XML request/response', ['error' => $t->getMessage()]);
+                            }
+                        }
 
                     $erroresConsecutivos = 0; // Reset contador de errores si la llamada es exitosa
                 } catch (SoapFault $e) {
@@ -531,7 +548,7 @@ class VehiculoSoapService
     {
         $items = collect();
         Log::debug('[VehiculoSoapService] Iniciando procesarRespuestaSoap. Respuesta recibida (JSON):', ['responseJson' => json_encode($soapResponse)]);
-        
+
         // Log adicional para debug: mostrar la estructura completa del objeto SOAP
         Log::info('[VehiculoSoapService] 🔍 Estructura completa del objeto SOAP:', [
             'soapResponse_type' => gettype($soapResponse),
@@ -561,12 +578,12 @@ class VehiculoSoapService
                 Log::debug("[VehiculoSoapService] Procesando item #{$index}:", ['itemData' => json_encode($vehiculo)]);
                 if (is_object($vehiculo) || is_array($vehiculo)) {
                     $vehiculo = (object) $vehiculo;
-                    
+
                     // Log detallado de todos los campos disponibles en el vehículo
                     Log::info("[VehiculoSoapService] 🔍 Campos disponibles en vehículo #{$index}:", [
                         'all_properties' => get_object_vars($vehiculo),
                         'VHCLE' => $vehiculo->VHCLE ?? 'NO_EXISTE',
-                        'NUMPLA' => $vehiculo->NUMPLA ?? 'NO_EXISTE', 
+                        'NUMPLA' => $vehiculo->NUMPLA ?? 'NO_EXISTE',
                         'ANIOMOD' => $vehiculo->ANIOMOD ?? 'NO_EXISTE',
                         'MODVER' => $vehiculo->MODVER ?? 'NO_EXISTE',
                         'NUMMOT' => $vehiculo->NUMMOT ?? 'NO_EXISTE',
@@ -576,7 +593,7 @@ class VehiculoSoapService
                     // SOLUCIÓN ALTERNATIVA: Si NUMMOT no existe en el objeto, intentar parsearlo del XML
                     $nummotFinal = '';
                     $codmodFinal = '';
-                    
+
                     if (isset($vehiculo->NUMMOT) && !empty($vehiculo->NUMMOT)) {
                         $nummotFinal = (string) $vehiculo->NUMMOT;
                         Log::info("[VehiculoSoapService] ✅ NUMMOT encontrado en objeto: '{$nummotFinal}'");
@@ -585,7 +602,7 @@ class VehiculoSoapService
                         $nummotFinal = $this->extraerCampoDelXmlRaw('NUMMOT', $index);
                         Log::warning("[VehiculoSoapService] ⚠️ NUMMOT no encontrado en objeto, usando fallback XML: '{$nummotFinal}'");
                     }
-                    
+
                     if (isset($vehiculo->CODMOD) && !empty($vehiculo->CODMOD)) {
                         $codmodFinal = (string) $vehiculo->CODMOD;
                         Log::info("[VehiculoSoapService] ✅ CODMOD encontrado en objeto: '{$codmodFinal}'");
@@ -670,19 +687,19 @@ class VehiculoSoapService
 
         try {
             Log::info("[VehiculoSoapService] 🔍 Intentando extraer campo {$campo} del XML raw...");
-            
+
             // Método 1: Usar expresión regular para extraer directamente del XML
             $patron = "/<{$campo}>(.*?)<\/{$campo}>/";
             preg_match_all($patron, $this->lastRawXml, $matches);
-            
+
             if (isset($matches[1][$index]) && !empty($matches[1][$index])) {
                 $valor = trim($matches[1][$index]);
                 Log::info("[VehiculoSoapService] ✅ Campo {$campo} extraído con regex del XML (item #{$index}): '{$valor}'");
                 return $valor;
             }
-            
+
             Log::warning("[VehiculoSoapService] ⚠️ No se encontró campo {$campo} en item #{$index} con regex");
-            
+
             // Método 2: Intentar con SimpleXML (fallback)
             $xml = simplexml_load_string($this->lastRawXml);
             if (!$xml) {
@@ -703,7 +720,7 @@ class VehiculoSoapService
 
             $item = $items[$index];
             $valor = (string) $item->{$campo};
-            
+
             if (!empty($valor)) {
                 Log::info("[VehiculoSoapService] ✅ Campo {$campo} extraído con SimpleXML del XML raw: '{$valor}'");
             } else {
@@ -1028,7 +1045,7 @@ class VehiculoSoapService
         $sapWebserviceEnabled = env('SAP_WEBSERVICE_ENABLED', false);
         $useMockServices = env('USE_MOCK_SERVICES', false);
         $webserviceEnabled = config('vehiculos_webservice.enabled', true);
-        
+
         // URLs y credenciales
         $wsdlUrl = config('services.sap_3p.wsdl_url');
         $sapUsuario = config('services.sap_3p.usuario');
@@ -1046,11 +1063,11 @@ class VehiculoSoapService
         if (!$sapEnabled) {
             Log::warning('[VehiculoSoapService] ⚠️  SAP_ENABLED está en false - El servicio SAP no se utilizará');
         }
-        
+
         if (!$sapWebserviceEnabled) {
             Log::warning('[VehiculoSoapService] ⚠️  SAP_WEBSERVICE_ENABLED está en false - Los webservices SAP están deshabilitados');
         }
-        
+
         if ($useMockServices) {
             Log::warning('[VehiculoSoapService] ⚠️  USE_MOCK_SERVICES está en true - Se priorizarán datos simulados');
         }
@@ -1077,18 +1094,18 @@ class VehiculoSoapService
         $sapEnabledEnv = env('SAP_ENABLED', false);
         $sapWebserviceEnabled = env('SAP_WEBSERVICE_ENABLED', false);
         $useMockServices = env('USE_MOCK_SERVICES', false);
-        
+
         // URLs y credenciales
         $wsdlUrl = config('services.sap_3p.wsdl_url');
         $sapUsuario = config('services.sap_3p.usuario');
         $sapPassword = config('services.sap_3p.password');
 
-        return $webserviceEnabled && 
-               $sapEnabledEnv && 
-               $sapWebserviceEnabled && 
-               !$useMockServices && 
-               !empty($wsdlUrl) && 
-               !empty($sapUsuario) && 
+        return $webserviceEnabled &&
+               $sapEnabledEnv &&
+               $sapWebserviceEnabled &&
+               !$useMockServices &&
+               !empty($wsdlUrl) &&
+               !empty($sapUsuario) &&
                !empty($sapPassword);
     }
 }

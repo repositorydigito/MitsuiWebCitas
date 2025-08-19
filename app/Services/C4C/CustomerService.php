@@ -76,7 +76,7 @@ class CustomerService
 
         $params = [
             'CustomerSelectionByElements' => [
-                'y6s:zDNI_EA8AE8AUBVHCSXVYS0FJ1R3ON' => [
+                'yax:zDNI_EA8AE8AUBVHCSXVYS0FJ1R3ON' => [
                     'SelectionByText' => [
                         'InclusionExclusionCode' => 'I',
                         'IntervalBoundaryTypeCode' => '1',
@@ -176,7 +176,7 @@ class CustomerService
 
         $params = [
             'CustomerSelectionByElements' => [
-                'y6s:zRuc_EA8AE8AUBVHCSXVYS0FJ1R3ON' => [
+                'yax:zRuc_EA8AE8AUBVHCSXVYS0FJ1R3ON' => [
                     'SelectionByText' => [
                         'InclusionExclusionCode' => 'I',
                         'IntervalBoundaryTypeCode' => '1',
@@ -258,7 +258,7 @@ class CustomerService
 
         $params = [
             'CustomerSelectionByElements' => [
-                'y6s:zCE_EA8AE8AUBVHCSXVYS0FJ1R3ON' => [
+                'yax:zCE_EA8AE8AUBVHCSXVYS0FJ1R3ON' => [
                     'SelectionByText' => [
                         'InclusionExclusionCode' => 'I',
                         'IntervalBoundaryTypeCode' => '1',
@@ -340,7 +340,7 @@ class CustomerService
 
         $params = [
             'CustomerSelectionByElements' => [
-                'y6s:zPasaporte_EA8AE8AUBVHCSXVYS0FJ1R3ON' => [
+                'yax:zPasaporte_EA8AE8AUBVHCSXVYS0FJ1R3ON' => [
                     'SelectionByText' => [
                         'InclusionExclusionCode' => 'I',
                         'IntervalBoundaryTypeCode' => '1',

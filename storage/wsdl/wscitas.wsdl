@@ -288,7 +288,7 @@
   </wsdl:binding>
   <wsdl:service name="WSCitasService">
     <wsdl:port name="WSCitasPort" binding="tns:WSCitasBinding">
-      <soap:address location="https://my317791.crm.ondemand.com/sap/bc/srt/scs/sap/yy6saj0kgy_wscitas"/>
+      <soap:address location="https://my330968.crm.ondemand.com/sap/bc/srt/scs/sap/yy6saj0kgy_wscitas"/>
     </wsdl:port>
   </wsdl:service>
 </wsdl:definitions>

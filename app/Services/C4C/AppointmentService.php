@@ -116,18 +116,18 @@ class AppointmentService
                     'TextTypeCode' => '10002',
                     'ContentText' => $data['notes'] ?? 'Cita creada desde la aplicación',
                 ],
-                'y6s:zClienteComodin' => $data['customer_name'] ?? 'Cliente',
+                'yax:zClienteComodin' => $data['customer_name'] ?? 'Cliente',
                 // Campos de INICIO (AGREGADOS para que WSCitas devuelva la hora correcta) - USAR HORA ORIGINAL SIN CONVERSIÓN UTC
-                'y6s:zFechaInicio' => Carbon::parse($data['start_date'])->format('Y-m-d'),
-                'y6s:zHoraInicio' => Carbon::parse($data['start_date'])->format('H:i:s'),
+                'yax:zFechaInicio' => Carbon::parse($data['start_date'])->format('Y-m-d'),
+                'yax:zHoraInicio' => Carbon::parse($data['start_date'])->format('H:i:s'),
                 // Campos de SALIDA (YA EXISTÍAN)
-                'y6s:zFechaHoraProbSalida' => $endDate->format('Y-m-d'),
-                'y6s:zHoraProbSalida' => $endDate->format('H:i:s'),
-                'y6s:zIDCentro' => $data['center_id'],
-                'y6s:zPlaca' => $data['vehicle_plate'],
-                'y6s:zEstadoCita' => config('c4c.status_codes.appointment.generated'),
-                'y6s:zVieneHCP' => 'X',
-                'y6s:zExpress' => $data['express'] ?? 'false',
+                'yax:zFechaHoraProbSalida' => $endDate->format('Y-m-d'),
+                'yax:zHoraProbSalida' => $endDate->format('H:i:s'),
+                'yax:zIDCentro' => $data['center_id'],
+                'yax:zPlaca' => $data['vehicle_plate'],
+                'yax:zEstadoCita' => config('c4c.status_codes.appointment.generated'),
+                'yax:zVieneHCP' => 'X',
+                'yax:zExpress' => $data['express'] ?? 'false',
             ],
         ];
 
@@ -232,14 +232,14 @@ class AppointmentService
                     'ContentText' => $data['notes'] ?? 'Nueva cita para '.($data['vehicle_plate'] ?? 'vehículo').' creada desde Laravel',
                 ],
                 // Campos personalizados con namespace y6s (EXACTAMENTE como Python)
-                'y6s:zClienteComodin' => $data['customer_name'] ?? 'Cliente de Prueba',
-                'y6s:zFechaHoraProbSalida' => $exitDate,
-                'y6s:zHoraProbSalida' => $exitTime,
-                'y6s:zIDCentro' => $data['center_id'] ?? 'M013',
-                'y6s:zPlaca' => $data['vehicle_plate'] ?? 'BJD-733',
-                'y6s:zEstadoCita' => '1', // Generada
-                'y6s:zVieneHCP' => 'X',
-                'y6s:zExpress' => $data['is_express'] ?? 'false',
+                'yax:zClienteComodin' => $data['customer_name'] ?? 'Cliente de Prueba',
+                'yax:zFechaHoraProbSalida' => $exitDate,
+                'yax:zHoraProbSalida' => $exitTime,
+                'yax:zIDCentro' => $data['center_id'] ?? 'M013',
+                'yax:zPlaca' => $data['vehicle_plate'] ?? 'BJD-733',
+                'yax:zEstadoCita' => '1', // Generada
+                'yax:zVieneHCP' => 'X',
+                'yax:zExpress' => $data['is_express'] ?? 'false',
             ],
         ];
 
@@ -339,7 +339,7 @@ class AppointmentService
             'AppointmentActivity' => [
                 'actionCode' => '04', // Update
                 'UUID' => $uuid,
-                'y6s:zVieneHCP' => 'X',
+                'yax:zVieneHCP' => 'X',
             ],
         ];
 
@@ -353,27 +353,27 @@ class AppointmentService
         }
 
         if ($exitDate) {
-            $params['AppointmentActivity']['y6s:zFechaHoraProbSalida'] = $exitDate;
+            $params['AppointmentActivity']['yax:zFechaHoraProbSalida'] = $exitDate;
         }
 
         if ($exitTime) {
-            $params['AppointmentActivity']['y6s:zHoraProbSalida'] = $exitTime;
+            $params['AppointmentActivity']['yax:zHoraProbSalida'] = $exitTime;
         }
 
         if (isset($data['appointment_status'])) {
-            $params['AppointmentActivity']['y6s:zEstadoCita'] = $data['appointment_status'];
+            $params['AppointmentActivity']['yax:zEstadoCita'] = $data['appointment_status'];
         }
 
         if (isset($data['customer_name'])) {
-            $params['AppointmentActivity']['y6s:zClienteComodin'] = $data['customer_name'];
+            $params['AppointmentActivity']['yax:zClienteComodin'] = $data['customer_name'];
         }
 
         if (isset($data['vehicle_plate'])) {
-            $params['AppointmentActivity']['y6s:zPlaca'] = $data['vehicle_plate'];
+            $params['AppointmentActivity']['yax:zPlaca'] = $data['vehicle_plate'];
         }
 
         if (isset($data['center_id'])) {
-            $params['AppointmentActivity']['y6s:zIDCentro'] = $data['center_id'];
+            $params['AppointmentActivity']['yax:zIDCentro'] = $data['center_id'];
         }
 
         if (isset($data['notes'])) {
@@ -451,21 +451,21 @@ class AppointmentService
                 'actionCode' => '04', // Update
                 'UUID' => $uuid,
                 'LifeCycleStatusCode' => 2, // Según documentación para updates
-                'y6s:zEstadoCita' => $status,
-                'y6s:zVieneHCP' => 'X', // Campo requerido
+                'yax:zEstadoCita' => $status,
+                'yax:zVieneHCP' => 'X', // Campo requerido
             ],
         ];
 
         // ✅ INCLUIR DATOS REALES DE LA CITA SI ESTÁN DISPONIBLES
         if ($appointmentData) {
             if (!empty($appointmentData['vehicle_plate'])) {
-                $params['AppointmentActivity']['y6s:zPlaca'] = $appointmentData['vehicle_plate'];
+                $params['AppointmentActivity']['yax:zPlaca'] = $appointmentData['vehicle_plate'];
             }
             if (!empty($appointmentData['customer_name'])) {
-                $params['AppointmentActivity']['y6s:zClienteComodin'] = $appointmentData['customer_name'];
+                $params['AppointmentActivity']['yax:zClienteComodin'] = $appointmentData['customer_name'];
             }
             if (!empty($appointmentData['center_code'])) {
-                $params['AppointmentActivity']['y6s:zIDCentro'] = $appointmentData['center_code'];
+                $params['AppointmentActivity']['yax:zIDCentro'] = $appointmentData['center_code'];
             }
 
             // ✅ INCLUIR FECHAS ORIGINALES (mismo patrón que cancel() y create())
@@ -478,8 +478,8 @@ class AppointmentService
                 ];
 
                 // Campos de inicio locales (mismo patrón que create())
-                $params['AppointmentActivity']['y6s:zFechaInicio'] = Carbon::parse($appointmentData['start_date'])->format('Y-m-d');
-                $params['AppointmentActivity']['y6s:zHoraInicio'] = Carbon::parse($appointmentData['start_date'])->format('H:i:s');
+                $params['AppointmentActivity']['yax:zFechaInicio'] = Carbon::parse($appointmentData['start_date'])->format('Y-m-d');
+                $params['AppointmentActivity']['yax:zHoraInicio'] = Carbon::parse($appointmentData['start_date'])->format('H:i:s');
             }
 
             if (!empty($appointmentData['end_date'])) {
@@ -491,8 +491,8 @@ class AppointmentService
                 ];
 
                 // Campos de salida (mismo patrón que create())
-                $params['AppointmentActivity']['y6s:zFechaHoraProbSalida'] = Carbon::parse($appointmentData['end_date'])->format('Y-m-d');
-                $params['AppointmentActivity']['y6s:zHoraProbSalida'] = Carbon::parse($appointmentData['end_date'])->format('H:i:s');
+                $params['AppointmentActivity']['yax:zFechaHoraProbSalida'] = Carbon::parse($appointmentData['end_date'])->format('Y-m-d');
+                $params['AppointmentActivity']['yax:zHoraProbSalida'] = Carbon::parse($appointmentData['end_date'])->format('H:i:s');
             }
 
             Log::info('✅ Datos originales de cita incluidos en actualización', [
@@ -595,8 +595,8 @@ class AppointmentService
                 '@actionCode' => $data['action_code'] ?? '04', // Modificar - COMO ATRIBUTO
                 'UUID' => $uuid,
                 'LifeCycleStatusCode' => $data['lifecycle_status'] ?? '2',
-                'y6s:zEstadoCita' => $data['estado_cita'] ?? '6', // Estado cancelado
-                'y6s:zVieneHCP' => $data['viene_hcp'] ?? 'X',
+                'yax:zEstadoCita' => $data['estado_cita'] ?? '6', // Estado cancelado
+                'yax:zVieneHCP' => $data['viene_hcp'] ?? 'X',
             ],
         ];
 
@@ -637,7 +637,7 @@ class AppointmentService
             'params_completos' => $params,
             'action_code' => $params['AppointmentActivity']['@actionCode'],
             'lifecycle_status' => $params['AppointmentActivity']['LifeCycleStatusCode'],
-            'estado_cita' => $params['AppointmentActivity']['y6s:zEstadoCita'],
+            'estado_cita' => $params['AppointmentActivity']['yax:zEstadoCita'],
             'uuid' => $params['AppointmentActivity']['UUID'],
             'tiene_start_date' => isset($params['AppointmentActivity']['StartDateTime']),
             'tiene_end_date' => isset($params['AppointmentActivity']['EndDateTime']),
@@ -723,8 +723,8 @@ class AppointmentService
                 '@actionCode' => '04', // Delete - COMO ATRIBUTO
                 'UUID' => $uuid,
                 'LifeCycleStatusCode' => '2', // Requerido para eliminación
-                'y6s:zEstadoCita' => '6', // Estado eliminado
-                'y6s:zVieneHCP' => 'X',
+                'yax:zEstadoCita' => '6', // Estado eliminado
+                'yax:zVieneHCP' => 'X',
             ],
         ];
 
@@ -732,7 +732,7 @@ class AppointmentService
             'params' => $params,
             'action_code' => $params['AppointmentActivity']['@actionCode'],
             'lifecycle_status' => $params['AppointmentActivity']['LifeCycleStatusCode'],
-            'estado_cita' => $params['AppointmentActivity']['y6s:zEstadoCita'],
+            'estado_cita' => $params['AppointmentActivity']['yax:zEstadoCita'],
         ]);
 
         Log::info('🚀 [AppointmentService::delete] Enviando request a C4C...');

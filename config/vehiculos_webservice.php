@@ -23,6 +23,9 @@ return [
     // Número de intentos fallidos antes de activar modo fallback
     'retry_attempts' => env('VEHICULOS_WEBSERVICE_RETRY_ATTEMPTS', 2),
 
+    // Habilitar logging de XML request/response para pruebas (por ambiente)
+    'log_xml' => env('VEHICULOS_WEBSERVICE_LOG_XML', false),
+
     // Intervalo de verificación de disponibilidad en segundos (5 minutos por defecto)
     'health_check_interval' => env('VEHICULOS_WEBSERVICE_HEALTH_CHECK_INTERVAL', 300),
 

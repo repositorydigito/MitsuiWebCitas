@@ -385,10 +385,10 @@
 </wsdl:binding>
 <wsdl:service name="ZWS_GESCIT">
 <wsdl:port name="ZWS_GESCIT" binding="tns:ZWS_GESCIT">
-<soap:address location="http://mitprod.mitsuiautomotriz.com:8000/sap/bc/srt/rfc/sap/zws_ges_cit/400/zws_gescit/zws_gescit"/>
+<soap:address location="http://mitdesqafo.mitsuiautomotriz.com:8002/sap/bc/srt/rfc/sap/zws_ges_cit/400/zws_gescit/zws_gescit"/>
 </wsdl:port>
 <wsdl:port name="ZWS_GESCIT_soap12" binding="tns:ZWS_GESCIT_soap12">
-<wsoap12:address location="http://mitprod.mitsuiautomotriz.com:8000/sap/bc/srt/rfc/sap/zws_ges_cit/400/zws_gescit/zws_gescit"/>
+<wsoap12:address location="http://mitdesqafo.mitsuiautomotriz.com:8002/sap/bc/srt/rfc/sap/zws_ges_cit/400/zws_gescit/zws_gescit"/>
 </wsdl:port>
 </wsdl:service>
-</wsdl:definitions>
+</wsdl:definitions> 

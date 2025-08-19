@@ -369,11 +369,17 @@ class C4CClient
             $searchField = '';
             $searchValue = '';
 
-            if (isset($customerSelection['y6s:zDNI_EA8AE8AUBVHCSXVYS0FJ1R3ON'])) {
-                $searchField = 'y6s:zDNI_EA8AE8AUBVHCSXVYS0FJ1R3ON';
+            if (isset($customerSelection['yax:zDNI_EA8AE8AUBVHCSXVYS0FJ1R3ON'])) {
+                $searchField = 'yax:zDNI_EA8AE8AUBVHCSXVYS0FJ1R3ON';
                 $searchValue = $customerSelection[$searchField]['SelectionByText']['LowerBoundaryName'] ?? '';
-            } elseif (isset($customerSelection['y6s:zRuc_EA8AE8AUBVHCSXVYS0FJ1R3ON'])) {
-                $searchField = 'y6s:zRuc_EA8AE8AUBVHCSXVYS0FJ1R3ON';
+            } elseif (isset($customerSelection['yax:zRuc_EA8AE8AUBVHCSXVYS0FJ1R3ON'])) {
+                $searchField = 'yax:zRuc_EA8AE8AUBVHCSXVYS0FJ1R3ON';
+                $searchValue = $customerSelection[$searchField]['SelectionByText']['LowerBoundaryName'] ?? '';
+            } elseif (isset($customerSelection['yax:zCE_EA8AE8AUBVHCSXVYS0FJ1R3ON'])) {
+                $searchField = 'yax:zCE_EA8AE8AUBVHCSXVYS0FJ1R3ON';
+                $searchValue = $customerSelection[$searchField]['SelectionByText']['LowerBoundaryName'] ?? '';
+            } elseif (isset($customerSelection['yax:zPasaporte_EA8AE8AUBVHCSXVYS0FJ1R3ON'])) {
+                $searchField = 'yax:zPasaporte_EA8AE8AUBVHCSXVYS0FJ1R3ON';
                 $searchValue = $customerSelection[$searchField]['SelectionByText']['LowerBoundaryName'] ?? '';
             }
 
@@ -383,7 +389,7 @@ class C4CClient
 <soapenv:Envelope
     xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
     xmlns:glob="http://sap.com/xi/SAPGlobal20/Global"
-    xmlns:y6s="http://0002961282-one-off.sap.com/Y6SAJ0KGY_">
+    xmlns:yax="http://0002961282-one-off.sap.com/YAXZZOWOY_">
     <soapenv:Header/>
     <soapenv:Body>
         <glob:CustomerByElementsQuery_sync>
@@ -546,35 +552,30 @@ class C4CClient
         $observation = $appointment['Text']['ContentText'] ?? 'Cita de prueba automatizada';
 
         // Extraer campos personalizados
-        $clientName = $appointment['y6s:zClienteComodin'] ?? 'Cliente de Prueba';
-        $exitDate = $appointment['y6s:zFechaHoraProbSalida'] ?? '2024-10-08';
-        $exitTime = $appointment['y6s:zHoraProbSalida'] ?? '13:40:00';
-        $centerId = $appointment['y6s:zIDCentro'] ?? 'M013';
-        $licensePlate = $appointment['y6s:zPlaca'] ?? 'NO-PLACA';
-        $appointmentStatus = $appointment['y6s:zEstadoCita'] ?? '1';
-        $isExpress = $appointment['y6s:zExpress'] ?? 'false';
+        $clientName = $appointment['yax:zClienteComodin'] ?? 'Cliente de Prueba';
+        $exitDate = $appointment['yax:zFechaHoraProbSalida'] ?? '2024-10-08';
+        $exitTime = $appointment['yax:zHoraProbSalida'] ?? '13:40:00';
+        $centerId = $appointment['yax:zIDCentro'] ?? 'M013';
+        $licensePlate = $appointment['yax:zPlaca'] ?? 'NO-PLACA';
+        $appointmentStatus = $appointment['yax:zEstadoCita'] ?? '1';
+        $isExpress = $appointment['yax:zExpress'] ?? 'false';
 
         // 🔍 DEBUG: Log para ver qué placa está llegando
         Log::info('🔍 [C4CClient] Placa extraída del appointment array', [
             'license_plate_found' => $licensePlate,
-            'has_zPlaca_key' => isset($appointment['y6s:zPlaca']),
-            'zPlaca_value' => $appointment['y6s:zPlaca'] ?? 'NO_ENCONTRADO',
+            'has_zPlaca_key' => isset($appointment['yax:zPlaca']),
+            'zPlaca_value' => $appointment['yax:zPlaca'] ?? 'NO_ENCONTRADO',
             'appointment_keys' => array_keys($appointment),
         ]);
 
         // Solo los campos que Python realmente usa (no más campos adicionales)
 
         // Construir XML dinámicamente según el actionCode
-        $xmlBody = '<?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope
-    xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
-    xmlns:glob="http://sap.com/xi/SAPGlobal20/Global"
-    xmlns:y6s="http://0002961282-one-off.sap.com/Y6SAJ0KGY_"
-    xmlns:a25="http://sap.com/xi/AP/CustomerExtension/BYD/A252F">
-    <soapenv:Header/>
-    <soapenv:Body>
-        <glob:AppointmentActivityBundleMaintainRequest_sync_V1>
-            <AppointmentActivity actionCode="' . htmlspecialchars($actionCode) . '">';
+        $xmlBody = '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:glob="http://sap.com/xi/SAPGlobal20/Global" xmlns:yax="http://0002961282-one-off.sap.com/YAXZZOWOY_" xmlns:a25="http://sap.com/xi/AP/CustomerExtension/BYD/A252F">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <glob:AppointmentActivityBundleMaintainRequest_sync_V1>
+         <AppointmentActivity actionCode="' . htmlspecialchars($actionCode) . '">';
 
         // Para UPDATE y DELETE, incluir UUID
         if (! empty($uuid) && ($actionCode === '04' || $actionCode === '05')) {
@@ -631,35 +632,35 @@ class C4CClient
         // Campos personalizados (solo para CREATE)
         if ($actionCode === '01') {
             $xmlBody .= '
-                <y6s:zClienteComodin>' . htmlspecialchars($clientName) . '</y6s:zClienteComodin>
-                <y6s:zFechaHoraProbSalida>' . htmlspecialchars($exitDate) . '</y6s:zFechaHoraProbSalida>
-                <y6s:zHoraProbSalida>' . htmlspecialchars($exitTime) . '</y6s:zHoraProbSalida>
-                <y6s:zIDCentro>' . htmlspecialchars($centerId) . '</y6s:zIDCentro>
-                <y6s:zPlaca>' . htmlspecialchars($licensePlate) . '</y6s:zPlaca>
-                <y6s:zEstadoCita>' . htmlspecialchars($appointmentStatus) . '</y6s:zEstadoCita>
-                <y6s:zVieneHCP>X</y6s:zVieneHCP>
-                <y6s:zExpress>' . htmlspecialchars($isExpress) . '</y6s:zExpress>';
+                <yax:zClienteComodin>' . htmlspecialchars($clientName) . '</yax:zClienteComodin>
+                <yax:zFechaHoraProbSalida>' . htmlspecialchars($exitDate) . '</yax:zFechaHoraProbSalida>
+                <yax:zHoraProbSalida>' . htmlspecialchars($exitTime) . '</yax:zHoraProbSalida>
+                <yax:zIDCentro>' . htmlspecialchars($centerId) . '</yax:zIDCentro>
+                <yax:zPlaca>' . htmlspecialchars($licensePlate) . '</yax:zPlaca>
+                <yax:zEstadoCita>' . htmlspecialchars($appointmentStatus) . '</yax:zEstadoCita>
+                <yax:zVieneHCP>X</yax:zVieneHCP>
+                <yax:zExpress>' . htmlspecialchars($isExpress) . '</yax:zExpress>';
         }
 
         // Para UPDATE/CANCEL (04): solo campos mínimos - NO cambiar placa
         if ($actionCode === '04') {
             $xmlBody .= '
-                <y6s:zEstadoCita>' . htmlspecialchars($appointmentStatus) . '</y6s:zEstadoCita>
-                <y6s:zVieneHCP>X</y6s:zVieneHCP>';
+                <yax:zEstadoCita>' . htmlspecialchars($appointmentStatus) . '</yax:zEstadoCita>
+                <yax:zVieneHCP>X</yax:zVieneHCP>';
         }
 
         // Para DELETE, solo campos mínimos
         if ($actionCode === '05') {
             $xmlBody .= '
                 <LifeCycleStatusCode>4</LifeCycleStatusCode>
-                <y6s:zEstadoCita>6</y6s:zEstadoCita>
-                <y6s:zVieneHCP>X</y6s:zVieneHCP>';
+                <yax:zEstadoCita>6</yax:zEstadoCita>
+                <yax:zVieneHCP>X</yax:zVieneHCP>';
         }
 
         $xmlBody .= '
-            </AppointmentActivity>
-        </glob:AppointmentActivityBundleMaintainRequest_sync_V1>
-    </soapenv:Body>
+         </AppointmentActivity>
+      </glob:AppointmentActivityBundleMaintainRequest_sync_V1>
+   </soapenv:Body>
 </soapenv:Envelope>';
 
         // 🔍 LOG DEL XML FINAL GENERADO
@@ -689,13 +690,10 @@ class C4CClient
         // Parámetros de procesamiento
         $maxResults = $processing['QueryHitsMaximumNumberValue'] ?? 10000;
 
-        return '<?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope
-    xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
-    xmlns:glob="http://sap.com/xi/SAPGlobal20/Global">
-    <soapenv:Header/>
-    <soapenv:Body>
-        <glob:ActivityBOVNCitasQueryByElementsSimpleByRequest_sync>
+        return '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:glob="http://sap.com/xi/SAPGlobal20/Global">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <glob:ActivityBOVNCitasQueryByElementsSimpleByRequest_sync>
             <ActivitySimpleSelectionBy>
                 <SelectionByTypeCode>
                     <InclusionExclusionCode>I</InclusionExclusionCode>
@@ -720,8 +718,8 @@ class C4CClient
                 <QueryHitsUnlimitedIndicator/>
                 <LastReturnedObjectID/>
             </ProcessingConditions>
-        </glob:ActivityBOVNCitasQueryByElementsSimpleByRequest_sync>
-    </soapenv:Body>
+      </glob:ActivityBOVNCitasQueryByElementsSimpleByRequest_sync>
+   </soapenv:Body>
 </soapenv:Envelope>';
     }
 
@@ -873,7 +871,7 @@ class C4CClient
 
         return '<?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
- xmlns:glob="http://sap.com/xi/SAPGlobal20/Global" xmlns:y6s="http://0002961282-one-off.sap.com/Y6SAJ0KGY_" xmlns:a25="http://sap.com/xi/AP/CustomerExtension/BYD/A252F">
+ xmlns:glob="http://sap.com/xi/SAPGlobal20/Global" xmlns:yax="http://0002961282-one-off.sap.com/YAXZZOWOY_" xmlns:a25="http://sap.com/xi/AP/CustomerExtension/BYD/A252F">
     <soap:Header/>
     <soap:Body>
         <glob:CustomerQuoteBundleMaintainRequest_sync_V1>
@@ -910,12 +908,12 @@ class C4CClient
                     <ItemRequestedScheduleLine>
                         <Quantity unitCode="' . htmlspecialchars($unitCode) . '">' . htmlspecialchars($quantity) . '</Quantity>
                     </ItemRequestedScheduleLine>
-                    <y6s:zOVPosIDTipoPosicion listID="?" listVersionID="?" listAgencyID="?">' . htmlspecialchars($zOVPosIDTipoPosicion) . '</y6s:zOVPosIDTipoPosicion>
-                    <y6s:zOVPosTipServ listID="?" listVersionID="" listAgencyID="">' . htmlspecialchars($zOVPosTipServ) . '</y6s:zOVPosTipServ>
-                    <y6s:zOVPosCantTrab>' . htmlspecialchars($zOVPosCantTrab) . '</y6s:zOVPosCantTrab>
-                    <y6s:zID_PAQUETE>' . htmlspecialchars($zID_PAQUETE) . '</y6s:zID_PAQUETE>
-                    <y6s:zTIPO_PAQUETE>' . htmlspecialchars($zTIPO_PAQUETE) . '</y6s:zTIPO_PAQUETE>
-                    <y6s:zOVPosTiempoTeorico>' . htmlspecialchars($zOVPosTiempoTeorico) . '</y6s:zOVPosTiempoTeorico>
+                    <yax:zOVPosIDTipoPosicion listID="?" listVersionID="?" listAgencyID="?">' . htmlspecialchars($zOVPosIDTipoPosicion) . '</yax:zOVPosIDTipoPosicion>
+                    <yax:zOVPosTipServ listID="?" listVersionID="" listAgencyID="">' . htmlspecialchars($zOVPosTipServ) . '</yax:zOVPosTipServ>
+                    <yax:zOVPosCantTrab>' . htmlspecialchars($zOVPosCantTrab) . '</yax:zOVPosCantTrab>
+                    <yax:zID_PAQUETE>' . htmlspecialchars($zID_PAQUETE) . '</yax:zID_PAQUETE>
+                    <yax:zTIPO_PAQUETE>' . htmlspecialchars($zTIPO_PAQUETE) . '</yax:zTIPO_PAQUETE>
+                    <yax:zOVPosTiempoTeorico>' . htmlspecialchars($zOVPosTiempoTeorico) . '</yax:zOVPosTiempoTeorico>
                 </Item>
                 <BusinessTransactionDocumentReference actionCode="' . htmlspecialchars($btdrActionCode) . '">
                     <UUID schemeAgencyID="" schemeID="">' . htmlspecialchars($uuid) . '</UUID>
@@ -926,13 +924,13 @@ class C4CClient
                     <TextTypeCode listAgencyID="" listAgencySchemeAgencyID="" listAgencySchemeID="" listID="" listVersionID="">' . htmlspecialchars($textTypeCode) . '</TextTypeCode>
                     <ContentText>' . htmlspecialchars($contentText) . '</ContentText>
                 </Text>
-                <y6s:zOVGrupoVendedores>' . htmlspecialchars($zOVGrupoVendedores) . '</y6s:zOVGrupoVendedores>
-                <y6s:zOVIDCentro>' . htmlspecialchars($zOVIDCentro) . '</y6s:zOVIDCentro>
-                <y6s:zOVPlaca>' . htmlspecialchars($zOVPlaca) . '</y6s:zOVPlaca>
-                <y6s:zOVVieneDeHCI>' . htmlspecialchars($zOVVieneDeHCI) . '</y6s:zOVVieneDeHCI>
-                <y6s:zOVServExpress>' . htmlspecialchars($zOVServExpress) . '</y6s:zOVServExpress>
-                <y6s:zOVKilometraje>' . htmlspecialchars($zOVKilometraje) . '</y6s:zOVKilometraje>
-                <y6s:zOVOrdenDBMV3>' . htmlspecialchars($zOVOrdenDBMV3) . '</y6s:zOVOrdenDBMV3>
+                <yax:zOVGrupoVendedores>' . htmlspecialchars($zOVGrupoVendedores) . '</yax:zOVGrupoVendedores>
+                <yax:zOVIDCentro>' . htmlspecialchars($zOVIDCentro) . '</yax:zOVIDCentro>
+                <yax:zOVPlaca>' . htmlspecialchars($zOVPlaca) . '</yax:zOVPlaca>
+                <yax:zOVVieneDeHCI>' . htmlspecialchars($zOVVieneDeHCI) . '</yax:zOVVieneDeHCI>
+                <yax:zOVServExpress>' . htmlspecialchars($zOVServExpress) . '</yax:zOVServExpress>
+                <yax:zOVKilometraje>' . htmlspecialchars($zOVKilometraje) . '</yax:zOVKilometraje>
+                <yax:zOVOrdenDBMV3>' . htmlspecialchars($zOVOrdenDBMV3) . '</yax:zOVOrdenDBMV3>
             </CustomerQuote>
         </glob:CustomerQuoteBundleMaintainRequest_sync_V1>
     </soap:Body>
@@ -995,25 +993,25 @@ class C4CClient
                     <ItemRequestedScheduleLine>
                         <Quantity unitCode="' . htmlspecialchars($unitCode) . '">' . htmlspecialchars($quantity) . '</Quantity>
                     </ItemRequestedScheduleLine>
-                    <y6s:zOVPosIDTipoPosicion listID="?" listVersionID="?" listAgencyID="?">' . htmlspecialchars($positionType) . '</y6s:zOVPosIDTipoPosicion>
-                    <y6s:zOVPosTipServ listID="?" listVersionID="" listAgencyID="">P</y6s:zOVPosTipServ>
-                    <y6s:zOVPosCantTrab>0</y6s:zOVPosCantTrab>';
+                    <yax:zOVPosIDTipoPosicion listID="?" listVersionID="?" listAgencyID="?">' . htmlspecialchars($positionType) . '</yax:zOVPosIDTipoPosicion>
+                    <yax:zOVPosTipServ listID="?" listVersionID="" listAgencyID="">P</yax:zOVPosTipServ>
+                    <yax:zOVPosCantTrab>0</yax:zOVPosCantTrab>';
 
                 // ✅ SOLO INCLUIR CAMPOS DE PAQUETE SI TIENE PACKAGE_ID (OMITIR PARA WILDCARD)
                 if (!empty($packageId)) {
                     $itemsXml .= '
-                    <y6s:zID_PAQUETE>' . htmlspecialchars($packageId) . '</y6s:zID_PAQUETE>
-                    <y6s:zTIPO_PAQUETE>Z1</y6s:zTIPO_PAQUETE>';
+                    <yax:zID_PAQUETE>' . htmlspecialchars($packageId) . '</yax:zID_PAQUETE>
+                    <yax:zTIPO_PAQUETE>Z1</yax:zTIPO_PAQUETE>';
                 }
 
                 $itemsXml .= '
-                    <y6s:zOVPosTiempoTeorico>' . htmlspecialchars($workTime) . '</y6s:zOVPosTiempoTeorico>
+                    <yax:zOVPosTiempoTeorico>' . htmlspecialchars($workTime) . '</yax:zOVPosTiempoTeorico>
                 </Item>';
             }
         }
 
         // ✅ ESTRUCTURA COMPLETA SIN DECLARACIÓN XML (como Postman)
-        return '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:glob="http://sap.com/xi/SAPGlobal20/Global" xmlns:y6s="http://0002961282-one-off.sap.com/Y6SAJ0KGY_" xmlns:a25="http://sap.com/xi/AP/CustomerExtension/BYD/A252F">
+        return '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:glob="http://sap.com/xi/SAPGlobal20/Global" xmlns:yax="http://0002961282-one-off.sap.com/YAXZZOWOY_" xmlns:a25="http://sap.com/xi/AP/CustomerExtension/BYD/A252F">
     <soap:Header/>
     <soap:Body>
         <glob:CustomerQuoteBundleMaintainRequest_sync_V1>
@@ -1050,13 +1048,13 @@ class C4CClient
                     <TextTypeCode listAgencyID="" listAgencySchemeAgencyID="" listAgencySchemeID="" listID="" listVersionID="">10024</TextTypeCode>
                     <ContentText>' . htmlspecialchars($comments) . '</ContentText>
                 </Text>
-                <y6s:zOVGrupoVendedores>' . htmlspecialchars($salesGroupID) . '</y6s:zOVGrupoVendedores>
-                <y6s:zOVIDCentro>' . htmlspecialchars($centerCode) . '</y6s:zOVIDCentro>
-                <y6s:zOVPlaca>' . htmlspecialchars($placa) . '</y6s:zOVPlaca>
-                <y6s:zOVVieneDeHCI>X</y6s:zOVVieneDeHCI>
-                <y6s:zOVServExpress>' . htmlspecialchars($serviceExpress) . '</y6s:zOVServExpress>
-                <y6s:zOVKilometraje>' . htmlspecialchars($kilometraje) . '</y6s:zOVKilometraje>
-                <y6s:zOVOrdenDBMV3>3000694890</y6s:zOVOrdenDBMV3>
+                <yax:zOVGrupoVendedores>' . htmlspecialchars($salesGroupID) . '</yax:zOVGrupoVendedores>
+                <yax:zOVIDCentro>' . htmlspecialchars($centerCode) . '</yax:zOVIDCentro>
+                <yax:zOVPlaca>' . htmlspecialchars($placa) . '</yax:zOVPlaca>
+                <yax:zOVVieneDeHCI>X</yax:zOVVieneDeHCI>
+                <yax:zOVServExpress>' . htmlspecialchars($serviceExpress) . '</yax:zOVServExpress>
+                <yax:zOVKilometraje>' . htmlspecialchars($kilometraje) . '</yax:zOVKilometraje>
+                <yax:zOVOrdenDBMV3>3000694890</yax:zOVOrdenDBMV3>
             </CustomerQuote>
         </glob:CustomerQuoteBundleMaintainRequest_sync_V1>
     </soap:Body>
