@@ -53,8 +53,20 @@
 </head>
 <body>
     <div class="header">
+        <div style="text-align: center; margin-bottom: 20px;">
+            @php
+                // Usar URL absoluta directamente
+                $logoUrl = url('images/logo_Mitsui_Blanco.png');
+                $style = "display: block; margin: 0 auto 15px; width: 180px; height: auto;";
+            @endphp
+            
+            <img src="{{ $logoUrl }}" 
+                 alt="Mitsui Automotriz" 
+                 style="{{ $style }}"
+                 onerror="console.error('Error al cargar la imagen:', this.src)">
+        </div>
         <h1>Solicitud de Información</h1>
-        <p>{{ $nombrePopup }}</p>
+        <p>Nuevo mensaje recibido a través del formulario de contacto</p>
     </div>
     
     <div class="content">

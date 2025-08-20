@@ -100,13 +100,16 @@
     <div class="header">
         <div class="logo-container">
             @php
-                $logoPath = 'images/logo_Mitsui_Blanco.png';
-                $logoUrl = \App\Helpers\EmailImageHelper::getImageUrl($logoPath, true);
+                // Usar URL absoluta directamente
+                $logoUrl = url('images/logo_Mitsui_Blanco.png');
+                $style = "display: block; margin: 0 auto 15px; width: 200px; height: auto;";
             @endphp
+            
             <img src="{{ $logoUrl }}" 
                  alt="Mitsui Automotriz" 
                  class="logo"
-                 style="display: block; margin: 0 auto 15px; max-width: 200px; height: auto;">
+                 style="{{ $style }}"
+                 onerror="console.error('Error al cargar la imagen:', this.src)">
         </div>
         <h2 style="margin: 0; font-size: 24px; line-height: 1.3;">
             <span class="reminder-icon" style="color: #17a2b8; font-size: 24px; vertical-align: middle;">⏰</span> 

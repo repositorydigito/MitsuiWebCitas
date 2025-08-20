@@ -129,15 +129,18 @@
 </head>
 <body style="margin: 0; padding: 20px; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
     <div class="container">
-        <div class="header">
+        <div class="logo-container">
             @php
-                $logoPath = 'images/logo_Mitsui_Blanco.png';
-                $logoUrl = \App\Helpers\EmailImageHelper::getImageUrl($logoPath, true);
+                // Usar URL absoluta directamente
+                $logoUrl = url('images/logo_Mitsui_Blanco.png');
+                $style = "display: block; margin: 0 auto 15px; width: 200px; height: auto;";
             @endphp
+            
             <img src="{{ $logoUrl }}" 
                  alt="Mitsui Automotriz" 
                  class="logo"
-                 style="display: block; margin: 0 auto 15px; max-width: 200px; height: auto;">
+                 style="{{ $style }}"
+                 onerror="console.error('Error al cargar la imagen:', this.src)">
             <h1 class="title">Restablece tu contraseña</h1>
         </div>
         
