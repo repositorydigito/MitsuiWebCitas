@@ -100,26 +100,19 @@
     <div class="header">
         <div class="logo-container">
             @php
-                $logoPath = 'images/logo_Mitsui_Blanco.png';
+                // Usar URL absoluta directamente
+                $logoUrl = url('images/logo_Mitsui_Blanco.png');
+                $style = "display: block; margin: 0 auto 15px; width: 200px; height: auto;";
                 
-                // Intentar con base64 primero
-                $base64Image = \App\Helpers\EmailImageHelper::imageToBase64($logoPath);
-                
-                // Si falla, usar URL absoluta
-                $logoUrl = $base64Image ?: asset($logoPath);
-                
-                // Si es base64, forzar el ancho y alto
-                $style = "display: block; margin: 0 auto 15px; max-width: 200px; height: auto;";
-                if ($base64Image) {
-                    $style .= " width: 200px; height: auto;";
-                }
+                // Log para depuración
+                Log::info("URL de la imagen: " . $logoUrl);
             @endphp
             
             <img src="{{ $logoUrl }}" 
                  alt="Mitsui Automotriz" 
                  class="logo"
                  style="{{ $style }}"
-                 onerror="this.onerror=null; this.src='{{ asset($logoPath) }}';">
+                 onerror="console.error('Error al cargar la imagen:', this.src)">
         </div>
         <h2 style="margin: 0; font-size: 24px; line-height: 1.3;">
             <span class="success-icon" style="color: #28a745; font-size: 24px; vertical-align: middle;">✅</span> 

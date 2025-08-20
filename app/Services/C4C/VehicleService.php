@@ -41,12 +41,12 @@ class VehicleService
 
         $this->initialized = true;
 
-        Log::info('🔧 VehicleService inicializado correctamente', [
-            'base_url_configured' => !empty($this->baseUrl),
-            'base_url_preview' => substr($this->baseUrl, 0, 50) . '...',
-            'username' => $this->username,
-            'timeout' => $this->timeout
-        ]);
+        // Log::info('🔧 VehicleService inicializado correctamente', [
+        //     'base_url_configured' => !empty($this->baseUrl),
+        //     'base_url_preview' => substr($this->baseUrl, 0, 50) . '...',
+        //     'username' => $this->username,
+        //     'timeout' => $this->timeout
+        // ]);
     }
 
     /**
@@ -65,11 +65,11 @@ class VehicleService
                     '$filter' => "zPlaca eq '{$placa}'"
                 ];
 
-                Log::info('🚗 Consultando vehículo por placa', [
-                    'placa' => $placa,
-                    'base_url' => $this->baseUrl,
-                    'query_params' => $queryParams
-                ]);
+                // Log::info('🚗 Consultando vehículo por placa', [
+                //     'placa' => $placa,
+                //     'base_url' => $this->baseUrl,
+                //     'query_params' => $queryParams
+                // ]);
 
                 $response = Http::withBasicAuth($this->username, $this->password)
                     ->timeout($this->timeout)
@@ -82,13 +82,13 @@ class VehicleService
                     if (!empty($vehiculos)) {
                         $vehiculo = $vehiculos[0]; // Tomar el primer resultado
 
-                        Log::info('✅ Vehículo encontrado por placa', [
-                            'placa' => $placa,
-                            'ObjectID' => $vehiculo['ObjectID'] ?? 'N/A',
-                            'zModelo' => $vehiculo['zModelo'] ?? 'N/A',
-                            'zDescMarca' => $vehiculo['zDescMarca'] ?? 'N/A',
-                            'zTipoValorTrabajo' => $vehiculo['zTipoValorTrabajo'] ?? 'N/A'
-                        ]);
+                        // Log::info('✅ Vehículo encontrado por placa', [
+                        //     'placa' => $placa,
+                        //     'ObjectID' => $vehiculo['ObjectID'] ?? 'N/A',
+                        //     'zModelo' => $vehiculo['zModelo'] ?? 'N/A',
+                        //     'zDescMarca' => $vehiculo['zDescMarca'] ?? 'N/A',
+                        //     'zTipoValorTrabajo' => $vehiculo['zTipoValorTrabajo'] ?? 'N/A'
+                        // ]);
 
                         return [
                             'success' => true,
@@ -97,9 +97,9 @@ class VehicleService
                             'total' => count($vehiculos)
                         ];
                     } else {
-                        Log::warning('⚠️ Vehículo no encontrado por placa', [
-                            'placa' => $placa
-                        ]);
+                        // Log::warning('⚠️ Vehículo no encontrado por placa', [
+                        //     'placa' => $placa
+                        // ]);
 
                         return [
                             'success' => true,
@@ -109,11 +109,11 @@ class VehicleService
                         ];
                     }
                 } else {
-                    Log::error('💥 Error HTTP en consulta de vehículo', [
-                        'placa' => $placa,
-                        'status' => $response->status(),
-                        'body' => $response->body()
-                    ]);
+                    // Log::error('💥 Error HTTP en consulta de vehículo', [
+                    //     'placa' => $placa,
+                    //     'status' => $response->status(),
+                    //     'body' => $response->body()
+                    // ]);
 
                     return [
                         'success' => false,
@@ -125,10 +125,10 @@ class VehicleService
             });
 
         } catch (\Exception $e) {
-            Log::error('💥 Error obteniendo vehículo por placa', [
-                'error' => $e->getMessage(),
-                'placa' => $placa
-            ]);
+            // Log::error('💥 Error obteniendo vehículo por placa', [
+            //     'error' => $e->getMessage(),
+            //     'placa' => $placa
+            // ]);
 
             return [
                 'success' => false,
@@ -147,35 +147,35 @@ class VehicleService
         $this->initializeConfig(); // Inicializar solo cuando se usa
 
         try {
-            Log::info('🔧 Consultando tipo_valor_trabajo por placa', [
-                'placa' => $placa
-            ]);
+            // Log::info('🔧 Consultando tipo_valor_trabajo por placa', [
+            //     'placa' => $placa
+            // ]);
 
             $resultado = $this->obtenerVehiculoPorPlaca($placa);
 
             if ($resultado['success'] && $resultado['found'] && $resultado['data']) {
                 $tipoValorTrabajo = $resultado['data']['zTipoValorTrabajo'] ?? null;
 
-                Log::info('✅ Tipo valor trabajo obtenido', [
-                    'placa' => $placa,
-                    'tipo_valor_trabajo' => $tipoValorTrabajo
-                ]);
+                // Log::info('✅ Tipo valor trabajo obtenido', [
+                //     'placa' => $placa,
+                //     'tipo_valor_trabajo' => $tipoValorTrabajo
+                // ]);
 
                 return $tipoValorTrabajo;
             }
 
-            Log::warning('⚠️ No se pudo obtener tipo_valor_trabajo', [
-                'placa' => $placa,
-                'resultado' => $resultado
-            ]);
+            // Log::warning('⚠️ No se pudo obtener tipo_valor_trabajo', [
+            //     'placa' => $placa,
+            //     'resultado' => $resultado
+            // ]);
 
             return null;
 
         } catch (\Exception $e) {
-            Log::error('💥 Error obteniendo tipo_valor_trabajo por placa', [
-                'error' => $e->getMessage(),
-                'placa' => $placa
-            ]);
+            // Log::error('💥 Error obteniendo tipo_valor_trabajo por placa', [
+            //     'error' => $e->getMessage(),
+            //     'placa' => $placa
+            // ]);
 
             return null;
         }
@@ -194,27 +194,27 @@ class VehicleService
             return Cache::remember($cacheKey, 300, function () use ($clienteId) {
                 $url = $this->baseUrl . "?\$filter=CustomerID eq '{$clienteId}'";
 
-                Log::info('🚗 Consultando vehículos por cliente', [
-                    'cliente_id' => $clienteId,
-                    'url' => $url
-                ]);
+                // Log::info('🚗 Consultando vehículos por cliente', [
+                //     'cliente_id' => $clienteId,
+                //     'url' => $url
+                // ]);
 
                 $response = $this->makeRequest($url);
                 
                 if ($response['success']) {
                     $vehiculos = $response['data']->d->results ?? [];
                     
-                    Log::info('✅ Vehículos obtenidos por cliente', [
-                        'cliente_id' => $clienteId,
-                        'total_vehiculos' => count($vehiculos),
-                        'primeros_3' => array_slice(array_map(function($v) {
-                            return [
-                                'placa' => $v->zPlaca ?? 'N/A',
-                                'modelo' => $v->Model ?? 'N/A',
-                                'marca' => $v->Brand ?? 'N/A'
-                            ];
-                        }, $vehiculos), 0, 3)
-                    ]);
+                    // Log::info('✅ Vehículos obtenidos por cliente', [
+                    //     'cliente_id' => $clienteId,
+                    //     'total_vehiculos' => count($vehiculos),
+                    //     'primeros_3' => array_slice(array_map(function($v) {
+                    //         return [
+                    //             'placa' => $v->zPlaca ?? 'N/A',
+                    //             'modelo' => $v->Model ?? 'N/A',
+                    //             'marca' => $v->Brand ?? 'N/A'
+                    //         ];
+                    //     }, $vehiculos), 0, 3)
+                    // ]);
 
                     return [
                         'success' => true,
@@ -227,10 +227,10 @@ class VehicleService
             });
 
         } catch (\Exception $e) {
-            Log::error('💥 Error obteniendo vehículos por cliente', [
-                'error' => $e->getMessage(),
-                'cliente_id' => $clienteId
-            ]);
+            // Log::error('💥 Error obteniendo vehículos por cliente', [
+            //     'error' => $e->getMessage(),
+            //     'cliente_id' => $clienteId
+            // ]);
 
             return [
                 'success' => false,
@@ -256,10 +256,10 @@ class VehicleService
             ];
 
         } catch (\Exception $e) {
-            Log::error('💥 Error validando placa', [
-                'error' => $e->getMessage(),
-                'placa' => $placa
-            ]);
+            // Log::error('💥 Error validando placa', [
+            //     'error' => $e->getMessage(),
+            //     'placa' => $placa
+            // ]);
 
             return [
                 'exists' => false,
@@ -281,22 +281,22 @@ class VehicleService
             return Cache::remember($cacheKey, 600, function () use ($skip, $top) {
                 $url = $this->baseUrl . "?\$skip={$skip}&\$top={$top}";
 
-                Log::info('🚗 Consultando todos los vehículos', [
-                    'skip' => $skip,
-                    'top' => $top,
-                    'url' => $url
-                ]);
+                // Log::info('🚗 Consultando todos los vehículos', [
+                //     'skip' => $skip,
+                //     'top' => $top,
+                //     'url' => $url
+                // ]);
 
                 $response = $this->makeRequest($url);
                 
                 if ($response['success']) {
                     $vehiculos = $response['data']->d->results ?? [];
                     
-                    Log::info('✅ Vehículos obtenidos (paginados)', [
-                        'skip' => $skip,
-                        'top' => $top,
-                        'total_obtenidos' => count($vehiculos)
-                    ]);
+                    // Log::info('✅ Vehículos obtenidos (paginados)', [
+                    //     'skip' => $skip,
+                    //     'top' => $top,
+                    //     'total_obtenidos' => count($vehiculos)
+                    // ]);
 
                     return [
                         'success' => true,
@@ -311,11 +311,11 @@ class VehicleService
             });
 
         } catch (\Exception $e) {
-            Log::error('💥 Error obteniendo todos los vehículos', [
-                'error' => $e->getMessage(),
-                'skip' => $skip,
-                'top' => $top
-            ]);
+            // Log::error('💥 Error obteniendo todos los vehículos', [
+            //     'error' => $e->getMessage(),
+            //     'skip' => $skip,
+            //     'top' => $top
+            // ]);
 
             return [
                 'success' => false,
@@ -335,20 +335,20 @@ class VehicleService
         try {
             $url = $this->baseUrl . "?\$filter=substringof('{$modelo}',Model)";
 
-            Log::info('🚗 Buscando vehículos por modelo', [
-                'modelo' => $modelo,
-                'url' => $url
-            ]);
+            // Log::info('🚗 Buscando vehículos por modelo', [
+            //     'modelo' => $modelo,
+            //     'url' => $url
+            // ]);
 
             $response = $this->makeRequest($url);
             
             if ($response['success']) {
                 $vehiculos = $response['data']->d->results ?? [];
                 
-                Log::info('✅ Vehículos encontrados por modelo', [
-                    'modelo' => $modelo,
-                    'total_encontrados' => count($vehiculos)
-                ]);
+                // Log::info('✅ Vehículos encontrados por modelo', [
+                //     'modelo' => $modelo,
+                //     'total_encontrados' => count($vehiculos)
+                // ]);
 
                 return [
                     'success' => true,
@@ -360,10 +360,10 @@ class VehicleService
             return $response;
 
         } catch (\Exception $e) {
-            Log::error('💥 Error buscando vehículos por modelo', [
-                'error' => $e->getMessage(),
-                'modelo' => $modelo
-            ]);
+            // Log::error('💥 Error buscando vehículos por modelo', [
+            //     'error' => $e->getMessage(),
+            //     'modelo' => $modelo
+            // ]);
 
             return [
                 'success' => false,
@@ -381,29 +381,14 @@ class VehicleService
         try {
             $this->initializeConfig(); // Inicializar para health check
             
-            Log::info('🏥 Verificando salud del servicio de vehículos');
+            // Log::info('🏥 Verificando salud del servicio de vehículos');
 
             // Hacer una consulta simple para verificar conectividad
             $url = $this->baseUrl . '?\$top=1';
             $response = $this->makeRequest($url);
 
             if ($response['success']) {
-                Log::info('✅ Servicio de vehículos saludable');
-                return [
-                    'success' => true,
-                    'message' => 'Servicio de vehículos operativo',
-                    'response_time' => $response['response_time'] ?? null
-                ];
-            }
-
-            Log::warning('⚠️ Servicio de vehículos con problemas', [
-                'error' => $response['error']
-            ]);
-
-            return [
-                'success' => false,
-                'error' => $response['error'],
-                'message' => 'Servicio de vehículos no disponible'
+                // Log::info('✅ Servicio de vehículos saludable');
             ];
 
         } catch (\Exception $e) {

@@ -22,19 +22,25 @@ class EmailImageHelper
             // 1. Intentar con la ruta directa en public
             $fullPath = public_path($imagePath);
             
+            // Log de depuración
+            Log::debug("Buscando imagen en: " . $fullPath);
+            
             // 2. Verificar si el archivo existe y es legible
             if (file_exists($fullPath) && is_file($fullPath) && is_readable($fullPath)) {
-                Log::debug("Imagen encontrada en: {$fullPath}");
+                Log::debug("Archivo encontrado y legible: " . $fullPath);
                 $imageData = file_get_contents($fullPath);
                 if ($imageData === false) {
                     throw new \Exception("No se pudo leer el archivo: {$fullPath}");
                 }
+                Log::debug("Tamaño del archivo leído: " . strlen($imageData) . " bytes");
                 
                 // Obtener el tipo MIME
                 $mimeType = mime_content_type($fullPath);
                 if (!$mimeType) {
                     $mimeType = self::getMimeTypeFromExtension($fullPath);
-                    Log::debug("Tipo MIME determinado por extensión: {$mimeType} para {$fullPath}");
+                    Log::debug("Tipo MIME determinado por extensión: " . $mimeType);
+                } else {
+                    Log::debug("Tipo MIME detectado: " . $mimeType);
                 }
                 
                 $base64 = 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
