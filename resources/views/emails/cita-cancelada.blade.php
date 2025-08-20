@@ -98,23 +98,22 @@
 </head>
 <body style="margin: 0; padding: 0; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
     <div class="header">
-        <div class="logo-container" style="text-align: center; margin-bottom: 20px;">
+        <div style="text-align: center; margin-bottom: 20px;">
             @php
+                // Ruta directa a la imagen en public
                 $logoPath = 'images/logo_Mitsui_Blanco.png';
+                
+                // Obtener URL base64 o absoluta
                 $logoUrl = \App\Helpers\EmailImageHelper::getImageUrl($logoPath, true);
                 
-                // URL de respaldo en caso de que falle la carga
+                // URL de respaldo (absoluta)
                 $fallbackUrl = asset($logoPath);
-                
-                // Añadir parámetro de caché para evitar problemas de caché en clientes de correo
-                $cacheBuster = '?v=' . now()->format('YmdHis');
             @endphp
             
-            <!-- Imagen principal con fallback a URL absoluta -->
-            <img src="{{ $logoUrl }}{{ $cacheBuster }}" 
+            <!-- Imagen con estilo en línea -->
+            <img src="{{ $logoUrl }}" 
                  alt="Mitsui Automotriz" 
-                 class="logo"
-                 style="display: block; margin: 0 auto 15px; max-width: 200px; height: auto; border: 0; outline: none;"
+                 style="max-width: 200px; height: auto; display: block; margin: 0 auto 15px; border: 0; outline: none;"
                  onerror="this.onerror=null; this.src='{{ $fallbackUrl }}'"
                  title="Mitsui Automotriz">
         </div>
