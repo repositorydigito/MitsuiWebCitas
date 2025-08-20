@@ -16,36 +16,67 @@ class EmailImageHelper
     public static function imageToBase64($imagePath)
     {
         try {
-            // Primero intentamos con la ruta directa
+            // Normalizar la ruta eliminando barras iniciales
+            $imagePath = ltrim($imagePath, '/');
+            
+            // 1. Intentar con la ruta directa en public
             $fullPath = public_path($imagePath);
             
-            // Si no existe, intentamos con storage
-            if (!file_exists($fullPath)) {
-                $fullPath = storage_path('app/public/' . $imagePath);
+            // 2. Si no existe, intentar con storage
+            if (!file_exists($fullPath) || !is_file($fullPath)) {
+                $storagePath = 'public/' . ltrim($imagePath, '/');
                 
-                if (!file_exists($fullPath)) {
-                    Log::warning("La imagen no se encontró en ninguna ruta: {$imagePath}");
-                    return null;
+                // Verificar si existe en storage
+                if (Storage::exists($storagePath)) {
+                    $fullPath = storage_path('app/' . $storagePath);
+                    Log::debug("Imagen encontrada en storage: {$fullPath}");
+                } else {
+                    // Si no está en storage, verificar si la ruta es correcta
+                    $fullPath = public_path($imagePath);
+                    if (!file_exists($fullPath) || !is_file($fullPath)) {
+                        Log::warning("La imagen no se encontró en ninguna ruta: {$imagePath}", [
+                            'public_path' => public_path($imagePath),
+                            'storage_path' => storage_path('app/public/' . $imagePath),
+                            'cwd' => getcwd()
+                        ]);
+                        return null;
+                    }
                 }
+            }
+            
+            // Verificar si el archivo es legible
+            if (!is_readable($fullPath)) {
+                throw new \Exception("El archivo no es legible (permisos insuficientes): {$fullPath}");
             }
             
             $imageData = file_get_contents($fullPath);
             
             if ($imageData === false) {
-                throw new \Exception("No se pudo leer el archivo: {$imagePath}");
+                throw new \Exception("No se pudo leer el contenido del archivo: {$fullPath}");
             }
             
+            // Obtener el tipo MIME
             $mimeType = mime_content_type($fullPath);
             
+            // Si no se pudo determinar, intentar por extensión
             if (!$mimeType) {
                 $mimeType = self::getMimeTypeFromExtension($fullPath);
+                Log::debug("Tipo MIME determinado por extensión: {$mimeType} para {$fullPath}");
             }
             
-            return 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
+            $base64 = 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
+            
+            // Validar que la cadena base64 no esté vacía
+            if (empty($base64) || strpos($base64, 'base64,') === false) {
+                throw new \Exception("Error al codificar la imagen a base64");
+            }
+            
+            return $base64;
             
         } catch (\Exception $e) {
             Log::error('Error en EmailImageHelper: ' . $e->getMessage(), [
                 'path' => $imagePath,
+                'full_path' => $fullPath ?? 'no definido',
                 'trace' => $e->getTraceAsString()
             ]);
             return null;
@@ -67,9 +98,14 @@ class EmailImageHelper
             'bmp' => 'image/bmp',
             'webp' => 'image/webp',
             'svg' => 'image/svg+xml',
+            'ico' => 'image/x-icon',
         ];
         
-        return $mimeTypes[$ext] ?? 'application/octet-stream';
+        $mime = $mimeTypes[$ext] ?? 'application/octet-stream';
+        
+        Log::debug("Tipo MIME para extensión .{$ext}: {$mime}");
+        
+        return $mime;
     }
     
     /**
@@ -78,14 +114,38 @@ class EmailImageHelper
      */
     public static function getImageUrl($imagePath, $useBase64 = true)
     {
+        // Normalizar la ruta
+        $imagePath = ltrim($imagePath, '/');
+        
+        // Si se solicita base64, intentar primero con esa opción
         if ($useBase64) {
             $base64 = self::imageToBase64($imagePath);
             if ($base64) {
+                Log::debug("Imagen codificada en base64 exitosamente", [
+                    'path' => $imagePath,
+                    'base64_length' => strlen($base64)
+                ]);
                 return $base64;
+            }
+            
+            Log::warning("No se pudo codificar la imagen en base64, usando URL absoluta", [
+                'path' => $imagePath
+            ]);
+        }
+        
+        // Generar URL absoluta
+        $absoluteUrl = asset($imagePath);
+        
+        // Verificar si la URL es accesible (solo en entorno local para no ralentizar)
+        if (app()->environment('local')) {
+            $headers = @get_headers($absoluteUrl);
+            $isAccessible = $headers && strpos($headers[0], '200') !== false;
+            
+            if (!$isAccessible) {
+                Log::warning("La URL de la imagen no es accesible: {$absoluteUrl}");
             }
         }
         
-        // Si falla base64 o no se desea usar, devolver URL absoluta
-        return asset($imagePath);
+        return $absoluteUrl;
     }
 }
