@@ -139,35 +139,33 @@ class EmailImageHelper
      */
     public static function getImageUrl($imagePath, $useBase64 = true)
     {
-        // Normalizar la ruta
         $imagePath = ltrim($imagePath, '/');
         
-        // Si se solicita base64, intentar primero con esa opción
+        // Primero intentar con base64 si está habilitado
         if ($useBase64) {
             $base64 = self::imageToBase64($imagePath);
-            if ($base64) {
-                Log::debug("Imagen codificada en base64 exitosamente", [
-                    'path' => $imagePath,
-                    'base64_length' => strlen($base64)
-                ]);
+            if (!empty($base64)) {
                 return $base64;
             }
-            
-            Log::warning("No se pudo codificar la imagen en base64, usando URL absoluta", [
-                'path' => $imagePath
-            ]);
         }
         
-        // Generar URL absoluta
+        // Si falla base64 o no está habilitado, usar URL absoluta
         $absoluteUrl = asset($imagePath);
         
-        // Verificar si la URL es accesible (solo en entorno local para no ralentizar)
+        // Asegurarse de que la URL sea accesible
         if (app()->environment('local')) {
+            $absoluteUrl = str_replace('http://', 'https://', $absoluteUrl);
             $headers = @get_headers($absoluteUrl);
             $isAccessible = $headers && strpos($headers[0], '200') !== false;
             
             if (!$isAccessible) {
                 Log::warning("La URL de la imagen no es accesible: {$absoluteUrl}");
+                // Si falla con HTTPS, intentar con HTTP
+                $httpUrl = str_replace('https://', 'http://', $absoluteUrl);
+                $headers = @get_headers($httpUrl);
+                if ($headers && strpos($headers[0], '200') !== false) {
+                    return $httpUrl;
+                }
             }
         }
         
