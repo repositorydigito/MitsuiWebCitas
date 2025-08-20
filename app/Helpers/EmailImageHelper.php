@@ -16,38 +16,63 @@ class EmailImageHelper
     public static function imageToBase64($imagePath)
     {
         try {
-            // Normalizar la ruta eliminando barras iniciales
-            $imagePath = ltrim($imagePath, '/');
+            // Normalizar la ruta eliminando barras iniciales y asegurando el formato correcto
+            $imagePath = ltrim(str_replace('\\', '/', $imagePath), '/');
             
             // 1. Intentar con la ruta directa en public
             $fullPath = public_path($imagePath);
             
-            // 2. Si no existe, intentar con storage
-            if (!file_exists($fullPath) || !is_file($fullPath)) {
-                $storagePath = 'public/' . ltrim($imagePath, '/');
-                
-                // Verificar si existe en storage
-                if (Storage::exists($storagePath)) {
-                    $fullPath = storage_path('app/' . $storagePath);
-                    Log::debug("Imagen encontrada en storage: {$fullPath}");
-                } else {
-                    // Si no está en storage, verificar si la ruta es correcta
-                    $fullPath = public_path($imagePath);
-                    if (!file_exists($fullPath) || !is_file($fullPath)) {
-                        Log::warning("La imagen no se encontró en ninguna ruta: {$imagePath}", [
-                            'public_path' => public_path($imagePath),
-                            'storage_path' => storage_path('app/public/' . $imagePath),
-                            'cwd' => getcwd()
-                        ]);
-                        return null;
-                    }
+            // 2. Verificar si el archivo existe y es legible
+            if (file_exists($fullPath) && is_file($fullPath) && is_readable($fullPath)) {
+                Log::debug("Imagen encontrada en: {$fullPath}");
+                $imageData = file_get_contents($fullPath);
+                if ($imageData === false) {
+                    throw new \Exception("No se pudo leer el archivo: {$fullPath}");
                 }
+                
+                // Obtener el tipo MIME
+                $mimeType = mime_content_type($fullPath);
+                if (!$mimeType) {
+                    $mimeType = self::getMimeTypeFromExtension($fullPath);
+                    Log::debug("Tipo MIME determinado por extensión: {$mimeType} para {$fullPath}");
+                }
+                
+                $base64 = 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
+                
+                if (empty($base64)) {
+                    throw new \Exception("Error al codificar la imagen a base64");
+                }
+                
+                return $base64;
             }
             
-            // Verificar si el archivo es legible
-            if (!is_readable($fullPath)) {
-                throw new \Exception("El archivo no es legible (permisos insuficientes): {$fullPath}");
+            // 3. Si no se encontró en public, intentar con storage
+            $storagePath = 'public/' . ltrim($imagePath, '/');
+            if (Storage::exists($storagePath)) {
+                $fullPath = storage_path('app/' . $storagePath);
+                Log::debug("Imagen encontrada en storage: {$fullPath}");
+                
+                $imageData = file_get_contents($fullPath);
+                if ($imageData === false) {
+                    throw new \Exception("No se pudo leer el archivo: {$fullPath}");
+                }
+                
+                $mimeType = Storage::mimeType($storagePath);
+                if (!$mimeType) {
+                    $mimeType = self::getMimeTypeFromExtension($fullPath);
+                }
+                
+                return 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
             }
+            
+            // Si no se encontró en ninguna ubicación
+            Log::warning("La imagen no se encontró en ninguna ruta: {$imagePath}", [
+                'public_path' => $fullPath,
+                'storage_path' => storage_path('app/' . $storagePath),
+                'cwd' => getcwd()
+            ]);
+            
+            return null;
             
             $imageData = file_get_contents($fullPath);
             
