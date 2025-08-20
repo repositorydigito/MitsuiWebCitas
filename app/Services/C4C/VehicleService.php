@@ -389,6 +389,11 @@ class VehicleService
 
             if ($response['success']) {
                 // Log::info('✅ Servicio de vehículos saludable');
+            }
+
+            return [
+                'success' => true,
+                'message' => 'Servicio de vehículos operativo'
             ];
 
         } catch (\Exception $e) {
