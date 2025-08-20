@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cita Modificada</title>
+    <title>Cita Actualizada</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -11,24 +11,39 @@
             color: #333;
             max-width: 600px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -webkit-text-size-adjust: none;
         }
         .header {
             background-color: #0075BF;
             color: white;
-            padding: 20px;
+            padding: 30px 20px;
             text-align: center;
             border-radius: 8px 8px 0 0;
+        }
+        .logo-container {
+            margin-bottom: 20px;
+        }
+        .logo {
+            max-width: 200px;
+            height: auto;
+            display: block;
+            margin: 0 auto 15px;
+            width: auto;
+            border: 0;
+            outline: none;
         }
         .content {
             background-color: #f9f9f9;
             padding: 30px;
             border-radius: 0 0 8px 8px;
+            line-height: 1.5;
         }
         .info-section {
             background-color: white;
             padding: 20px;
-            margin: 15px 0;
+            margin: 20px 0;
             border-radius: 6px;
             border-left: 4px solid #0075BF;
         }
@@ -36,24 +51,29 @@
             font-weight: bold;
             color: #0075BF;
             margin-bottom: 5px;
+            display: block;
         }
         .info-value {
-            color: #555;
-            margin-bottom: 10px;
+            color: #333;
+            margin-bottom: 15px;
+            display: block;
         }
-        .highlight {
+        .changes {
             background-color: #e8f4fd;
-            padding: 15px;
+            padding: 20px;
             border-radius: 6px;
-            margin: 15px 0;
-            border: 1px solid #0075BF;
+            margin: 25px 0;
+            border: 1px solid #b8daff;
         }
-        .changes-section {
-            background-color: #e8f5e8;
-            padding: 15px;
-            border-radius: 6px;
-            margin: 15px 0;
-            border-left: 4px solid #28a745;
+        .change-item {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #dee2e6;
+        }
+        .change-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
         }
         .footer {
             text-align: center;
@@ -62,18 +82,46 @@
             border-top: 1px solid #ddd;
             color: #666;
             font-size: 12px;
+            line-height: 1.5;
         }
         .edit-icon {
-            color: #0075BF;
+            color: #17a2b8;
             font-size: 24px;
             margin-right: 10px;
+            vertical-align: middle;
+        }
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 20px 15px;
+            }
+            .header {
+                padding: 20px 15px;
+            }
+            .logo {
+                max-width: 180px;
+            }
+            .changes, .info-section {
+                padding: 15px;
+            }
         }
     </style>
 </head>
-<body>
+<body style="margin: 0; padding: 0; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
     <div class="header">
-        <img src="{{ \App\Helpers\EmailImageHelper::imageToBase64('images/logo_Mitsui_Blanco.png') ?: url('images/logo_Mitsui_Blanco.png') }}" alt="logoMitsui" style="margin-right:20px; width: 12rem; height: auto;">
-        <h2><span class="edit-icon">✏️</span> Cita Modificada</h2>
+        <div class="logo-container">
+            @php
+                $logoPath = 'images/logo_Mitsui_Blanco.png';
+                $logoUrl = \App\Helpers\EmailImageHelper::getImageUrl($logoPath, true);
+            @endphp
+            <img src="{{ $logoUrl }}" 
+                 alt="Mitsui Automotriz" 
+                 class="logo"
+                 style="display: block; margin: 0 auto 15px; max-width: 200px; height: auto;">
+        </div>
+        <h2 style="margin: 0; font-size: 24px; line-height: 1.3;">
+            <span class="edit-icon" style="color: #17a2b8; font-size: 24px; vertical-align: middle;">✏️</span> 
+            Cita Actualizada
+        </h2>
     </div>
     
     <div class="content">
@@ -157,7 +205,13 @@
             <p>"Recuerde que, según el Decreto Legislativo 1529, las operaciones a partir de S/2,000 o US$ 500 se deberán realizar a través de un medio de pago dentro del sistema financiero, como transferencias bancarias o tarjetas (no aceptamos cheques)."</p>
         </div>
         
-        <img src="{{ \App\Helpers\EmailImageHelper::imageToBase64('images/logomitsui2.svg') ?: url('images/logomitsui2.svg') }}" alt="logoMitsui2" style="display:flex; justify-content:center; width: 12rem; height: auto;">
+        @php
+            $logo2Path = 'images/logomitsui2.svg';
+            $logo2Url = \App\Helpers\EmailImageHelper::getImageUrl($logo2Path, true);
+        @endphp
+        <img src="{{ $logo2Url }}" 
+             alt="Mitsui Automotriz" 
+             style="display: block; margin: 20px auto; max-width: 200px; height: auto;">
         
     </div>
     

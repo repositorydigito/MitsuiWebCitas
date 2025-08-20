@@ -11,8 +11,10 @@
             color: #333;
             max-width: 600px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 0;
             background-color: #f4f4f4;
+            -webkit-font-smoothing: antialiased;
+            -webkit-text-size-adjust: none;
         }
         .container {
             background-color: #ffffff;
@@ -27,7 +29,11 @@
         .logo {
             max-width: 200px;
             height: auto;
-            margin-bottom: 20px;
+            margin: 0 auto 20px;
+            display: block;
+            width: auto;
+            border: 0;
+            outline: none;
         }
         .title {
             color: #0075BF;
@@ -37,6 +43,7 @@
         }
         .content {
             margin-bottom: 30px;
+            line-height: 1.5;
         }
         .greeting {
             font-size: 18px;
@@ -63,7 +70,9 @@
             transition: background-color 0.3s;
         }
         .reset-button:hover {
-            background-color: #073568;
+            background-color: #0056b3;
+            text-decoration: none;
+            color: white;
         }
         .expiry-notice {
             font-size: 14px;
@@ -78,6 +87,7 @@
             font-size: 14px;
             color: #666;
             text-align: center;
+            line-height: 1.5;
         }
         .warning {
             background-color: #fff3cd;
@@ -85,7 +95,7 @@
             color: #856404;
             padding: 15px;
             border-radius: 5px;
-            margin-top: 20px;
+            margin: 20px 0;
         }
         .alternative-link {
             margin-top: 20px;
@@ -94,53 +104,88 @@
             border-radius: 5px;
             font-size: 14px;
             color: #666;
+            word-break: break-all;
         }
         .alternative-link a {
             color: #0075BF;
-            word-break: break-all;
+            text-decoration: none;
+        }
+        .alternative-link a:hover {
+            text-decoration: underline;
+        }
+        @media only screen and (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            .title {
+                font-size: 20px;
+            }
+            .reset-button {
+                padding: 12px 24px;
+                font-size: 15px;
+            }
         }
     </style>
 </head>
-<body>
+<body style="margin: 0; padding: 20px; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
     <div class="container">
         <div class="header">
-        <img src="{{ \App\Helpers\EmailImageHelper::imageToBase64('images/logo_Mitsui_Blanco.png') ?: url('images/logo_Mitsui_Blanco.png') }}" alt="logoMitsui" style="margin-right:20px; width: 12rem; height: auto;">
+            @php
+                $logoPath = 'images/logo_Mitsui_Blanco.png';
+                $logoUrl = \App\Helpers\EmailImageHelper::getImageUrl($logoPath, true);
+            @endphp
+            <img src="{{ $logoUrl }}" 
+                 alt="Mitsui Automotriz" 
+                 class="logo"
+                 style="display: block; margin: 0 auto 15px; max-width: 200px; height: auto;">
             <h1 class="title">Restablece tu contraseña</h1>
         </div>
         
         <div class="content">
-            <p class="greeting">Hola,</p>
+            <p class="greeting">¡Hola!</p>
             
-            <p class="message">
-                Recibimos una solicitud para restablecer tu contraseña asociada al documento <strong>{{ $documentType }}: {{ $documentNumber }}</strong>.
-            </p>
-            
-            <p class="message">
-                Haz clic en el siguiente botón para crear una nueva contraseña:
-            </p>
+            <p class="message">Recibiste este correo porque solicitaste restablecer tu contraseña en el sistema de agendamiento de citas de Mitsui Automotriz.</p>
             
             <div class="button-container">
-                <a href="{{ $resetUrl }}" class="reset-button">Restablecer contraseña</a>
+                <a href="{{ $resetUrl }}" class="reset-button" target="_blank" style="color: white; text-decoration: none;">
+                    Restablecer contraseña
+                </a>
             </div>
             
-            <p class="expiry-notice">
-                <strong>Este enlace es válido por 30 minutos.</strong>
-            </p>
-            
-            <div class="alternative-link">
-                <p><strong>¿No puedes hacer clic en el botón?</strong></p>
-                <p>Copia y pega el siguiente enlace en tu navegador:</p>
-                <a href="{{ $resetUrl }}">{{ $resetUrl }}</a>
-            </div>
+            <p class="expiry-notice">Este enlace expirará en {{ $expiresInMinutes }} minutos.</p>
             
             <div class="warning">
-                <strong>Importante:</strong> Si tú no solicitaste este cambio, puedes ignorar este mensaje. Tu contraseña actual permanecerá sin cambios.
+                <strong>Importante:</strong> Si no solicitaste este restablecimiento, por favor ignora este correo o contacta con nuestro equipo de soporte si tienes alguna pregunta.
+            </div>
+            
+            <div class="alternative-link">
+                Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
+                <a href="{{ $resetUrl }}" target="_blank">{{ $resetUrl }}</a>
+            </div>
+            
+            <!-- Logo adicional al pie del correo -->
+            <div style="text-align: center; margin: 30px 0 20px;">
+                @php
+                    $logo2Path = 'images/logomitsui2.svg';
+                    $logo2Url = \App\Helpers\EmailImageHelper::getImageUrl($logo2Path, true);
+                @endphp
+                <img src="{{ $logo2Url }}" 
+                     alt="Mitsui Automotriz" 
+                     style="max-width: 200px; height: auto; margin: 0 auto; display: block;">
             </div>
         </div>
         
         <div class="footer">
-            <p>Este es un mensaje automático, por favor no respondas a este correo.</p>
-            <p>&copy; {{ date('Y') }} Mitsui. Todos los derechos reservados.</p>
+            <p>Este es un correo automático. Por favor, no respondas a este mensaje.</p>
+            <p>Si necesitas ayuda, contáctanos a <a href="mailto:soporte@mitsuiautomotriz.com" style="color: #0075BF; text-decoration: none;">soporte@mitsuiautomotriz.com</a></p>
+            
+            <div style="margin-top: 20px; font-size: 12px; color: #999;">
+                &copy; {{ date('Y') }} Mitsui Automotriz. Todos los derechos reservados.
+            </div>
+            
+            <div style="margin-top: 15px; font-size: 12px; color: #999;">
+                <p>Por motivos de seguridad, nunca compartas este enlace con nadie. Mitsui Automotriz nunca te pedirá tu contraseña por correo electrónico.</p>
+            </div>
         </div>
     </div>
 </body>

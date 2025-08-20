@@ -11,24 +11,39 @@
             color: #333;
             max-width: 600px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -webkit-text-size-adjust: none;
         }
         .header {
             background-color: #17a2b8;
             color: white;
-            padding: 20px;
+            padding: 30px 20px;
             text-align: center;
             border-radius: 8px 8px 0 0;
+        }
+        .logo-container {
+            margin-bottom: 20px;
+        }
+        .logo {
+            max-width: 200px;
+            height: auto;
+            display: block;
+            margin: 0 auto 15px;
+            width: auto;
+            border: 0;
+            outline: none;
         }
         .content {
             background-color: #f9f9f9;
             padding: 30px;
             border-radius: 0 0 8px 8px;
+            line-height: 1.5;
         }
         .info-section {
             background-color: white;
             padding: 20px;
-            margin: 15px 0;
+            margin: 20px 0;
             border-radius: 6px;
             border-left: 4px solid #17a2b8;
         }
@@ -36,25 +51,19 @@
             font-weight: bold;
             color: #17a2b8;
             margin-bottom: 5px;
+            display: block;
         }
         .info-value {
-            color: #555;
-            margin-bottom: 10px;
+            color: #333;
+            margin-bottom: 15px;
+            display: block;
         }
-        .highlight {
-            background-color: #d1ecf1;
-            padding: 15px;
+        .reminder {
+            background-color: #e8f4fd;
+            padding: 20px;
             border-radius: 6px;
-            margin: 15px 0;
-            border: 1px solid #17a2b8;
-        }
-        .urgent {
-            background-color: #fff3cd;
-            padding: 15px;
-            border-radius: 6px;
-            margin: 15px 0;
-            border: 1px solid #ffc107;
-            color: #856404;
+            margin: 25px 0;
+            border: 1px solid #b8daff;
         }
         .footer {
             text-align: center;
@@ -63,17 +72,46 @@
             border-top: 1px solid #ddd;
             color: #666;
             font-size: 12px;
+            line-height: 1.5;
         }
         .reminder-icon {
             color: #17a2b8;
             font-size: 24px;
             margin-right: 10px;
+            vertical-align: middle;
+        }
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 20px 15px;
+            }
+            .header {
+                padding: 20px 15px;
+            }
+            .logo {
+                max-width: 180px;
+            }
+            .reminder, .info-section {
+                padding: 15px;
+            }
         }
     </style>
 </head>
-<body>
+<body style="margin: 0; padding: 0; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
     <div class="header">
-        <h1><span class="reminder-icon">🔔</span> Recordatorio de Cita</h1>
+        <div class="logo-container">
+            @php
+                $logoPath = 'images/logo_Mitsui_Blanco.png';
+                $logoUrl = \App\Helpers\EmailImageHelper::getImageUrl($logoPath, true);
+            @endphp
+            <img src="{{ $logoUrl }}" 
+                 alt="Mitsui Automotriz" 
+                 class="logo"
+                 style="display: block; margin: 0 auto 15px; max-width: 200px; height: auto;">
+        </div>
+        <h2 style="margin: 0; font-size: 24px; line-height: 1.3;">
+            <span class="reminder-icon" style="color: #17a2b8; font-size: 24px; vertical-align: middle;">⏰</span> 
+            Recordatorio de Cita
+        </h2>
         <p>{{ $appointment->appointment_number }}</p>
     </div>
     

@@ -11,42 +11,59 @@
             color: #333;
             max-width: 600px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -webkit-text-size-adjust: none;
         }
         .header {
-            background-color: #0075BF;
+            background-color: #dc3545;
             color: white;
-            padding: 20px;
+            padding: 30px 20px;
             text-align: center;
             border-radius: 8px 8px 0 0;
+        }
+        .logo-container {
+            margin-bottom: 20px;
+        }
+        .logo {
+            max-width: 200px;
+            height: auto;
+            display: block;
+            margin: 0 auto 15px;
+            width: auto;
+            border: 0;
+            outline: none;
         }
         .content {
             background-color: #f9f9f9;
             padding: 30px;
             border-radius: 0 0 8px 8px;
+            line-height: 1.5;
         }
         .info-section {
             background-color: white;
             padding: 20px;
-            margin: 15px 0;
+            margin: 20px 0;
             border-radius: 6px;
-            border-left: 4px solid #0075BF;
+            border-left: 4px solid #dc3545;
         }
         .info-label {
             font-weight: bold;
-            color: #0075BF;
+            color: #dc3545;
             margin-bottom: 5px;
+            display: block;
         }
         .info-value {
-            color: #555;
-            margin-bottom: 10px;
+            color: #333;
+            margin-bottom: 15px;
+            display: block;
         }
         .highlight {
-            background-color: #e8f4fd;
-            padding: 15px;
+            background-color: #f8d7da;
+            padding: 20px;
             border-radius: 6px;
-            margin: 15px 0;
-            border: 1px solid #0075BF;
+            margin: 25px 0;
+            border: 1px solid #f5c6cb;
         }
         .footer {
             text-align: center;
@@ -55,18 +72,46 @@
             border-top: 1px solid #ddd;
             color: #666;
             font-size: 12px;
+            line-height: 1.5;
         }
-        .cancel-icon {
-            color: #0075BF;
+        .warning-icon {
+            color: #ffc107;
             font-size: 24px;
             margin-right: 10px;
+            vertical-align: middle;
+        }
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 20px 15px;
+            }
+            .header {
+                padding: 20px 15px;
+            }
+            .logo {
+                max-width: 180px;
+            }
+            .highlight, .info-section {
+                padding: 15px;
+            }
         }
     </style>
 </head>
-<body>
+<body style="margin: 0; padding: 0; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
     <div class="header">
-        <img src="{{ \App\Helpers\EmailImageHelper::imageToBase64('images/logo_Mitsui_Blanco.png') ?: url('images/logo_Mitsui_Blanco.png') }}" alt="logoMitsui" style="margin-right:20px; width: 12rem; height: auto;">
-        <h2><span class="cancel-icon">❌</span> Cita Cancelada</h2>
+        <div class="logo-container">
+            @php
+                $logoPath = 'images/logo_Mitsui_Blanco.png';
+                $logoUrl = \App\Helpers\EmailImageHelper::getImageUrl($logoPath, true);
+            @endphp
+            <img src="{{ $logoUrl }}" 
+                 alt="Mitsui Automotriz" 
+                 class="logo"
+                 style="display: block; margin: 0 auto 15px; max-width: 200px; height: auto;">
+        </div>
+        <h2 style="margin: 0; font-size: 24px; line-height: 1.3;">
+            <span class="warning-icon" style="color: #ffc107; font-size: 24px; vertical-align: middle;">⚠️</span> 
+            Cita Cancelada
+        </h2>
     </div>
     
     <div class="content">
