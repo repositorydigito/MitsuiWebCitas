@@ -848,12 +848,9 @@ class Vehiculos extends Page
             // $cacheKey = "citas_pendientes_{$user->c4c_internal_id}";
             // return \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($user) {
 
-            $appointmentService = app(\App\Services\C4C\AppointmentQueryService::class);
+            $appointmentService = app(\App\Services\C4C\AppointmentService::class);
 
-            $result = $appointmentService->getPendingAppointments($user->c4c_internal_id, [
-                'status_codes' => [1, 2], // Generada y Confirmada
-                'limit' => 1000
-            ]);
+            $result = $appointmentService->queryPendingAppointments($user->c4c_internal_id);
 
             Log::info("[VehiculosPage] Resultado WSCitas completo:", $result);
 
@@ -864,7 +861,7 @@ class Vehiculos extends Page
                 // Log resumido de citas encontradas
                 Log::info("[VehiculosPage] Citas encontradas: " . count($citas));
                 foreach ($citas as $index => $cita) {
-                    Log::info("[VehiculosPage] Cita {$index}: Placa={$cita['vehicle']['plate']}, Estado={$cita['status']['appointment_code']}-{$cita['status']['appointment_name']}, Fecha={$cita['dates']['scheduled_start_date']}");
+                    Log::info("[VehiculosPage] Cita {$index}: Placa={$cita['license_plate']}, Estado={$cita['appointment_status']}-{$cita['appointment_status_name']}, Fecha={$cita['scheduled_start_date']}");
                 }
 
                 return $citas;
@@ -891,7 +888,7 @@ class Vehiculos extends Page
         Log::info("[VehiculosPage] === CREANDO ÍNDICE DE CITAS ===");
 
         foreach ($citas as $index => $cita) {
-            $placa = $cita['vehicle']['plate'] ?? null;
+            $placa = $cita['license_plate'] ?? null;
             Log::info("[VehiculosPage] Procesando cita {$index} - Placa: " . ($placa ?? 'NULL'));
 
             if ($placa) {
@@ -921,8 +918,8 @@ class Vehiculos extends Page
         }
 
         foreach ($citasDelVehiculo as $cita) {
-            $statusCode = $cita['status']['appointment_code'] ?? '';
-            $fechaProgramada = $cita['dates']['scheduled_start_date'] ?? '';
+            $statusCode = $cita['appointment_status'] ?? '';
+            $fechaProgramada = $cita['scheduled_start_date'] ?? '';
 
             // Verificar si es una cita válida (Generada=1 o Confirmada=2)
             if (in_array($statusCode, ['1', '2'])) {

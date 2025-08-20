@@ -29,14 +29,38 @@ class AppointmentQueryService
         // Intentar usar el WSDL local primero
         $localWsdl = storage_path('wsdl/wscitas.wsdl');
         if (file_exists($localWsdl)) {
-            $this->wsdl = $localWsdl;
-            Log::info('AppointmentQueryService usando WSDL local: '.$localWsdl);
+            // Extraer la URL del endpoint del WSDL local
+            $this->wsdl = $this->extractEndpointFromWsdl($localWsdl);
+            Log::info('AppointmentQueryService usando WSDL local: '.$localWsdl.' -> Endpoint: '.$this->wsdl);
         } else {
             $this->wsdl = config('c4c.services.appointment.query_wsdl');
             Log::info('AppointmentQueryService usando WSDL remoto: '.$this->wsdl);
         }
 
         $this->method = config('c4c.services.appointment.query_method');
+    }
+
+    /**
+     * Extract the endpoint URL from a local WSDL file.
+     */
+    private function extractEndpointFromWsdl(string $wsdlPath): string
+    {
+        try {
+            $wsdlContent = file_get_contents($wsdlPath);
+
+            // Buscar la dirección del servicio SOAP
+            if (preg_match('/<soap:address\s+location="([^"]+)"/', $wsdlContent, $matches)) {
+                return $matches[1];
+            }
+
+            // Fallback: usar configuración remota si no se puede extraer
+            Log::warning('No se pudo extraer endpoint del WSDL local, usando configuración remota');
+            return config('c4c.services.appointment.query_wsdl');
+
+        } catch (\Exception $e) {
+            Log::error('Error al leer WSDL local: ' . $e->getMessage());
+            return config('c4c.services.appointment.query_wsdl');
+        }
     }
 
     /**
