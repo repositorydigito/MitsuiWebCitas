@@ -98,24 +98,21 @@
 </head>
 <body style="margin: 0; padding: 0; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
     <div class="header">
-        <div style="text-align: center; margin-bottom: 20px;">
+        <div class="logo-container">
             @php
-                // Ruta directa a la imagen en public
                 $logoPath = 'images/logo_Mitsui_Blanco.png';
-                
-                // Obtener URL base64 o absoluta
                 $logoUrl = \App\Helpers\EmailImageHelper::getImageUrl($logoPath, true);
                 
-                // URL de respaldo (absoluta)
-                $fallbackUrl = asset($logoPath);
+                // Si falla la conversión a base64, usar URL absoluta
+                if (empty($logoUrl)) {
+                    $logoUrl = asset($logoPath);
+                }
             @endphp
             
-            <!-- Imagen con estilo en línea -->
             <img src="{{ $logoUrl }}" 
                  alt="Mitsui Automotriz" 
-                 style="max-width: 200px; height: auto; display: block; margin: 0 auto 15px; border: 0; outline: none;"
-                 onerror="this.onerror=null; this.src='{{ $fallbackUrl }}'"
-                 title="Mitsui Automotriz">
+                 class="logo"
+                 style="display: block; margin: 0 auto 15px; max-width: 200px; height: auto;">
         </div>
         <h2 style="margin: 0; font-size: 24px; line-height: 1.3;">
             <span class="success-icon" style="color: #28a745; font-size: 24px; vertical-align: middle;">✅</span> 
