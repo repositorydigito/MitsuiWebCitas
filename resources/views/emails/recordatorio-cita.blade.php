@@ -181,13 +181,15 @@
         <strong>Equipo de Servicio - Mitsui</strong></p>
         
         @php
-            $logoFooterUrl = url('images/logomitsui2.svg');
-            $logoFooterStyle = "display: block; margin: 20px auto; width: 12rem; height: auto;";
+            // Forzar HTTPS para la URL de la imagen
+            $logoFooterUrl = asset('images/logomitsui2.svg');
+            $logoFooterUrl = str_replace('http://', 'https://', $logoFooterUrl);
+            $logoFooterStyle = "display: block; margin: 20px auto; width: 12rem; height: auto; max-width: 100%;";
         @endphp
         <img src="{{ $logoFooterUrl }}" 
              alt="Mitsui Automotriz" 
              style="{{ $logoFooterStyle }}"
-             onerror="console.error('Error al cargar la imagen del pie:', this.src)">
+             onerror="this.onerror=null; this.src='{{ asset('images/logo_Mitsui_Blanco.png') }}';">
     </div>
     
     <div class="footer">

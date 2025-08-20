@@ -196,6 +196,11 @@
             </div>
         </div>
         
+        <p>¡Te esperamos!</p>
+        
+        <p>Saludos cordiales,<br>
+        <strong>Equipo de Servicio - Mitsui</strong></p>
+        
         <div class="highlight">
         <p><strong>📋 Importante:</strong></p>
             <ul>
@@ -209,12 +214,15 @@
         </div>
         
         @php
-            $logo2Path = 'images/logomitsui2.svg';
-            $logo2Url = \App\Helpers\EmailImageHelper::getImageUrl($logo2Path, true);
+            // Forzar HTTPS para la URL de la imagen
+            $logoFooterUrl = asset('images/logomitsui2.svg');
+            $logoFooterUrl = str_replace('http://', 'https://', $logoFooterUrl);
+            $logoFooterStyle = "display: block; margin: 20px auto; width: 12rem; height: auto; max-width: 100%;";
         @endphp
-        <img src="{{ $logo2Url }}" 
+        <img src="{{ $logoFooterUrl }}" 
              alt="Mitsui Automotriz" 
-             style="display: block; margin: 20px auto; max-width: 200px; height: auto;">
+             style="{{ $logoFooterStyle }}"
+             onerror="this.onerror=null; this.src='{{ asset('images/logo_Mitsui_Blanco.png') }}';">
         
     </div>
     
