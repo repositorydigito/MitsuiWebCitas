@@ -217,7 +217,7 @@
             // Usar la versión PNG del logo para mejor compatibilidad
             $logoFooterUrl = asset('images/logomitsuifooter.png');
             $logoFooterUrl = str_replace('http://', 'https://', $logoFooterUrl);
-            $logoFooterStyle = "display: block; margin: 20px auto; width: 12rem; height: auto; max-width: 100%;";
+            $logoFooterStyle = "display: block; margin: 20px auto; width: 6rem; height: auto; max-width: 100%;";
         @endphp
         <img src="{{ $logoFooterUrl }}" 
              alt="Mitsui Automotriz" 
