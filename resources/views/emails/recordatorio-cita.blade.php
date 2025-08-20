@@ -179,6 +179,15 @@
         
         <p>Saludos cordiales,<br>
         <strong>Equipo de Servicio - Mitsui</strong></p>
+        
+        @php
+            $logoFooterUrl = url('images/logomitsui2.svg');
+            $logoFooterStyle = "display: block; margin: 20px auto; width: 12rem; height: auto;";
+        @endphp
+        <img src="{{ $logoFooterUrl }}" 
+             alt="Mitsui Automotriz" 
+             style="{{ $logoFooterStyle }}"
+             onerror="console.error('Error al cargar la imagen del pie:', this.src)">
     </div>
     
     <div class="footer">

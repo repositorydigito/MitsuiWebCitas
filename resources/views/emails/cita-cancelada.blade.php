@@ -190,7 +190,14 @@
             <p>"Recuerde que, según el Decreto Legislativo 1529, las operaciones a partir de S/2,000 o US$ 500 se deberán realizar a través de un medio de pago dentro del sistema financiero, como transferencias bancarias o tarjetas (no aceptamos cheques)."</p>
         </div>
         
-        <img src="{{ \App\Helpers\EmailImageHelper::imageToBase64('images/logomitsui2.svg') ?: url('images/logomitsui2.svg') }}" alt="logoMitsui2" style="display:flex; justify-content:center; width: 12rem; height: auto;">
+        @php
+            $logoFooterUrl = url('images/logomitsui2.svg');
+            $logoFooterStyle = "display: block; margin: 20px auto; width: 12rem; height: auto;";
+        @endphp
+        <img src="{{ $logoFooterUrl }}" 
+             alt="Mitsui Automotriz" 
+             style="{{ $logoFooterStyle }}"
+             onerror="console.error('Error al cargar la imagen del pie:', this.src)">
     </div>
     
     <div class="footer">
