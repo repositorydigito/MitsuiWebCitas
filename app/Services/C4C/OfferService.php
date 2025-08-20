@@ -1043,24 +1043,38 @@ class OfferService
      */
     private function generarComentariosCombinados(Appointment $appointment): string
     {
-        $comentarios = ['Oferta generada automáticamente desde sistema web'];
-
+        $comentarios = [];
+        
         // Agregar tipo de mantenimiento si existe
         if (!empty($appointment->maintenance_type)) {
             $comentarios[] = "Mantenimiento: {$appointment->maintenance_type}";
         }
 
-        // Agregar servicios adicionales usando relación many-to-many
+        // Agregar servicios adicionales
         try {
+            // Cargar explícitamente la relación con el modelo AdditionalService
+            $appointment->load(['additionalServices.additionalService']);
+            
             $serviciosAdicionales = $appointment->additionalServices ?? collect([]);
+            
             if ($serviciosAdicionales->isNotEmpty()) {
-                $serviciosTexto = $serviciosAdicionales->pluck('name')->toArray();
-                $comentarios[] = "Servicios adicionales: " . implode(', ', $serviciosTexto);
+                $nombresServicios = [];
+                
+                foreach ($serviciosAdicionales as $servicio) {
+                    if ($servicio->additionalService && !empty($servicio->additionalService->name)) {
+                        $nombresServicios[] = $servicio->additionalService->name;
+                    }
+                }
+                
+                if (!empty($nombresServicios)) {
+                    $comentarios[] = "Servicios adicionales: " . implode(', ', $nombresServicios);
+                }
             }
         } catch (\Exception $e) {
             Log::warning('⚠️ Error obteniendo servicios adicionales para comentarios', [
                 'appointment_id' => $appointment->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
         }
 
