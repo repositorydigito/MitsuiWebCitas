@@ -1392,7 +1392,14 @@ class DetalleVehiculo extends Page
      */
     protected function fechasCoinciden(?string $fechaSAP, ?string $fechaCita): bool
     {
-        if (!$fechaSAP || !$fechaCita) {
+        Log::info('[DetalleVehiculo] Iniciando comparación de fechas', [
+            'fechaSAP' => $fechaSAP,
+            'fechaCita' => $fechaCita,
+            'tipo_fechaSAP' => gettype($fechaSAP),
+            'tipo_fechaCita' => gettype($fechaCita)
+        ]);
+
+        if (empty($fechaSAP) || empty($fechaCita)) {
             Log::info('[DetalleVehiculo] Una o ambas fechas están vacías', [
                 'fechaSAP' => $fechaSAP,
                 'fechaCita' => $fechaCita
@@ -1401,60 +1408,83 @@ class DetalleVehiculo extends Page
         }
 
         try {
-            // Log de depuración con las fechas originales
-            Log::info('[DetalleVehiculo] Iniciando comparación de fechas', [
-                'fechaSAP_original' => $fechaSAP,
-                'fechaCita_original' => $fechaCita
-            ]);
+            // Intentar parsear las fechas con Carbon
+            $carbonSAP = null;
+            $carbonCita = null;
+            $formatos = ['Y-m-d', 'd/m/Y', 'Y-m-d H:i:s', 'd/m/Y H:i:s', 'Ymd'];
             
-            // Función auxiliar para parsear fechas en diferentes formatos
-            $parsearFecha = function($fecha) {
-                // Si ya está en formato Y-m-d, devolver directamente
-                if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
-                    return $fecha;
-                }
-                
-                // Intentar parsear como d/m/Y
-                if (preg_match('/^\d{1,2}\/\d{1,2}\/\d{4}$/', $fecha)) {
-                    return \Carbon\Carbon::createFromFormat('d/m/Y', $fecha)->format('Y-m-d');
-                }
-                
-                // Intentar parsear con Carbon
+            // Intentar parsear fecha SAP
+            foreach ($formatos as $formato) {
                 try {
-                    return \Carbon\Carbon::parse($fecha)->format('Y-m-d');
+                    $carbonSAP = \Carbon\Carbon::createFromFormat($formato, $fechaSAP);
+                    if ($carbonSAP) break;
                 } catch (\Exception $e) {
-                    Log::error('[DetalleVehiculo] No se pudo parsear la fecha', [
-                        'fecha' => $fecha,
+                    // Continuar con el siguiente formato
+                    continue;
+                }
+            }
+            
+            // Intentar parsear fecha Cita
+            foreach ($formatos as $formato) {
+                try {
+                    $carbonCita = \Carbon\Carbon::createFromFormat($formato, $fechaCita);
+                    if ($carbonCita) break;
+                } catch (\Exception $e) {
+                    // Continuar con el siguiente formato
+                    continue;
+                }
+            }
+            
+            // Si no se pudo parsear alguna fecha, intentar con parse genérico
+            if (!$carbonSAP) {
+                try {
+                    $carbonSAP = \Carbon\Carbon::parse($fechaSAP);
+                } catch (\Exception $e) {
+                    Log::error('[DetalleVehiculo] No se pudo parsear la fecha SAP', [
+                        'fechaSAP' => $fechaSAP,
                         'error' => $e->getMessage()
                     ]);
-                    return null;
                 }
-            };
+            }
             
-            // Parsear ambas fechas
-            $fechaSAPFormateada = $parsearFecha($fechaSAP);
-            $fechaCitaFormateada = $parsearFecha($fechaCita);
+            if (!$carbonCita) {
+                try {
+                    $carbonCita = \Carbon\Carbon::parse($fechaCita);
+                } catch (\Exception $e) {
+                    Log::error('[DetalleVehiculo] No se pudo parsear la fecha Cita', [
+                        'fechaCita' => $fechaCita,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
             
-            if (!$fechaSAPFormateada || !$fechaCitaFormateada) {
-                Log::error('[DetalleVehiculo] No se pudieron formatear una o ambas fechas', [
+            if (!$carbonSAP || !$carbonCita) {
+                Log::error('[DetalleVehiculo] No se pudieron parsear una o ambas fechas', [
                     'fechaSAP' => $fechaSAP,
                     'fechaCita' => $fechaCita,
-                    'fechaSAPFormateada' => $fechaSAPFormateada,
-                    'fechaCitaFormateada' => $fechaCitaFormateada
+                    'carbonSAP' => $carbonSAP ? $carbonSAP->toDateTimeString() : null,
+                    'carbonCita' => $carbonCita ? $carbonCita->toDateTimeString() : null
                 ]);
                 return false;
             }
             
-            // Comparar las fechas formateadas
-            $coinciden = $fechaSAPFormateada === $fechaCitaFormateada;
+            // Normalizar a fecha sin hora para comparación
+            $fechaSAPNormalizada = $carbonSAP->format('Y-m-d');
+            $fechaCitaNormalizada = $carbonCita->format('Y-m-d');
+            
+            // Comparar las fechas normalizadas
+            $coinciden = $fechaSAPNormalizada === $fechaCitaNormalizada;
             
             // Log detallado del resultado
             Log::info('[DetalleVehiculo] Resultado comparación fechas', [
                 'fechaSAP_original' => $fechaSAP,
                 'fechaCita_original' => $fechaCita,
-                'fechaSAP_formateada' => $fechaSAPFormateada,
-                'fechaCita_formateada' => $fechaCitaFormateada,
-                'coinciden' => $coinciden ? 'SÍ' : 'NO'
+                'fechaSAP_normalizada' => $fechaSAPNormalizada,
+                'fechaCita_normalizada' => $fechaCitaNormalizada,
+                'carbonSAP' => $carbonSAP->toDateTimeString(),
+                'carbonCita' => $carbonCita->toDateTimeString(),
+                'coinciden' => $coinciden ? 'SÍ' : 'NO',
+                'comparacion' => "$fechaSAPNormalizada === $fechaCitaNormalizada"
             ]);
             
             return $coinciden;
