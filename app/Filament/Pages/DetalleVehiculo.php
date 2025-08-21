@@ -1356,30 +1356,13 @@ class DetalleVehiculo extends Page
                 }
             }
             
-            Log::info('[DetalleVehiculo] Buscando cita en la base de datos', [
-                'cita_actual' => $citaActual,
-                'candidatos_id' => $candidatosId
-            ]);
-            
-            // Probar con cada candidato hasta encontrar una cita válida
+            // Buscar cita en la base de datos
             foreach ($candidatosId as $id) {
                 $citaLocal = \App\Models\Appointment::find($id);
                 if ($citaLocal) {
                     $fechaCitaActual = $citaLocal->appointment_date ? $citaLocal->appointment_date->format('Y-m-d') : null;
-                    Log::info('[DetalleVehiculo] Cita encontrada en la base de datos', [
-                        'cita_id' => $id,
-                        'fecha_cita' => $fechaCitaActual,
-                        'appointment_date' => $citaLocal->appointment_date,
-                        'status' => $citaLocal->status
-                    ]);
                     break; // Usar el primer ID que encuentre
                 }
-            }
-            
-            if (!$fechaCitaActual) {
-                Log::warning('[DetalleVehiculo] No se encontró la cita en la base de datos con ninguno de los IDs', [
-                    'candidatos_id' => $candidatosId
-                ]);
             }
         }
         
@@ -1402,11 +1385,6 @@ class DetalleVehiculo extends Page
             $fechaUltServ = substr($fechaUltServ, 0, 10);
         }
         
-        Log::info('[DetalleVehiculo] Comparando fechas para estado', [
-            'fecha_ult_serv' => $fechaUltServ,
-            'fecha_cita_actual' => $fechaCitaActual,
-            'tiene_fecha_ult_serv' => $tieneFechaUltServ
-        ]);
         
         // Lógica de estados según SAP
         if ($tieneFechaUltServ && $fechaUltServ) {
@@ -1419,8 +1397,6 @@ class DetalleVehiculo extends Page
             
             $estadoBase['etapas']['trabajo_concluido']['activo'] = false;
             $estadoBase['etapas']['trabajo_concluido']['completado'] = false;
-            
-            Log::info('[DetalleVehiculo] Cambiando a estado En Trabajo por PE_FEC_ULT_SERV existente'); 
         }
         
         // CASO 1: Si tiene fecha de FACTURA -> TRABAJO CONCLUIDO (tiene prioridad sobre los demás estados)
