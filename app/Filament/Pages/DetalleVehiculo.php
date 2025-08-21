@@ -1332,16 +1332,28 @@ class DetalleVehiculo extends Page
         $citaActual = $this->citasAgendadas[0] ?? null;
         
         if ($citaActual) {
-            // Usar la fecha ya formateada o formatearla si es necesario
+            Log::info('[DetalleVehiculo] Datos completos de la cita:', $citaActual);
+            
+            // 1. Primero intentar con fecha_cita (si ya está formateada)
             if (!empty($citaActual['fecha_cita'])) {
                 $fechaCitaActual = $citaActual['fecha_cita'];
-                Log::info('[DetalleVehiculo] Usando fecha_cita de la cita', ['fecha' => $fechaCitaActual]);
-            } elseif (!empty($citaActual['scheduled_start_date'])) {
-                $fechaCitaActual = $this->formatearFechaC4C($citaActual['scheduled_start_date']);
-                Log::info('[DetalleVehiculo] Usando scheduled_start_date de la cita', ['fecha' => $fechaCitaActual]);
-            } elseif (!empty($citaActual['start_date_time'])) {
-                $fechaCitaActual = substr($citaActual['start_date_time'], 0, 10); // Extraer YYYY-MM-DD de ISO 8601
-                Log::info('[DetalleVehiculo] Usando start_date_time de la cita', ['fecha' => $fechaCitaActual]);
+                Log::info('[DetalleVehiculo] Usando fecha_cita directa', ['fecha' => $fechaCitaActual]);
+            } 
+            // 2. Intentar con scheduled_start_date (formato YYYY-MM-DD)
+            elseif (!empty($citaActual['scheduled_start_date'])) {
+                $fechaCitaActual = $citaActual['scheduled_start_date'];
+                Log::info('[DetalleVehiculo] Usando scheduled_start_date directo', ['fecha' => $fechaCitaActual]);
+            } 
+            // 3. Intentar con start_date_time (formato ISO 8601)
+            elseif (!empty($citaActual['start_date_time'])) {
+                $fechaCitaActual = substr($citaActual['start_date_time'], 0, 10);
+                Log::info('[DetalleVehiculo] Extrayendo fecha de start_date_time', ['fecha' => $fechaCitaActual]);
+            }
+            
+            // 4. Si aún no tenemos fecha, intentar formatear desde cualquier campo de fecha disponible
+            if (!$fechaCitaActual) {
+                $fechaCitaActual = $this->formatearFechaC4C($citaActual['scheduled_start_date'] ?? $citaActual['start_date_time'] ?? '');
+                Log::info('[DetalleVehiculo] Intentando formatear fecha con formatearFechaC4C', ['fecha' => $fechaCitaActual]);
             }
         }
 
