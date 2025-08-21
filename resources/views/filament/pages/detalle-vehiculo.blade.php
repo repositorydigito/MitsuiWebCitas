@@ -230,7 +230,7 @@
                                                 $trabajoCompletado = $etapas['en_trabajo']['completado'] ?? false;
                                                 $trabajoActivo = $etapas['en_trabajo']['activo'] ?? false;
                                             @endphp
-                                            <div style="display: flex; flex-direction: column; align-items: center; opacity: {{ $trabajoCompletado ? '1' : '0.5' }};">
+                                            <div style="display: flex; flex-direction: column; align-items: center; opacity: {{ $trabajoCompletado ? '1' : '1' }};">
                                                 <div style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: {{ $trabajoActivo ? '#059669' : ($trabajoCompletado ? '#059669' : '#d1d5db') }};">
                                                     @if($trabajoCompletado)
                                                         <svg style="width: 20px; height: 20px; color: white;" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
