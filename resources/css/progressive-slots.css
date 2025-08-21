@@ -1,0 +1,317 @@
+/**
+ * Progressive Slots CSS - Mobile First
+ * Compatible con Filament Theme
+ */
+
+/* Base Mobile Styles */
+.slot-checking {
+    position: relative;
+    background: linear-gradient(45deg, #fef3c7, #fbbf24, #fef3c7) !important;
+    background-size: 200% 200%;
+    animation: checking-pulse 2s ease-in-out infinite;
+    border-color: #fbbf24 !important;
+    overflow: hidden;
+}
+
+@keyframes checking-pulse {
+    0%, 100% { 
+        background-position: 0% 50%; 
+        opacity: 0.9;
+    }
+    50% { 
+        background-position: 100% 50%; 
+        opacity: 1;
+    }
+}
+
+.slot-available {
+    background: #d1fae5 !important;
+    border-color: #10b981 !important;
+    color: #065f46 !important;
+    transition: all 0.3s ease;
+}
+
+.slot-unavailable {
+    background: #fee2e2 !important;
+    border-color: #ef4444 !important;
+    color: #991b1b !important;
+    opacity: 0.6;
+    cursor: not-allowed !important;
+    pointer-events: none;
+}
+
+/* Verification Indicator */
+.verification-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-size: 10px;
+    margin-top: 4px;
+    min-height: 16px;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+.shimmer {
+    width: 8px;
+    height: 8px;
+    background: #fbbf24;
+    border-radius: 50%;
+    animation: shimmer-pulse 1.5s infinite;
+    flex-shrink: 0;
+}
+
+@keyframes shimmer-pulse {
+    0%, 100% { 
+        opacity: 0.3; 
+        transform: scale(0.8); 
+    }
+    50% { 
+        opacity: 1; 
+        transform: scale(1.2); 
+    }
+}
+
+.capacity-info {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: inherit;
+    line-height: 1.2;
+}
+
+.capacity-info.available {
+    color: #065f46;
+    font-weight: 600;
+}
+
+.capacity-info.unavailable {
+    color: #991b1b;
+    font-weight: 600;
+}
+
+.available-icon, .unavailable-icon {
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+/* Mobile Specific (320px - 767px) */
+@media (max-width: 767px) {
+    .verification-indicator {
+        font-size: 9px;
+        gap: 2px;
+        margin-top: 2px;
+        min-height: 14px;
+    }
+    
+    .shimmer {
+        width: 6px;
+        height: 6px;
+    }
+    
+    .available-icon, .unavailable-icon {
+        font-size: 10px;
+    }
+    
+    /* Ensure buttons are touch-friendly (44px minimum) */
+    [wire\:model="selectedTime"] button,
+    [x-model="selectedTime"] button {
+        min-height: 44px !important;
+        min-width: 44px !important;
+        padding: 8px 4px !important;
+        font-size: 14px;
+    }
+    
+    /* Compact grid for mobile */
+    [wire\:model="selectedTime"] .grid,
+    [x-model="selectedTime"] .grid {
+        gap: 8px !important;
+    }
+    
+    /* Hover states disabled on mobile */
+    .slot-available:hover {
+        transform: none;
+        box-shadow: none;
+    }
+}
+
+/* Small Mobile (320px - 479px) */
+@media (max-width: 479px) {
+    .verification-indicator {
+        font-size: 8px;
+        gap: 1px;
+    }
+    
+    [wire\:model="selectedTime"] button,
+    [x-model="selectedTime"] button {
+        font-size: 12px;
+        padding: 6px 2px !important;
+    }
+}
+
+/* Tablet Portrait (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .verification-indicator {
+        font-size: 11px;
+        gap: 3px;
+        margin-top: 3px;
+    }
+    
+    .shimmer {
+        width: 7px;
+        height: 7px;
+    }
+    
+    .available-icon, .unavailable-icon {
+        font-size: 11px;
+    }
+    
+    [wire\:model="selectedTime"] button,
+    [x-model="selectedTime"] button {
+        min-height: 48px !important;
+        min-width: 48px !important;
+        font-size: 15px;
+    }
+}
+
+/* Desktop (1024px+) */
+@media (min-width: 1024px) {
+    .verification-indicator {
+        font-size: 12px;
+        gap: 4px;
+        margin-top: 4px;
+    }
+    
+    .shimmer {
+        width: 8px;
+        height: 8px;
+    }
+    
+    .available-icon, .unavailable-icon {
+        font-size: 12px;
+    }
+    
+    [wire\:model="selectedTime"] button,
+    [x-model="selectedTime"] button {
+        min-height: 50px !important;
+        min-width: 50px !important;
+        font-size: 16px;
+    }
+    
+    /* Desktop hover effects */
+    .slot-available:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3) !important;
+    }
+    
+    .slot-checking:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 8px rgba(251, 191, 36, 0.3) !important;
+    }
+}
+
+/* Large Desktop (1440px+) */
+@media (min-width: 1440px) {
+    .verification-indicator {
+        font-size: 13px;
+    }
+    
+    [wire\:model="selectedTime"] button,
+    [x-model="selectedTime"] button {
+        font-size: 17px;
+        min-height: 52px !important;
+        min-width: 52px !important;
+    }
+}
+
+/* Dark Mode Support for Filament */
+.dark .slot-checking {
+    background: linear-gradient(45deg, #451a03, #92400e, #451a03) !important;
+    color: #fbbf24 !important;
+}
+
+.dark .slot-available {
+    background: #064e3b !important;
+    border-color: #10b981 !important;
+    color: #a7f3d0 !important;
+}
+
+.dark .slot-unavailable {
+    background: #7f1d1d !important;
+    border-color: #ef4444 !important;
+    color: #fca5a5 !important;
+}
+
+.dark .shimmer {
+    background: #92400e;
+}
+
+.dark .capacity-info.available {
+    color: #a7f3d0;
+}
+
+.dark .capacity-info.unavailable {
+    color: #fca5a5;
+}
+
+/* Animation for slot updates */
+@keyframes slot-update {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+.slot-updating {
+    animation: slot-update 0.3s ease-in-out;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .slot-available {
+        border-width: 3px !important;
+    }
+    
+    .slot-unavailable {
+        border-width: 3px !important;
+    }
+    
+    .verification-indicator {
+        font-weight: 700 !important;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .slot-checking {
+        animation: none;
+        background: #fef3c7 !important;
+    }
+    
+    .shimmer {
+        animation: none;
+        opacity: 0.7;
+    }
+    
+    .slot-available:hover,
+    .slot-checking:hover {
+        transform: none !important;
+        box-shadow: none !important;
+    }
+    
+    .slot-updating {
+        animation: none;
+    }
+}
+
+/* Focus states for accessibility */
+[wire\:model="selectedTime"] button:focus,
+[x-model="selectedTime"] button:focus {
+    outline: 2px solid #3b82f6 !important;
+    outline-offset: 2px !important;
+}
+
+.dark [wire\:model="selectedTime"] button:focus,
+.dark [x-model="selectedTime"] button:focus {
+    outline-color: #60a5fa !important;
+}

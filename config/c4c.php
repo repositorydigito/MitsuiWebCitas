@@ -37,7 +37,7 @@ return [
         'appointment' => [
             'create_wsdl' => env('C4C_APPOINTMENT_WSDL', 'https://my330968.crm.ondemand.com/sap/bc/srt/scs/sap/manageappointmentactivityin1?sap-vhost=my330968.crm.ondemand.com'),
             'create_method' => 'AppointmentActivityBundleMaintainRequest_sync_V1',
-            'query_wsdl' => env('C4C_APPOINTMENT_QUERY_WSDL', 'https://my330968.crm.ondemand.com/sap/bc/srt/scs/sap/yy6saj0kgy_wscitas?sap-vhost=my330968.crm.ondemand.com'),
+            'query_wsdl' => env('C4C_APPOINTMENT_QUERY_WSDL', 'https://my330968.crm.ondemand.com/sap/bc/srt/scs/sap/yyaxzzowoy_wscitas?sap-vhost=my330968.crm.ondemand.com'),
             'query_method' => 'ActivityBOVNCitasQueryByElementsSimpleByRequest_sync',
         ],
         // ✅ NUEVA CONFIGURACIÓN: Servicios de ofertas
