@@ -1329,11 +1329,19 @@ class DetalleVehiculo extends Page
         $fechaUltServ = $this->datosAsesorSAP['fecha_ult_serv'] ?? null;
         
         // Obtener datos de la cita actual
+        Log::info('[DetalleVehiculo] citasAgendadas:', ['count' => count($this->citasAgendadas)]);
+        Log::info('[DetalleVehiculo] Primera cita:', $this->citasAgendadas[0] ?? 'No hay cita disponible');
+        
         $citaActual = $this->citasAgendadas[0] ?? null;
         
         // Obtener la fecha de la cita de diferentes campos posibles
         $fechaCitaActual = null;
         if ($citaActual) {
+            Log::info('[DetalleVehiculo] Campos de fecha en la cita:', [
+                'scheduled_start_date' => $citaActual['scheduled_start_date'] ?? 'No definido',
+                'start_date_time' => $citaActual['start_date_time'] ?? 'No definido',
+                'exit_date' => $citaActual['exit_date'] ?? 'No definido'
+            ]);
             // Intentar con scheduled_start_date primero
             $fechaCitaActual = $citaActual['scheduled_start_date'] ?? null;
             
@@ -1362,10 +1370,10 @@ class DetalleVehiculo extends Page
             'tiene_fecha_ult_serv' => $tieneFechaUltServ,
             'tiene_fecha_factura' => $tieneFechaFactura,
             'fecha_ult_serv' => $fechaUltServ,
-            'fecha_cita_actual' => $fechaCitaActual,
-            'cita_actual' => $citaActual ? json_encode($citaActual) : 'No hay cita actual',
+            'fecha_cita_actual' => $fechaCitaActual ?? 'No se pudo obtener fecha',
             'tipo_fecha_ult_serv' => gettype($fechaUltServ),
-            'tipo_fecha_cita' => gettype($fechaCitaActual)
+            'tipo_fecha_cita' => gettype($fechaCitaActual),
+            'cita_actual_keys' => $citaActual ? array_keys($citaActual) : 'No hay cita actual'
         ]);
 
         // CASO 1: Si tiene fecha de FACTURA -> TRABAJO CONCLUIDO (tiene prioridad sobre los demás estados)
