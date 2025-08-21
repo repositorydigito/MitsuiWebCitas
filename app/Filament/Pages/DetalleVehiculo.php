@@ -1319,7 +1319,27 @@ class DetalleVehiculo extends Page
         $tieneFechaUltServ = $this->datosAsesorSAP['tiene_fecha_ult_serv'];
         $tieneFechaFactura = $this->datosAsesorSAP['tiene_fecha_factura'];
         $fechaUltServ = $this->datosAsesorSAP['fecha_ult_serv'] ?? null;
-        $fechaCitaActual = $this->citasAgendadas[0]['fecha_cita'] ?? null;
+        
+        // Obtener la fecha de la cita en formato Y-m-d para comparación
+        $fechaCitaActual = null;
+        if (!empty($this->citasAgendadas[0]['fecha_cita'])) {
+            try {
+                // Convertir de d/m/Y a Y-m-d para comparación
+                $fechaCitaActual = \DateTime::createFromFormat('d/m/Y', $this->citasAgendadas[0]['fecha_cita']);
+                if ($fechaCitaActual) {
+                    $fechaCitaActual = $fechaCitaActual->format('Y-m-d');
+                } else {
+                    Log::warning('[DetalleVehiculo] No se pudo parsear la fecha de la cita', [
+                        'fecha_cita' => $this->citasAgendadas[0]['fecha_cita']
+                    ]);
+                }
+            } catch (\Exception $e) {
+                Log::error('[DetalleVehiculo] Error al parsear fecha de cita', [
+                    'fecha_cita' => $this->citasAgendadas[0]['fecha_cita'],
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
 
         // CASO 3: Si tiene fecha de FACTURA -> TRABAJO CONCLUIDO (independientemente de otras fechas)
         if ($tieneFechaFactura) {
