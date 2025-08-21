@@ -305,14 +305,10 @@ class DetalleVehiculo extends Page
 
                     foreach ($citasVehiculo as $cita) {
                         // Log para depuración de la estructura de la cita
-                        Log::info('[DetalleVehiculo] Datos de la cita recibida:', [
-                            'cita_completa' => $cita,
-                            'fechas_disponibles' => [
-                                'dates.scheduled_start_date' => $cita['dates']['scheduled_start_date'] ?? 'No existe',
-                                'scheduled_start_date' => $cita['scheduled_start_date'] ?? 'No existe',
-                                'dates.start_date' => $cita['dates']['start_date'] ?? 'No existe',
-                                'start_date' => $cita['start_date'] ?? 'No existe'
-                            ]
+                        Log::info('[DetalleVehiculo] Asignando fecha de cita:', [
+                            'fecha_sap' => $this->datosAsesorSAP['fecha_ult_serv'] ?? 'No existe',
+                            'fecha_cita' => $cita['scheduled_start_date'] ?? 'No existe',
+                            'fecha_formateada' => $this->formatearFechaC4C($cita['scheduled_start_date'] ?? '')
                         ]);
 
                         // Mapear campos de WSCitas a la estructura de la vista (estructura real)
@@ -330,7 +326,7 @@ class DetalleVehiculo extends Page
                             'servicio' => $maintenanceTypeLocal ?: $this->determinarTipoServicioC4C($cita),
                             'maintenance_type' => $maintenanceTypeLocal,
                             'estado' => $estadoInfo['nombre'],
-                            'fecha_cita' => $this->formatearFechaC4C($cita['dates']['scheduled_start_date'] ?? $cita['scheduled_start_date'] ?? ''),
+                            'fecha_cita' => $this->formatearFechaC4C($cita['scheduled_start_date'] ?? ''),
                             'hora_cita' => $this->formatearHoraC4C($cita['dates']['start_time'] ?? $cita['start_time'] ?? ''),
                             'probable_entrega' => $citaEnriquecida['probable_entrega'],
                             'sede' => (\App\Models\Local::where('code', $cita['center']['id'] ?? $cita['center_id'] ?? '')->value('name') ?: ($cita['center']['id'] ?? $cita['center_id'] ?? 'No especificado')),
