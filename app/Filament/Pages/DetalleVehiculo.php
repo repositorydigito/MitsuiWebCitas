@@ -1401,19 +1401,26 @@ class DetalleVehiculo extends Page
         if ($fechaUltServ) {
             $fechaUltServ = substr($fechaUltServ, 0, 10);
         }
+            'fecha_ult_serv' => $fechaUltServ,
+            'fecha_cita_actual' => $fechaCitaActual,
+            'tiene_fecha_ult_serv' => $tieneFechaUltServ
+        ]);
         
-        if ($fechaCitaActual) {
-            $fechaCitaActual = substr($fechaCitaActual, 0, 10);
+        // Lógica de estados según SAP
+        if ($tieneFechaUltServ && $fechaUltServ) {
+            // Si tiene fecha de último servicio, cambiar a En Trabajo
+            $estadoBase['etapas']['cita_confirmada']['activo'] = false;
+            $estadoBase['etapas']['cita_confirmada']['completado'] = true;
+            
+            $estadoBase['etapas']['en_trabajo']['activo'] = true;
+            $estadoBase['etapas']['en_trabajo']['completado'] = false;
+            
+            $estadoBase['etapas']['trabajo_concluido']['activo'] = false;
+            $estadoBase['etapas']['trabajo_concluido']['completado'] = false;
+            
+            Log::info('[DetalleVehiculo] Cambiando a estado En Trabajo por PE_FEC_ULT_SERV existente'); 
         }
         
-        // Log detallado para depuración
-        Log::info('[DetalleVehiculo] Datos de la cita:', [
-            'cita_completa' => $citaActual,
-            'fecha_ult_serv' => $fechaUltServ,
-            'fecha_cita_actual' => $fechaCitaActual ?? 'No se encontró fecha de cita',
-            'citas_agendadas_count' => count($this->citasAgendadas)
-        ]);
-
         // CASO 1: Si tiene fecha de FACTURA -> TRABAJO CONCLUIDO (tiene prioridad sobre los demás estados)
         if ($tieneFechaFactura) {
             $estadoBase['etapas']['cita_confirmada']['activo'] = false;
