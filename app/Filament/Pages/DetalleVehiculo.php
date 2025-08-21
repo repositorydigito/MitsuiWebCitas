@@ -304,6 +304,17 @@ class DetalleVehiculo extends Page
                     $this->citasAgendadas = [];
 
                     foreach ($citasVehiculo as $cita) {
+                        // Log para depuración de la estructura de la cita
+                        Log::info('[DetalleVehiculo] Datos de la cita recibida:', [
+                            'cita_completa' => $cita,
+                            'fechas_disponibles' => [
+                                'dates.scheduled_start_date' => $cita['dates']['scheduled_start_date'] ?? 'No existe',
+                                'scheduled_start_date' => $cita['scheduled_start_date'] ?? 'No existe',
+                                'dates.start_date' => $cita['dates']['start_date'] ?? 'No existe',
+                                'start_date' => $cita['start_date'] ?? 'No existe'
+                            ]
+                        ]);
+
                         // Mapear campos de WSCitas a la estructura de la vista (estructura real)
                         $estadoInfo = $this->obtenerInformacionEstadoCompleta($cita['status']['appointment_code'] ?? $cita['appointment_status'] ?? '1');
 
