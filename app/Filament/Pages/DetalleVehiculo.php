@@ -1322,6 +1322,14 @@ class DetalleVehiculo extends Page
         
         // Obtener la fecha de la cita en formato Y-m-d para comparación
         $fechaCitaActual = null;
+        
+        // Debug: Verificar el contenido de citasAgendadas
+        Log::info('[DetalleVehiculo] Contenido de citasAgendadas', [
+            'citasAgendadas' => $this->citasAgendadas,
+            'primer_elemento' => $this->citasAgendadas[0] ?? 'No hay elementos',
+            'fecha_cita' => $this->citasAgendadas[0]['fecha_cita'] ?? 'No existe fecha_cita'
+        ]);
+        
         if (!empty($this->citasAgendadas[0]['fecha_cita'])) {
             try {
                 // Convertir de d/m/Y a Y-m-d para comparación
