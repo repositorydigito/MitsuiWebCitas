@@ -1330,14 +1330,30 @@ class DetalleVehiculo extends Page
         
         // Obtener datos de la cita actual
         $citaActual = $this->citasAgendadas[0] ?? null;
-        $fechaCitaActual = $citaActual['scheduled_start_date'] ?? null;
         
-        // Asegurarse de que las fechas estén en el mismo formato para comparación
-        if ($fechaUltServ && strpos($fechaUltServ, 'T') !== false) {
-            $fechaUltServ = substr($fechaUltServ, 0, 10); // Extraer solo la fecha de un datetime
+        // Obtener la fecha de la cita de diferentes campos posibles
+        $fechaCitaActual = null;
+        if ($citaActual) {
+            // Intentar con scheduled_start_date primero
+            $fechaCitaActual = $citaActual['scheduled_start_date'] ?? null;
+            
+            // Si no está, intentar con start_date_time
+            if (empty($fechaCitaActual) && !empty($citaActual['start_date_time'])) {
+                $fechaCitaActual = substr($citaActual['start_date_time'], 0, 10);
+            }
+            
+            // Si aún no hay fecha, intentar con exit_date
+            if (empty($fechaCitaActual) && !empty($citaActual['exit_date'])) {
+                $fechaCitaActual = $citaActual['exit_date'];
+            }
         }
         
-        if ($fechaCitaActual && strpos($fechaCitaActual, 'T') !== false) {
+        // Asegurarse de que las fechas estén en el mismo formato para comparación (YYYY-MM-DD)
+        if ($fechaUltServ) {
+            $fechaUltServ = substr($fechaUltServ, 0, 10);
+        }
+        
+        if ($fechaCitaActual) {
             $fechaCitaActual = substr($fechaCitaActual, 0, 10);
         }
         
@@ -1347,7 +1363,7 @@ class DetalleVehiculo extends Page
             'tiene_fecha_factura' => $tieneFechaFactura,
             'fecha_ult_serv' => $fechaUltServ,
             'fecha_cita_actual' => $fechaCitaActual,
-            'cita_actual' => $citaActual ? 'Existe' : 'No hay cita actual',
+            'cita_actual' => $citaActual ? json_encode($citaActual) : 'No hay cita actual',
             'tipo_fecha_ult_serv' => gettype($fechaUltServ),
             'tipo_fecha_cita' => gettype($fechaCitaActual)
         ]);
