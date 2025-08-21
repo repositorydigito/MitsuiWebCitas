@@ -1331,7 +1331,30 @@ class DetalleVehiculo extends Page
         
         // Obtener la fecha de la cita del array de citas transformado
         $citaActual = $this->citasAgendadas[0] ?? null;
-        $fechaCitaActual = $citaActual['fecha_cita'] ?? null;
+        
+        // Intentar obtener la fecha de la cita de la base de datos local primero
+        $fechaCitaActual = null;
+        if ($citaActual && isset($citaActual['id'])) {
+            // Si la cita tiene un ID local (formato 'local-123'), extraer el ID numérico
+            $citaId = is_numeric($citaActual['id']) ? $citaActual['id'] : 
+                     (strpos($citaActual['id'], 'local-') === 0 ? substr($citaActual['id'], 6) : null);
+            
+            if ($citaId) {
+                $citaLocal = \App\Models\Appointment::find($citaId);
+                if ($citaLocal && $citaLocal->appointment_date) {
+                    $fechaCitaActual = $citaLocal->appointment_date->format('Y-m-d');
+                    Log::info('[DetalleVehiculo] Usando fecha de cita desde la base de datos local', [
+                        'cita_id' => $citaId,
+                        'fecha_cita' => $fechaCitaActual
+                    ]);
+                }
+            }
+        }
+        
+        // Si no se pudo obtener de la base de datos local, usar el valor del array
+        if (!$fechaCitaActual) {
+            $fechaCitaActual = $citaActual['fecha_cita'] ?? null;
+        }
         
         // Asegurarse de que las fechas estén en el mismo formato para comparación (YYYY-MM-DD)
         if ($fechaUltServ) {
