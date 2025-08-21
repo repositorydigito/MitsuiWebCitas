@@ -1328,9 +1328,9 @@ class DetalleVehiculo extends Page
         $tieneFechaFactura = $this->datosAsesorSAP['tiene_fecha_factura'] ?? false;
         $fechaUltServ = $this->datosAsesorSAP['fecha_ult_serv'] ?? null;
         
-        // Obtener la fecha de la cita del array de citas
+        // Obtener la fecha de la cita del array de citas transformado
         $citaActual = $this->citasAgendadas[0] ?? null;
-        $fechaCitaActual = $citaActual['scheduled_start_date'] ?? $citaActual['start_date_time'] ?? null;
+        $fechaCitaActual = $citaActual['fecha_cita'] ?? null;
         
         // Asegurarse de que las fechas estén en el mismo formato para comparación (YYYY-MM-DD)
         if ($fechaUltServ) {
