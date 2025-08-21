@@ -1328,9 +1328,9 @@ class DetalleVehiculo extends Page
         $tieneFechaFactura = $this->datosAsesorSAP['tiene_fecha_factura'] ?? false;
         $fechaUltServ = $this->datosAsesorSAP['fecha_ult_serv'] ?? null;
         
-        // Obtener la fecha de la cita de la misma forma que en Ver Detalle
+        // Obtener la fecha de la cita del array de citas
         $citaActual = $this->citasAgendadas[0] ?? null;
-        $fechaCitaActual = $citaActual['scheduled_start_date'] ?? null;
+        $fechaCitaActual = $citaActual['scheduled_start_date'] ?? $citaActual['start_date_time'] ?? null;
         
         // Asegurarse de que las fechas estén en el mismo formato para comparación (YYYY-MM-DD)
         if ($fechaUltServ) {
@@ -1341,10 +1341,12 @@ class DetalleVehiculo extends Page
             $fechaCitaActual = substr($fechaCitaActual, 0, 10);
         }
         
-        // Log simplificado
-        Log::info('[DetalleVehiculo] Estado actual:', [
+        // Log detallado para depuración
+        Log::info('[DetalleVehiculo] Datos de la cita:', [
+            'cita_completa' => $citaActual,
             'fecha_ult_serv' => $fechaUltServ,
-            'fecha_cita_actual' => $fechaCitaActual ?? 'No hay cita'
+            'fecha_cita_actual' => $fechaCitaActual ?? 'No se encontró fecha de cita',
+            'citas_agendadas_count' => count($this->citasAgendadas)
         ]);
 
         // CASO 1: Si tiene fecha de FACTURA -> TRABAJO CONCLUIDO (tiene prioridad sobre los demás estados)
