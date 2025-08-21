@@ -30,3 +30,10 @@ yarn-error.log
 CLAUDE.md
 .claude/
 contexto-servicios.md
+disponibilidad.md
+test_laravel_method.php
+test_laravel_fix.php
+test_batch_method.php
+test_soap.php
+.env.example
+.env.example

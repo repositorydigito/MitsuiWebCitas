@@ -195,6 +195,15 @@ class C4CClient
                 ]);
             }
 
+            // ✅ Log completo para TOPE HORA DE CITA
+            if (strpos($wsdl, 'yyaxzzowoy_wscitas') !== false) {
+                Log::info('🔍 [C4CClient] SOAP Body COMPLETO para TOPE HORA DE CITA', [
+                    'soap_body_complete' => $soapBody,
+                    'soap_body_length' => strlen($soapBody),
+                    'wsdl_url' => $wsdl
+                ]);
+            }
+
             // ✅ NUEVO: Log completo para eliminación de citas (CUALQUIER actionCode)
             if (strpos($wsdl, 'manageappointmentactivityin1') !== false) {
                 Log::info('🔍 [C4CClient] SOAP Body completo para CITAS', [
@@ -353,6 +362,7 @@ class C4CClient
         if ($method === 'ActivityBOVNCitasQueryByElementsSimpleByRequest_sync') {
             return self::buildAppointmentQuerySoapBody($params);
         }
+
 
         // ✅ NUEVO: Creación de ofertas (SIMPLIFICADO como Postman)
         if ($method === 'CustomerQuoteBundleMaintainRequest_sync_V1') {
@@ -675,22 +685,74 @@ class C4CClient
 
     /**
      * Build SOAP body for appointment query operations.
+     * ✅ ACTUALIZADO: Soporte para filtros con sufijos (Tope Hora de Cita)
      */
     private static function buildAppointmentQuerySoapBody(array $params): string
     {
         $selection = $params['ActivitySimpleSelectionBy'] ?? [];
         $processing = $params['ProcessingConditions'] ?? [];
 
-        // Extraer parámetros de selección
+        // Extraer parámetros de selección BÁSICOS
         $typeCode = $selection['SelectionByTypeCode']['LowerBoundaryTypeCode'] ?? '12';
         $partyId = $selection['SelectionByPartyID']['LowerBoundaryPartyID'] ?? '';
+        
+        // Extraer parámetros con SUFIJOS (para validación de capacidad)
+        $centroId = $selection['SelectionByzIDCentro_5PEND6QL5482763O1SFB05YP5']['LowerBoundaryzIDCentro_5PEND6QL5482763O1SFB05YP5'] ?? '';
+        $fecha = $selection['SelectionByzFecha_5PEND6QL5482763O1SFB05YP5']['LowerBoundaryzFecha_5PEND6QL5482763O1SFB05YP5'] ?? '';
+        $horaInicio = $selection['SelectionByzHoraInicio_5PEND6QL5482763O1SFB05YP5']['LowerBoundaryzHoraInicio_5PEND6QL5482763O1SFB05YP5'] ?? '';
+        
+        // Estados (compatibilidad con ambos formatos)
         $lowerStatus = $selection['SelectionByzEstadoCita_5PEND6QL5482763O1SFB05YP5']['LowerBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5'] ?? '1';
         $upperStatus = $selection['SelectionByzEstadoCita_5PEND6QL5482763O1SFB05YP5']['UpperBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5'] ?? '2';
 
         // Parámetros de procesamiento
         $maxResults = $processing['QueryHitsMaximumNumberValue'] ?? 10000;
 
-        return '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:glob="http://sap.com/xi/SAPGlobal20/Global">
+        // ✅ GENERAR XML EXACTO COMO EL REQUERIMIENTO
+        if (!empty($centroId) && !empty($fecha) && !empty($horaInicio)) {
+            // XML PARA VALIDACIÓN DE TOPE HORA DE CITA (formato exacto)
+            return '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:glob="http://sap.com/xi/SAPGlobal20/Global">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <glob:ActivityBOVNCitasQueryByElementsSimpleByRequest_sync>
+         <ActivitySimpleSelectionBy>
+            <SelectionByzIDCentro_5PEND6QL5482763O1SFB05YP5>
+               <InclusionExclusionCode>I</InclusionExclusionCode>
+               <IntervalBoundaryTypeCode>1</IntervalBoundaryTypeCode>
+               <LowerBoundaryzIDCentro_5PEND6QL5482763O1SFB05YP5>' . htmlspecialchars($centroId) . '</LowerBoundaryzIDCentro_5PEND6QL5482763O1SFB05YP5>
+            </SelectionByzIDCentro_5PEND6QL5482763O1SFB05YP5>
+            <SelectionByzFecha_5PEND6QL5482763O1SFB05YP5>
+               <InclusionExclusionCode>I</InclusionExclusionCode>
+               <IntervalBoundaryTypeCode>1</IntervalBoundaryTypeCode>
+               <LowerBoundaryzFecha_5PEND6QL5482763O1SFB05YP5>' . htmlspecialchars($fecha) . '</LowerBoundaryzFecha_5PEND6QL5482763O1SFB05YP5>
+            </SelectionByzFecha_5PEND6QL5482763O1SFB05YP5>
+            <SelectionByzHoraInicio_5PEND6QL5482763O1SFB05YP5>
+               <InclusionExclusionCode>I</InclusionExclusionCode>
+               <IntervalBoundaryTypeCode>1</IntervalBoundaryTypeCode>
+               <LowerBoundaryzHoraInicio_5PEND6QL5482763O1SFB05YP5>' . htmlspecialchars($horaInicio) . '</LowerBoundaryzHoraInicio_5PEND6QL5482763O1SFB05YP5>
+            </SelectionByzHoraInicio_5PEND6QL5482763O1SFB05YP5>
+            <SelectionByTypeCode>
+               <InclusionExclusionCode>I</InclusionExclusionCode>
+               <IntervalBoundaryTypeCode>1</IntervalBoundaryTypeCode>
+               <LowerBoundaryTypeCode>12</LowerBoundaryTypeCode>
+            </SelectionByTypeCode>
+            <SelectionByLifeCycleStatusCode>
+               <InclusionExclusionCode>E</InclusionExclusionCode>
+               <IntervalBoundaryTypeCode>1</IntervalBoundaryTypeCode>
+               <LowerBoundaryLifeCycleStatusCode>4</LowerBoundaryLifeCycleStatusCode>
+            </SelectionByLifeCycleStatusCode>
+         </ActivitySimpleSelectionBy>
+         <ProcessingConditions>
+            <QueryHitsMaximumNumberValue>' . htmlspecialchars($maxResults) . '</QueryHitsMaximumNumberValue>
+            <QueryHitsUnlimitedIndicator/>
+            <LastReturnedObjectID/>
+         </ProcessingConditions>
+      </glob:ActivityBOVNCitasQueryByElementsSimpleByRequest_sync>
+   </soapenv:Body>
+</soapenv:Envelope>';
+        } else {
+            // XML ORIGINAL para consultas normales
+            return '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:glob="http://sap.com/xi/SAPGlobal20/Global">
    <soapenv:Header/>
    <soapenv:Body>
       <glob:ActivityBOVNCitasQueryByElementsSimpleByRequest_sync>
@@ -721,7 +783,9 @@ class C4CClient
       </glob:ActivityBOVNCitasQueryByElementsSimpleByRequest_sync>
    </soapenv:Body>
 </soapenv:Envelope>';
+        }
     }
+
 
     /**
      * Build SOAP body for appointment creation (simplified method like the example).

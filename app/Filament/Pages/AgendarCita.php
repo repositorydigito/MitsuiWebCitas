@@ -95,6 +95,14 @@ class AgendarCita extends Page
 
     public array $horariosDisponibles = [];
 
+    // Debug info para mostrar en el frontend
+    public array $debugInfo = [
+        'status' => 'Pendiente',
+        'details' => 'Selecciona una fecha para ver detalles...',
+        'total_slots' => 0,
+        'validation_method' => 'N/A'
+    ];
+
     // Servicios adicionales
     public array $serviciosAdicionales = [];
 
@@ -179,6 +187,7 @@ class AgendarCita extends Page
     public string $errorDisponibilidad = '';
     public bool $usarHorariosC4C = true;
     public array $slotsC4C = [];
+    public array $slotsCompletos = []; // ✅ SMART: Slots con información de disponibilidad
     public string $estadoConexionC4C = 'unknown';
 
     // Propiedades para edición de datos del cliente
@@ -291,16 +300,20 @@ class AgendarCita extends Page
                 $slotsDisponibles = $this->filtrarSlotsOcupados($result['slots'], $fechaFormateada, $codigoLocal);
                 $this->horariosDisponibles = $this->convertirSlotsAHorarios($slotsDisponibles);
 
-                $bloqueos = \App\Models\Bloqueo::where('premises', $codigoLocal)
-                    ->whereDate('start_date', '<=', $fechaFormateada)
-                    ->whereDate('end_date', '>=', $fechaFormateada)
-                    ->get()
-                    ->map(function ($bloqueo) {
-                        return [
-                            'inicio' => Carbon::createFromFormat('Y-m-d H:i:s', $bloqueo->start_date)->setTimeFromTimeString($bloqueo->start_time),
-                            'fin'    => Carbon::createFromFormat('Y-m-d H:i:s', $bloqueo->end_date)->setTimeFromTimeString($bloqueo->end_time),
-                        ];
-                    });
+                // ✅ CACHÉ: Optimizar consulta de bloqueos
+                $bloqueosCacheKey = "bloqueos:{$codigoLocal}:{$fechaFormateada}";
+                $bloqueos = Cache::remember($bloqueosCacheKey, 300, function() use ($codigoLocal, $fechaFormateada) {
+                    return \App\Models\Bloqueo::where('premises', $codigoLocal)
+                        ->whereDate('start_date', '<=', $fechaFormateada)
+                        ->whereDate('end_date', '>=', $fechaFormateada)
+                        ->get()
+                        ->map(function ($bloqueo) {
+                            return [
+                                'inicio' => Carbon::createFromFormat('Y-m-d H:i:s', $bloqueo->start_date)->setTimeFromTimeString($bloqueo->start_time),
+                                'fin'    => Carbon::createFromFormat('Y-m-d H:i:s', $bloqueo->end_date)->setTimeFromTimeString($bloqueo->end_time),
+                            ];
+                        });
+                });
 
                 if ($fechaStr instanceof \Carbon\Carbon) {
                     $fechaFormateada = $fechaStr->format('Y-m-d');
@@ -339,6 +352,7 @@ class AgendarCita extends Page
 
     protected function filtrarSlotsOcupados(array $slots, string $fechaStr, string $codigoLocal): array
     {
+        // ✅ SMART: NO filtrar slots, solo marcar disponibilidad adicional desde BD local
         $localId = $this->locales[$codigoLocal]['id'] ?? null;
         if (!$localId) return $slots;
 
@@ -351,21 +365,87 @@ class AgendarCita extends Page
             })
             ->toArray();
 
-        return array_filter($slots, function ($slot) use ($citasAgendadas) {
-            return !in_array($slot['start_time_formatted'], $citasAgendadas);
-        });
+        // YAGNI: Mantener TODOS los slots pero actualizar disponibilidad si hay citas locales adicionales
+        return array_map(function ($slot) use ($citasAgendadas) {
+            $tieneCtaLocal = in_array($slot['start_time_formatted'], $citasAgendadas);
+            
+            // Si el slot ya está marcado como no disponible por C4C, mantenerlo
+            // Si hay cita local adicional, marcarlo como no disponible
+            if ($tieneCtaLocal && ($slot['is_available'] ?? true)) {
+                $slot['is_available'] = false;
+                $slot['local_appointment_conflict'] = true;
+            }
+            
+            return $slot;
+        }, $slots);
     }
 
     protected function convertirSlotsAHorarios(array $slots): array
     {
+        // ✅ KISS: Guardar slots completos para uso posterior, pero devolver estructura compatible
+        $this->slotsCompletos = $slots; // Guardar slots completos con is_available
+        
+        // YAGNI: Por ahora mantener compatibilidad con código existente
         $horarios = [];
         foreach ($slots as $slot) {
             $horarios[] = date('H:i', strtotime($slot['start_time_formatted']));
         }
-        //eliminar horarios duplucados
+        
+        // Eliminar horarios duplicados
         $horarios = array_unique($horarios);
         sort($horarios);
-        return array_values($horarios); // Re-indexar array
+        
+        return array_values($horarios);
+    }
+
+    /**
+     * ✅ SMART: Convertir horarios simples a estructura completa para la vista
+     */
+    protected function convertirHorariosParaVista(): void
+    {
+        if (empty($this->slotsCompletos) || empty($this->horariosDisponibles)) {
+            return;
+        }
+
+        $horariosConDisponibilidad = [];
+        
+        foreach ($this->horariosDisponibles as $hora) {
+            // Buscar el slot correspondiente en slotsCompletos
+            $slotCorrespondiente = null;
+            foreach ($this->slotsCompletos as $slot) {
+                $slotTime = date('H:i', strtotime($slot['start_time_formatted']));
+                if ($slotTime === $hora) {
+                    $slotCorrespondiente = $slot;
+                    break;
+                }
+            }
+
+            if ($slotCorrespondiente) {
+                $horariosConDisponibilidad[] = [
+                    'time' => $hora,
+                    'is_available' => $slotCorrespondiente['is_available'] ?? true,
+                    'capacity_info' => $slotCorrespondiente['capacity_validation'] ?? [],
+                    'local_conflict' => $slotCorrespondiente['local_appointment_conflict'] ?? false
+                ];
+            } else {
+                // Fallback para horarios sin slot correspondiente
+                $horariosConDisponibilidad[] = [
+                    'time' => $hora,
+                    'is_available' => true,
+                    'capacity_info' => [],
+                    'local_conflict' => false
+                ];
+            }
+        }
+
+        Log::info('✅ [VISTA] Horarios convertidos para vista', [
+            'horarios_simples' => count($this->horariosDisponibles),
+            'horarios_con_disponibilidad' => count($horariosConDisponibilidad),
+            'disponibles' => count(array_filter($horariosConDisponibilidad, fn($h) => $h['is_available'])),
+            'no_disponibles' => count(array_filter($horariosConDisponibilidad, fn($h) => !$h['is_available']))
+        ]);
+
+        $this->horariosDisponibles = $horariosConDisponibilidad;
     }
 
     /**
@@ -3013,12 +3093,15 @@ class AgendarCita extends Page
         $localId = $this->locales[$this->localSeleccionado]['id'];
         $fechaStr = $fecha->format('Y-m-d');
 
-        // Buscar bloqueos para esta fecha y local que sean de todo el día
-        $bloqueoCompleto = Bloqueo::where('premises', $localId)
-            ->where('start_date', '<=', $fechaStr)
-            ->where('end_date', '>=', $fechaStr)
-            ->where('all_day', true)
-            ->exists();
+        // ✅ CACHÉ: Optimizar consulta de bloqueos completos
+        $bloqueoCompletoCacheKey = "bloqueo_completo:{$localId}:{$fechaStr}";
+        $bloqueoCompleto = Cache::remember($bloqueoCompletoCacheKey, 300, function() use ($localId, $fechaStr) {
+            return Bloqueo::where('premises', $localId)
+                ->where('start_date', '<=', $fechaStr)
+                ->where('end_date', '>=', $fechaStr)
+                ->where('all_day', true)
+                ->exists();
+        });
 
         // Depuración detallada de la consulta de bloqueos completos
         $queryBloqueoCompleto = Bloqueo::where('premises', $localId)
@@ -3033,12 +3116,15 @@ class AgendarCita extends Page
             return false;
         }
 
-        // Verificar si hay al menos un horario disponible en esta fecha
-        $bloqueosParciales = Bloqueo::where('premises', $localId)
-            ->where('start_date', '<=', $fechaStr)
-            ->where('end_date', '>=', $fechaStr)
-            ->where('all_day', false)
-            ->get();
+        // ✅ CACHÉ: Optimizar consulta de bloqueos parciales
+        $bloqueosParcialesCacheKey = "bloqueos_parciales:{$localId}:{$fechaStr}";
+        $bloqueosParciales = Cache::remember($bloqueosParcialesCacheKey, 300, function() use ($localId, $fechaStr) {
+            return Bloqueo::where('premises', $localId)
+                ->where('start_date', '<=', $fechaStr)
+                ->where('end_date', '>=', $fechaStr)
+                ->where('all_day', false)
+                ->get();
+        });
 
         // Si no hay bloqueos parciales, la fecha está disponible
         if ($bloqueosParciales->isEmpty()) {
@@ -3114,10 +3200,13 @@ class AgendarCita extends Page
             }
         }
 
-        // Buscar citas existentes para esta fecha y local
-        $citas = Appointment::where('premise_id', $localId)
-            ->where('appointment_date', $fechaStr)
-            ->get();
+        // ✅ CACHÉ: Optimizar consulta de citas existentes
+        $citasCacheKey = "citas_existentes:{$localId}:{$fechaStr}";
+        $citas = Cache::remember($citasCacheKey, 180, function() use ($localId, $fechaStr) {
+            return Appointment::where('premise_id', $localId)
+                ->where('appointment_date', $fechaStr)
+                ->get();
+        });
 
         foreach ($citas as $cita) {
             // Filtrar los horarios que ya están ocupados por citas
@@ -3197,6 +3286,12 @@ class AgendarCita extends Page
     {
         if (empty($this->fechaSeleccionada) || empty($this->localSeleccionado)) {
             $this->horariosDisponibles = [];
+            $this->debugInfo = [
+                'status' => 'Sin datos',
+                'details' => 'Selecciona fecha y local para cargar horarios',
+                'total_slots' => 0,
+                'validation_method' => 'N/A'
+            ];
             return;
         }
 
@@ -3205,14 +3300,236 @@ class AgendarCita extends Page
             $fechaStr = $fecha->format('Y-m-d');
             $codigoLocal = $this->localSeleccionado;
 
-            if ($this->usarHorariosC4C && $this->estadoConexionC4C === 'connected') {
-                $this->cargarHorariosDesdeC4C($fechaStr, $codigoLocal);
+            // ✅ CACHÉ: Crear clave única para esta combinación
+            $cacheKey = "horarios_disponibles:{$codigoLocal}:{$fechaStr}:" . ($this->usarHorariosC4C ? 'c4c' : 'local');
+            $cacheTtl = 180; // 3 minutos de caché
+
+            // ✅ CACHÉ: Intentar obtener desde caché primero
+            $horariosCache = Cache::get($cacheKey);
+            if ($horariosCache !== null) {
+                Log::info('📦 [Cache] Horarios obtenidos desde caché', [
+                    'cache_key' => $cacheKey,
+                    'total_horarios' => count($horariosCache)
+                ]);
+                $this->horariosDisponibles = $horariosCache;
             } else {
-                $this->cargarHorariosLocales($fechaStr, $codigoLocal);
+                Log::info('🔄 [Cache] Generando horarios (no en caché)', [
+                    'cache_key' => $cacheKey
+                ]);
+
+                // ✅ LÓGICA EXISTENTE SIN MODIFICAR
+                if ($this->usarHorariosC4C && $this->estadoConexionC4C === 'connected') {
+                    $this->cargarHorariosDesdeC4C($fechaStr, $codigoLocal);
+                } else {
+                    $this->cargarHorariosLocales($fechaStr, $codigoLocal);
+                }
+
+                // ✅ CACHÉ: Guardar resultado en caché
+                Cache::put($cacheKey, $this->horariosDisponibles, $cacheTtl);
+                Log::info('💾 [Cache] Horarios guardados en caché', [
+                    'cache_key' => $cacheKey,
+                    'total_horarios' => count($this->horariosDisponibles),
+                    'ttl_seconds' => $cacheTtl
+                ]);
+            }
+
+            // ✅ SMART: Aplicar validación de capacidad después de cargar horarios
+            if (!empty($this->horariosDisponibles)) {
+                Log::info('🔄 [Progressive] Aplicando validación de capacidad', [
+                    'total_horarios_originales' => count($this->horariosDisponibles),
+                    'fecha' => $this->fechaSeleccionada,
+                    'local' => $this->localSeleccionado
+                ]);
+
+                // ✅ SMART: La validación ya viene aplicada desde el BATCH del AvailabilityService
+                // Convertir horarios simples de vuelta a estructura completa para la vista
+                $this->convertirHorariosParaVista();
+
+                // Actualizar debug info
+                $this->debugInfo = [
+                    'status' => 'Validación aplicada',
+                    'details' => 'Horarios validados con lógica citas_existentes < zTope',
+                    'total_slots' => count($this->horariosDisponibles),
+                    'validation_method' => 'Capacidad + zTope'
+                ];
+
+                // Usar un pequeño delay para asegurar que el DOM se actualice
+                $this->dispatch('horarios-cargados-activar-progressive');
             }
         } catch (\Exception $e) {
             Log::error('Error cargando horarios: ' . $e->getMessage());
             $this->horariosDisponibles = [];
+        }
+    }
+
+    /**
+     * Cargar horarios desde configuración local (cuando C4C no está disponible)
+     */
+    protected function cargarHorariosLocales(string $fechaStr, string $codigoLocal): void
+    {
+        try {
+            Log::info('🏠 [AgendarCita] Cargando horarios locales', [
+                'fecha' => $fechaStr,
+                'local' => $codigoLocal
+            ]);
+
+            // Obtener horarios base del local
+            $horariosBase = $this->obtenerHorariosBase();
+
+            // Aplicar filtros de bloqueos y citas existentes
+            $localId = $this->locales[$codigoLocal]['id'] ?? null;
+            if (!$localId) {
+                $this->horariosDisponibles = $horariosBase;
+                return;
+            }
+
+            // ✅ CACHÉ: Optimizar consulta de bloqueos locales
+            $bloqueosCacheKey = "bloqueos_locales:{$localId}:{$fechaStr}";
+            $bloqueos = Cache::remember($bloqueosCacheKey, 300, function() use ($localId, $fechaStr) {
+                return \App\Models\Bloqueo::where('premises', $localId)
+                    ->whereDate('start_date', '<=', $fechaStr)
+                    ->whereDate('end_date', '>=', $fechaStr)
+                    ->get();
+            });
+
+            // ✅ CACHÉ: Optimizar consulta de citas existentes locales
+            $citasCacheKey = "citas_locales:{$localId}:{$fechaStr}";
+            $citasExistentes = Cache::remember($citasCacheKey, 180, function() use ($localId, $fechaStr) {
+                return \App\Models\Appointment::where('premise_id', $localId)
+                    ->where('appointment_date', $fechaStr)
+                    ->whereNotIn('status', ['cancelled', 'completed'])
+                    ->pluck('appointment_time')
+                    ->toArray();
+            });
+
+            // Filtrar horarios bloqueados
+            $horariosDisponibles = collect($horariosBase)->filter(function ($hora) use ($bloqueos, $fechaStr) {
+                $horaCompleta = Carbon::parse("{$fechaStr} {$hora}");
+
+                foreach ($bloqueos as $bloqueo) {
+                    $inicio = Carbon::createFromFormat('Y-m-d H:i:s', $bloqueo->start_date)->setTimeFromTimeString($bloqueo->start_time);
+                    $fin = Carbon::createFromFormat('Y-m-d H:i:s', $bloqueo->end_date)->setTimeFromTimeString($bloqueo->end_time);
+
+                    if ($horaCompleta->gte($inicio) && $horaCompleta->lt($fin)) {
+                        return false; // Hora bloqueada
+                    }
+                }
+                return true;
+            });
+
+            // Filtrar horarios ya ocupados por citas
+            $horariosDisponibles = $horariosDisponibles->filter(function ($hora) use ($citasExistentes) {
+                return !in_array($hora, $citasExistentes);
+            });
+
+            $this->horariosDisponibles = $horariosDisponibles->values()->toArray();
+
+            Log::info('✅ [AgendarCita] Horarios locales cargados', [
+                'total_base' => count($horariosBase),
+                'total_disponibles' => count($this->horariosDisponibles),
+                'bloqueos_aplicados' => $bloqueos->count(),
+                'citas_existentes' => count($citasExistentes)
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('❌ [AgendarCita] Error cargando horarios locales: ' . $e->getMessage());
+            $this->horariosDisponibles = $this->obtenerHorariosBase();
+        }
+    }
+
+    /**
+     * Validación progresiva de capacidad para horarios (llamado desde Alpine.js)
+     */
+    public function validarCapacidadProgresiva()
+    {
+        // ✅ FIX: Agregar logging detallado para debug
+        Log::info('🔍 [Progressive] Validando capacidad progresiva', [
+            'fechaSeleccionada' => $this->fechaSeleccionada,
+            'localSeleccionado' => $this->localSeleccionado,
+            'fechaSeleccionada_empty' => empty($this->fechaSeleccionada),
+            'localSeleccionado_empty' => empty($this->localSeleccionado)
+        ]);
+
+        if (empty($this->fechaSeleccionada) || empty($this->localSeleccionado)) {
+            Log::warning('❌ [Progressive] Faltan datos requeridos', [
+                'fechaSeleccionada' => $this->fechaSeleccionada ?? 'null',
+                'localSeleccionado' => $this->localSeleccionado ?? 'null'
+            ]);
+
+            return $this->dispatch('progressive-validation-completed', [
+                'success' => false,
+                'error' => 'Faltan fecha o local'
+            ]);
+        }
+
+        try {
+            $fecha = Carbon::createFromFormat('d/m/Y', $this->fechaSeleccionada);
+            $fechaStr = $fecha->format('Y-m-d');
+            $codigoLocal = $this->localSeleccionado;
+
+            Log::info('🔍 [Progressive] Iniciando validación de capacidad', [
+                'centro' => $codigoLocal,
+                'fecha' => $fechaStr
+            ]);
+
+            // Usar el AvailabilityService existente para validar capacidad
+            $availabilityService = app(AvailabilityService::class);
+            $result = $availabilityService->getAvailableSlots($codigoLocal, $fechaStr);
+
+            if ($result['success']) {
+                Log::info('✅ [Progressive] Validación completada', [
+                    'total_slots' => $result['total_slots'],
+                    'available_slots' => $result['available_slots']
+                ]);
+
+                // Actualizar debug info con resultados de validación
+                $slotsValidados = 0;
+                $slotsDisponibles = 0;
+                $detalles = [];
+
+                foreach ($result['slots'] as $slot) {
+                    if (isset($slot['capacity_validation']['validated']) && $slot['capacity_validation']['validated']) {
+                        $slotsValidados++;
+                        $status = $slot['is_available'] ? '✅' : '❌';
+                        $maxCap = $slot['capacity_validation']['max_capacity'] ?? 'N/A';
+                        $existing = $slot['capacity_validation']['existing_appointments'] ?? 'N/A';
+                        $remaining = $slot['capacity_validation']['remaining_capacity'] ?? 'N/A';
+
+                        $detalles[] = "{$status} {$slot['start_time_formatted']} | zTope: {$maxCap} | Citas: {$existing} | Libre: {$remaining}";
+
+                        if ($slot['is_available']) {
+                            $slotsDisponibles++;
+                        }
+                    }
+                }
+
+                $this->debugInfo = [
+                    'status' => 'Validación completada ✅',
+                    'details' => implode("\n", $detalles), // Mostrar TODOS los horarios
+                    'total_slots' => $result['total_slots'],
+                    'validation_method' => 'C4C BATCH + zTope',
+                    'slots_validados' => $slotsValidados,
+                    'slots_disponibles' => $slotsDisponibles
+                ];
+
+                // Enviar resultado a Alpine.js
+                $this->dispatch('progressive-validation-completed', [
+                    'success' => true,
+                    'slots' => $result['slots']
+                ]);
+            } else {
+                throw new \Exception($result['error']);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('❌ [Progressive] Error en validación', [
+                'error' => $e->getMessage()
+            ]);
+
+            $this->dispatch('progressive-validation-completed', [
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 
@@ -3409,10 +3726,28 @@ class AgendarCita extends Page
     public function seleccionarHora(string $hora): void
     {
         Log::info("[AgendarCita] Intentando seleccionar hora: {$hora}");
-        Log::info('[AgendarCita] Horarios disponibles: ' . json_encode($this->horariosDisponibles));
 
-        // Verificar si la hora está disponible
-        if (in_array($hora, $this->horariosDisponibles)) {
+        // ✅ SMART: Verificar disponibilidad en nueva estructura de datos
+        $horaDisponible = false;
+        $horaSeleccionable = false;
+        
+        foreach ($this->horariosDisponibles as $horario) {
+            if (is_array($horario)) {
+                // Nueva estructura con is_available
+                if ($horario['time'] === $hora) {
+                    $horaDisponible = true;
+                    $horaSeleccionable = $horario['is_available'] ?? false;
+                    break;
+                }
+            } elseif ($horario === $hora) {
+                // Estructura legacy (string)
+                $horaDisponible = true;
+                $horaSeleccionable = true;
+                break;
+            }
+        }
+
+        if ($horaDisponible && $horaSeleccionable) {
             // Si ya está seleccionada, deseleccionarla
             if ($this->horaSeleccionada === $hora) {
                 Log::info("[AgendarCita] Deseleccionando hora: {$hora}");
@@ -3423,7 +3758,10 @@ class AgendarCita extends Page
                 Log::info("[AgendarCita] Hora seleccionada: {$this->horaSeleccionada}");
             }
         } else {
-            Log::warning("[AgendarCita] Intento de seleccionar hora no disponible: {$hora}");
+            Log::warning("[AgendarCita] Intento de seleccionar hora no disponible: {$hora}", [
+                'hora_encontrada' => $horaDisponible,
+                'hora_seleccionable' => $horaSeleccionable
+            ]);
             // Notificar al usuario
             $this->notify('error', 'La hora seleccionada no está disponible');
         }

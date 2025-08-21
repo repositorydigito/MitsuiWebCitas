@@ -1,6 +1,26 @@
 <x-filament-panels::page>
     <style>
         [x-cloak] { display: none !important; }
+        
+        /* ✅ SMART: Estilos para horarios no disponibles */
+        .horario-no-disponible {
+            opacity: 0.6;
+            background-color: #f3f4f6 !important; /* bg-gray-100 */
+            color: #9ca3af !important; /* text-gray-400 */
+            cursor: not-allowed !important;
+            border: 1px solid #e5e7eb; /* border-gray-200 */
+        }
+        
+        .horario-no-disponible:hover {
+            background-color: #f3f4f6 !important; /* No cambiar en hover */
+            border-color: #e5e7eb !important; /* No cambiar border en hover */
+        }
+        
+        /* ✅ YAGNI: Estilos adicionales para mejor UX */
+        .horario-card {
+            transition: all 0.2s ease;
+            user-select: none;
+        }
     </style>
     <div class="bg-white rounded-lg shadow-sm p-6">
         <!-- Indicador de progreso -->
@@ -232,7 +252,7 @@
                     </div>
                 </div>
 
-                <!-- Horarios disponibles -->
+                <!-- Horarios disponibles con Progressive Loading -->
                 <div class="border rounded-lg p-4">
                     <h3 class="text-lg font-medium text-primary-800 mb-4">Horarios disponibles</h3>
 
@@ -252,6 +272,7 @@
                             <p class="text-xs mt-2">Esta fecha puede estar bloqueada o todos los horarios están ocupados</p>
                         </div>
                     @else
+                        {{-- ✅ HORARIOS CON PROGRESSIVE LOADING DIRECTO --}}
                         <style>
                             .horarios-grid {
                                 display: grid;
@@ -275,16 +296,120 @@
                                 font-size: 0.75rem;
                                 padding: 0.25rem;
                             }
+
+                            .slot-checking {
+                                opacity: 0.7;
+                                pointer-events: none;
+                                position: relative;
+                            }
+
+                            .slot-checking::after {
+                                content: '';
+                                position: absolute;
+                                top: 50%;
+                                left: 50%;
+                                width: 16px;
+                                height: 16px;
+                                margin: -8px 0 0 -8px;
+                                border: 2px solid #e5e7eb;
+                                border-top: 2px solid #3b82f6;
+                                border-radius: 50%;
+                                animation: spin 1s linear infinite;
+                            }
+
+                            @keyframes spin {
+                                0% { transform: rotate(0deg); }
+                                100% { transform: rotate(360deg); }
+                            }
+
+                            .slot-available {
+                                /* Disponible */
+                            }
+
+                            .slot-unavailable {
+                                opacity: 0.5;
+                                pointer-events: none;
+                            }
                         </style>
 
+                        {{-- Indicador de validación global con barra de progreso --}}
+                        <div id="validation-indicator" style="display: none;" class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-sm text-blue-700 font-medium">Validando disponibilidad en tiempo real...</span>
+                                <span id="progress-text" class="text-xs text-blue-600 font-bold">0%</span>
+                            </div>
+                            <div class="w-full bg-blue-200 rounded-full h-3 overflow-hidden">
+                                <div id="progress-bar" class="h-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500 ease-out" style="width: 0%;"></div>
+                            </div>
+                        </div>
+
+                        {{-- 🔍 DEBUG: Información de capacidad y citas --}}
+                        @if(!empty($horariosDisponibles))
+                        <div id="debug-capacity-info" class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs" style="display: none;">
+                            <div class="font-semibold text-yellow-800 mb-2">🔍 DEBUG - Información de Capacidad:</div>
+                            <div class="grid grid-cols-2 md:grid-cols-5 gap-2 text-yellow-700">
+                                <div><strong>Centro:</strong> {{ $localSeleccionado ?? 'N/A' }}</div>
+                                <div><strong>Fecha:</strong> {{ $fechaSeleccionada ?? 'N/A' }}</div>
+                                <div><strong>Total:</strong> {{ $debugInfo['total_slots'] ?? count($horariosDisponibles) }}</div>
+                                <div><strong>Validados:</strong> {{ $debugInfo['slots_validados'] ?? 'N/A' }}</div>
+                                <div><strong>Disponibles:</strong> {{ $debugInfo['slots_disponibles'] ?? 'N/A' }}</div>
+                            </div>
+                            <div class="mt-1 text-xs text-yellow-600">
+                                <strong>Método:</strong> {{ $debugInfo['validation_method'] ?? 'N/A' }}
+                            </div>
+                            <div class="mt-2 text-xs text-yellow-600">
+                                <div class="font-medium">Estado:
+                                    <span class="
+                                        @if(str_contains($debugInfo['status'] ?? '', 'Listo'))
+                                            text-green-600 font-semibold
+                                        @elseif(str_contains($debugInfo['status'] ?? '', 'progreso'))
+                                            text-blue-600 font-semibold
+                                        @elseif(str_contains($debugInfo['status'] ?? '', 'Completada'))
+                                            text-green-600 font-semibold
+                                        @else
+                                            text-orange-600 font-semibold
+                                        @endif
+                                    ">{{ $debugInfo['status'] ?? 'Pendiente' }}</span>
+                                </div>
+                                <div id="capacity-breakdown" class="mt-1 max-h-64 overflow-y-auto font-mono text-xs">
+                                    @if(isset($debugInfo['details']) && str_contains($debugInfo['details'], '✅'))
+                                        <pre class="whitespace-pre-wrap">{{ $debugInfo['details'] }}</pre>
+                                    @else
+                                        {{ $debugInfo['details'] ?? 'Selecciona una fecha para ver detalles...' }}
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
                         <div class="horarios-grid">
-                            @foreach($horariosDisponibles as $hora)
+                            @foreach($horariosDisponibles as $horario)
+                                @php
+                                    // SMART: Detectar si es estructura nueva o string legacy
+                                    $time = is_array($horario) ? $horario['time'] : $horario;
+                                    $isAvailable = is_array($horario) ? ($horario['is_available'] ?? true) : true;
+                                    $capacityInfo = is_array($horario) ? ($horario['capacity_info'] ?? []) : [];
+                                    
+                                    // Definir clases CSS según disponibilidad
+                                    if (!$isAvailable) {
+                                        $cardClasses = 'horario-card horario-no-disponible bg-gray-100 text-gray-400 cursor-not-allowed';
+                                        $clickAction = '';
+                                    } else {
+                                        $cardClasses = $horaSeleccionada === $time ? 
+                                            'horario-card text-white bg-primary-600' : 
+                                            'horario-card text-primary-600 hover:border-primary-600 cursor-pointer';
+                                        $clickAction = "wire:click=\"seleccionarHora('$time')\"";
+                                    }
+                                @endphp
+                                
                                 <div class="horario-item">
                                     <div
-                                        class="horario-card {{ $horaSeleccionada === $hora ? 'text-white bg-primary-600' : 'text-primary-600 hover:border-primary-600' }}"
-                                        wire:click="seleccionarHora('{{ $hora }}')"
+                                        class="{{ $cardClasses }}"
+                                        {!! $clickAction !!}
+                                        data-time="{{ $time }}"
+                                        @if(!$isAvailable) title="No disponible - {{ $capacityInfo['existing_appointments'] ?? 0 }}/{{ $capacityInfo['max_capacity'] ?? 0 }} ocupado" @endif
                                     >
-                                        <span>{{ $hora }}</span>
+                                        <span>{{ $time }}</span>
                                     </div>
                                 </div>
                             @endforeach
@@ -1303,6 +1428,199 @@
         });
     </script>
 </x-filament-panels::page>
+
+{{-- ✅ SOLUCIÓN KISS: JavaScript directo en la página --}}
+<script>
+console.log('🚀 Progressive Loader KISS iniciando');
+
+// Actualizar debug info inmediatamente
+setTimeout(function() {
+    const validationStatus = document.getElementById('validation-status');
+    const capacityBreakdown = document.getElementById('capacity-breakdown');
+
+    console.log('🔍 Actualizando debug info inicial');
+
+    if (validationStatus) {
+        validationStatus.textContent = 'Horarios cargados - Sin validar';
+        validationStatus.className = 'text-orange-600 font-semibold';
+        console.log('✅ Status actualizado');
+    }
+
+    if (capacityBreakdown) {
+        capacityBreakdown.innerHTML = '<div class="text-orange-600">Horarios cargados desde C4C/Local. Selecciona una fecha para validar capacidad con zTope.</div>';
+        console.log('✅ Breakdown actualizado');
+    }
+}, 1000);
+
+// Escuchar eventos de Livewire para actualizar debug
+document.addEventListener('livewire:updated', function() {
+    console.log('🔄 Livewire updated - Verificando horarios');
+    const timeButtons = document.querySelectorAll('[data-time]');
+    const validationStatus = document.getElementById('validation-status');
+
+    if (timeButtons.length > 0 && validationStatus) {
+        console.log('📊 Horarios detectados:', timeButtons.length);
+        validationStatus.textContent = 'Horarios detectados (' + timeButtons.length + ') - Listo para validar';
+        validationStatus.className = 'text-green-600 font-semibold';
+    }
+});
+
+// Escuchar evento de Livewire cuando se cargan horarios
+document.addEventListener('horarios-cargados-activar-progressive', function() {
+    console.log('🔄 Evento recibido: activando validación');
+
+    // Actualizar debug info cuando se recibe el evento
+    const validationStatus = document.getElementById('validation-status');
+    const capacityBreakdown = document.getElementById('capacity-breakdown');
+
+    if (validationStatus) {
+        validationStatus.textContent = 'Evento recibido - Iniciando validación';
+        validationStatus.className = 'text-blue-600 font-semibold';
+    }
+
+    setTimeout(function() {
+        const timeButtons = document.querySelectorAll('[data-time]');
+        if (timeButtons.length > 0) {
+            console.log('🚀 Activando validación para', timeButtons.length, 'botones');
+
+            // Mostrar indicador global y animar barra de progreso
+            const indicator = document.getElementById('validation-indicator');
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            const validationStatus = document.getElementById('validation-status');
+            const capacityBreakdown = document.getElementById('capacity-breakdown');
+
+            if (indicator) {
+                indicator.style.display = 'block';
+            }
+
+            // Actualizar estado de debug
+            if (validationStatus) {
+                validationStatus.textContent = 'En progreso... 🔄';
+                validationStatus.className = 'text-blue-600 font-semibold';
+            }
+
+            if (capacityBreakdown) {
+                capacityBreakdown.innerHTML = '<div class="text-blue-600">Validando capacidad en tiempo real...</div>';
+            }
+
+            if (progressBar && progressText) {
+                // Función para actualizar progreso
+                function updateProgress(percentage) {
+                    progressBar.style.width = percentage + '%';
+                    progressText.textContent = percentage + '%';
+                }
+
+                // Iniciar en 0%
+                updateProgress(0);
+
+                // Animar la barra de progreso paso a paso
+                setTimeout(() => updateProgress(25), 200);
+                setTimeout(() => updateProgress(50), 600);
+                setTimeout(() => updateProgress(75), 1200);
+                setTimeout(() => updateProgress(90), 1800);
+            }
+
+            // Aplicar efectos de loading a cada botón
+            timeButtons.forEach(function(button) {
+                button.classList.add('slot-checking');
+            });
+
+            // Llamar validación
+            if (window.Livewire) {
+                const wireElement = document.querySelector('[wire\\:id]');
+                if (wireElement) {
+                    const component = window.Livewire.find(wireElement.getAttribute('wire:id'));
+                    if (component) {
+                        component.call('validarCapacidadProgresiva');
+                    }
+                }
+            }
+        }
+    }, 200);
+});
+
+// Escuchar resultado de validación
+document.addEventListener('progressive-validation-completed', function(event) {
+    const data = event.detail[0];
+
+    // Completar barra de progreso y ocultar indicador
+    const indicator = document.getElementById('validation-indicator');
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+
+    if (progressBar && progressText) {
+        progressBar.style.width = '100%';
+        progressText.textContent = '100%';
+    }
+
+    setTimeout(() => {
+        if (indicator) {
+            indicator.style.display = 'none';
+        }
+        if (progressBar && progressText) {
+            progressBar.style.width = '0%';
+            progressText.textContent = '0%';
+        }
+    }, 500);
+
+    if (data.success && data.slots) {
+        console.log('✅ Validación completada');
+
+        // Actualizar información de debug
+        const debugInfo = document.getElementById('debug-capacity-info');
+        const validationStatus = document.getElementById('validation-status');
+        const capacityBreakdown = document.getElementById('capacity-breakdown');
+
+        if (validationStatus) {
+            validationStatus.textContent = 'Completada ✅';
+            validationStatus.className = 'text-green-600 font-semibold';
+        }
+
+        if (capacityBreakdown) {
+            let breakdown = '';
+            data.slots.forEach(function(slot) {
+                const capacity = slot.capacity_validation || {};
+                const status = slot.is_available ? '✅' : '❌';
+                const maxCap = capacity.max_capacity || 'N/A';
+                const existing = capacity.existing_appointments || 'N/A';
+                const remaining = capacity.remaining_capacity || 'N/A';
+
+                breakdown += `<div class="flex justify-between items-center py-1 border-b border-yellow-200">
+                    <span>${status} ${slot.start_time_formatted}</span>
+                    <span class="text-xs">zTope: ${maxCap} | Citas: ${existing} | Libre: ${remaining}</span>
+                </div>`;
+            });
+            capacityBreakdown.innerHTML = breakdown;
+        }
+
+        // Actualizar botones de horarios
+        data.slots.forEach(function(slot) {
+            const timeValue = slot.start_time_formatted;
+            const timeButton = document.querySelector('[data-time="' + timeValue + '"]');
+
+            if (timeButton) {
+                timeButton.classList.remove('slot-checking');
+
+                if (slot.is_available) {
+                    timeButton.classList.add('slot-available');
+                    timeButton.disabled = false;
+                } else {
+                    timeButton.classList.add('slot-unavailable');
+                    timeButton.disabled = true;
+                }
+            }
+        });
+    } else {
+        console.error('❌ Error en validación:', data.error);
+        // Fallback: hacer todos disponibles
+        document.querySelectorAll('.slot-checking').forEach(function(button) {
+            button.classList.remove('slot-checking');
+            button.disabled = false;
+        });
+    }
+});
+</script>
 
 @push('styles')
 <style>

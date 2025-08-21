@@ -58,6 +58,16 @@ Route::prefix('availability')->group(function () {
     
     // Obtener disponibilidad para un rango de fechas
     Route::get('/range', [AvailabilityController::class, 'getAvailabilityRange']);
+
+    // ✅ NUEVO: Progressive Loading Routes
+    // Obtener slots básicos sin validación (rápido ~500ms)
+    Route::get('/basic/{centerId}/{fecha}', 'App\Http\Controllers\Api\ProgressiveAvailabilityController@getBasicSlots');
+    
+    // Obtener slots con validación completa (lento ~7s)
+    Route::get('/validated/{centerId}/{fecha}', 'App\Http\Controllers\Api\ProgressiveAvailabilityController@getValidatedSlots');
+    
+    // Health check para progressive loading
+    Route::get('/progressive/health', 'App\Http\Controllers\Api\ProgressiveAvailabilityController@healthCheck');
 });
 
 // Sync API Routes (NEW - Sincronización con C4C)
