@@ -1376,17 +1376,65 @@ class DetalleVehiculo extends Page
     protected function fechasCoinciden(?string $fechaSAP, ?string $fechaCita): bool
     {
         if (!$fechaSAP || !$fechaCita) {
+            Log::info('[DetalleVehiculo] Una o ambas fechas están vacías', [
+                'fechaSAP' => $fechaSAP,
+                'fechaCita' => $fechaCita
+            ]);
             return false;
         }
 
         try {
-            // Normalizar fechas a formato Y-m-d para comparación
-            $fechaSAP = \Carbon\Carbon::parse($fechaSAP)->format('Y-m-d');
-            $fechaCita = \Carbon\Carbon::parse($fechaCita)->format('Y-m-d');
+            // Log de depuración
+            Log::info('[DetalleVehiculo] Comparando fechas', [
+                'fechaSAP_original' => $fechaSAP,
+                'fechaCita_original' => $fechaCita
+            ]);
+
+            // Intentar parsear la fecha de SAP (formato YYYY-MM-DD)
+            $fechaSAPObj = \Carbon\Carbon::createFromFormat('Y-m-d', $fechaSAP);
             
-            return $fechaSAP === $fechaCita;
+            // Intentar parsear la fecha de la cita en diferentes formatos
+            $fechaCitaObj = null;
+            
+            // Probar con formato dd/mm/yyyy primero
+            if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $fechaCita)) {
+                $fechaCitaObj = \Carbon\Carbon::createFromFormat('d/m/Y', $fechaCita);
+            } 
+            // Si no coincide, probar con Y-m-d
+            else if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaCita)) {
+                $fechaCitaObj = \Carbon\Carbon::createFromFormat('Y-m-d', $fechaCita);
+            }
+            
+            // Si no se pudo parsear alguna fecha, devolver false
+            if (!$fechaSAPObj || !$fechaCitaObj) {
+                Log::warning('[DetalleVehiculo] No se pudo parsear alguna de las fechas', [
+                    'fechaSAP' => $fechaSAP,
+                    'fechaCita' => $fechaCita
+                ]);
+                return false;
+            }
+            
+            // Formatear ambas fechas a Y-m-d para comparación
+            $fechaSAPFormatted = $fechaSAPObj->format('Y-m-d');
+            $fechaCitaFormatted = $fechaCitaObj->format('Y-m-d');
+            
+            $coinciden = $fechaSAPFormatted === $fechaCitaFormatted;
+            
+            Log::info('[DetalleVehiculo] Resultado comparación fechas', [
+                'fechaSAP_formateada' => $fechaSAPFormatted,
+                'fechaCita_formateada' => $fechaCitaFormatted,
+                'coinciden' => $coinciden ? 'SÍ' : 'NO'
+            ]);
+            
+            return $coinciden;
+            
         } catch (\Exception $e) {
-            Log::error("[DetalleVehiculo] Error al comparar fechas: " . $e->getMessage());
+            Log::error('[DetalleVehiculo] Error al comparar fechas', [
+                'error' => $e->getMessage(),
+                'fechaSAP' => $fechaSAP,
+                'fechaCita' => $fechaCita,
+                'trace' => $e->getTraceAsString()
+            ]);
             return false;
         }
     }
