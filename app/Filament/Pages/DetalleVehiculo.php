@@ -1323,8 +1323,8 @@ class DetalleVehiculo extends Page
      */
     protected function aplicarLogicaSAPAEstado(array $estadoBase): array
     {
-        $tieneFechaUltServ = $this->datosAsesorSAP['tiene_fecha_ult_serv'];
-        $tieneFechaFactura = $this->datosAsesorSAP['tiene_fecha_factura'];
+        $tieneFechaUltServ = $this->datosAsesorSAP['tiene_fecha_ult_serv'] ?? false;
+        $tieneFechaFactura = $this->datosAsesorSAP['tiene_fecha_factura'] ?? false;
         $fechaUltServ = $this->datosAsesorSAP['fecha_ult_serv'] ?? null;
         
         // Obtener la fecha de la cita en formato Y-m-d para comparación
@@ -1339,29 +1339,13 @@ class DetalleVehiculo extends Page
             } elseif (!empty($citaActual['scheduled_start_date'])) {
                 $fechaCitaActual = $this->formatearFechaC4C($citaActual['scheduled_start_date']);
                 Log::info('[DetalleVehiculo] Usando scheduled_start_date de la cita', ['fecha' => $fechaCitaActual]);
+            } elseif (!empty($citaActual['start_date_time'])) {
+                $fechaCitaActual = substr($citaActual['start_date_time'], 0, 10); // Extraer YYYY-MM-DD de ISO 8601
+                Log::info('[DetalleVehiculo] Usando start_date_time de la cita', ['fecha' => $fechaCitaActual]);
             }
         }
 
-        // CASO 2: Si tiene fecha de último servicio y coincide con la cita -> EN TRABAJO
-        if ($tieneFechaUltServ && $fechaUltServ && $fechaCitaActual) {
-            // Usar la función fechasCoinciden para manejar la comparación de fechas
-            if ($this->fechasCoinciden($fechaUltServ, $fechaCitaActual)) {
-                $estadoBase['etapas']['cita_confirmada']['activo'] = false;
-                $estadoBase['etapas']['cita_confirmada']['completado'] = true;
-                
-                $estadoBase['etapas']['en_trabajo']['activo'] = true;
-                
-                Log::info('[DetalleVehiculo] CASO 2: En trabajo - Fechas coinciden');
-                return $estadoBase;
-            } else {
-                Log::info('[DetalleVehiculo] CASO 2: Fechas no coinciden', [
-                    'fecha_ult_serv' => $fechaUltServ,
-                    'fecha_cita_actual' => $fechaCitaActual
-                ]);
-            }
-        }
-        
-        // CASO 3: Si tiene fecha de FACTURA -> TRABAJO CONCLUIDO (independientemente de otras fechas)
+        // CASO 3: Si tiene fecha de FACTURA -> TRABAJO CONCLUIDO (tiene prioridad sobre los demás estados)
         if ($tieneFechaFactura) {
             $estadoBase['etapas']['cita_confirmada']['activo'] = false;
             $estadoBase['etapas']['cita_confirmada']['completado'] = true;
@@ -1376,10 +1360,40 @@ class DetalleVehiculo extends Page
             return $estadoBase;
         }
         
+        // CASO 2: Si tiene fecha de último servicio y coincide con la cita -> EN TRABAJO
+        if ($tieneFechaUltServ && $fechaUltServ && $fechaCitaActual) {
+            // Usar la función fechasCoinciden para manejar la comparación de fechas
+            if ($this->fechasCoinciden($fechaUltServ, $fechaCitaActual)) {
+                $estadoBase['etapas']['cita_confirmada']['activo'] = false;
+                $estadoBase['etapas']['cita_confirmada']['completado'] = true;
+                
+                $estadoBase['etapas']['en_trabajo']['activo'] = true;
+                $estadoBase['etapas']['en_trabajo']['completado'] = false;
+                
+                Log::info('[DetalleVehiculo] CASO 2: En trabajo - Fechas coinciden', [
+                    'fecha_ult_serv' => $fechaUltServ,
+                    'fecha_cita_actual' => $fechaCitaActual
+                ]);
+                return $estadoBase;
+            } else {
+                Log::info('[DetalleVehiculo] CASO 2: Fechas no coinciden', [
+                    'fecha_ult_serv' => $fechaUltServ,
+                    'fecha_cita_actual' => $fechaCitaActual,
+                    'tipo_fecha_ult_serv' => gettype($fechaUltServ),
+                    'tipo_fecha_cita' => gettype($fechaCitaActual)
+                ]);
+            }
+        }
+        
         // CASO 1: Solo cita confirmada (por defecto)
         $razon = !$tieneFechaUltServ ? 'Sin PE_FEC_ULT_SERV' : 
                 ($tieneFechaFactura ? 'PE_FEC_FACTURA presente' : 'Fechas no coinciden');
-        Log::info("[DetalleVehiculo] CASO 1: Solo cita confirmada - $razon");
+        Log::info("[DetalleVehiculo] CASO 1: Solo cita confirmada - $razon", [
+            'tieneFechaUltServ' => $tieneFechaUltServ,
+            'tieneFechaFactura' => $tieneFechaFactura,
+            'fechaUltServ' => $fechaUltServ,
+            'fechaCitaActual' => $fechaCitaActual
+        ]);
         
         return $estadoBase;
     }
