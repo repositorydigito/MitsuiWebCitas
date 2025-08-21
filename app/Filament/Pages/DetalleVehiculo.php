@@ -311,11 +311,18 @@ class DetalleVehiculo extends Page
                             'fecha_formateada' => $this->formatearFechaC4C($cita['scheduled_start_date'] ?? '')
                         ]);
 
-                        // Mapear campos de WSCitas a la estructura de la vista (estructura real)
-                        $estadoInfo = $this->obtenerInformacionEstadoCompleta($cita['status']['appointment_code'] ?? $cita['appointment_status'] ?? '1');
+                        // Obtener información básica del estado sin procesamiento SAP
+                        $estadoCodigo = $cita['status']['appointment_code'] ?? $cita['appointment_status'] ?? '1';
+                        $estadoInfo = [
+                            '1' => ['nombre' => 'Generada'],
+                            '2' => ['nombre' => 'Confirmada'],
+                            '3' => ['nombre' => 'En Progreso'],
+                            '4' => ['nombre' => 'Completada'],
+                            '5' => ['nombre' => 'Cancelada']
+                        ][$estadoCodigo] ?? ['nombre' => 'Pendiente'];
 
-                        // Enriquecer con datos SAP si están disponibles
-                        $citaEnriquecida = $this->enriquecerCitaConDatosSAP($cita);
+                        // Enriquecer con datos SAP si están disponibles (sin procesar lógica de estados)
+                        $citaEnriquecida = $cita; // Copia simple para evitar procesamiento adicional
 
                         // Obtener maintenance_type desde la base de datos local
                         $maintenanceTypeLocal = $this->obtenerMaintenanceTypeLocal($cita['uuid'] ?? $cita['id'] ?? '');
@@ -1310,7 +1317,8 @@ class DetalleVehiculo extends Page
         $estadoBase = $estados[$appointmentStatus] ?? $estados['1'];
 
         // Aplicar lógica SAP para modificar estados dinámicamente
-        if ($this->datosAsesorSAP) {
+        // Solo si no estamos en medio de cargar las citas para evitar recursión
+        if ($this->datosAsesorSAP && !empty($this->citasAgendadas)) {
             $estadoBase = $this->aplicarLogicaSAPAEstado($estadoBase);
         }
 
