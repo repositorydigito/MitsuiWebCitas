@@ -1329,33 +1329,38 @@ class DetalleVehiculo extends Page
         
         // Obtener la fecha de la cita en formato Y-m-d para comparación
         $fechaCitaActual = null;
+        $citaActual = $this->citasAgendadas[0] ?? null;
         
-        // Debug: Verificar el contenido de citasAgendadas
-        Log::info('[DetalleVehiculo] Contenido de citasAgendadas', [
-            'citasAgendadas' => $this->citasAgendadas,
-            'primer_elemento' => $this->citasAgendadas[0] ?? 'No hay elementos',
-            'fecha_cita' => $this->citasAgendadas[0]['fecha_cita'] ?? 'No existe fecha_cita'
-        ]);
-        
-        if (!empty($this->citasAgendadas[0]['fecha_cita'])) {
-            try {
-                // Convertir de d/m/Y a Y-m-d para comparación
-                $fechaCitaActual = \DateTime::createFromFormat('d/m/Y', $this->citasAgendadas[0]['fecha_cita']);
-                if ($fechaCitaActual) {
-                    $fechaCitaActual = $fechaCitaActual->format('Y-m-d');
-                } else {
-                    Log::warning('[DetalleVehiculo] No se pudo parsear la fecha de la cita', [
-                        'fecha_cita' => $this->citasAgendadas[0]['fecha_cita']
-                    ]);
-                }
-            } catch (\Exception $e) {
-                Log::error('[DetalleVehiculo] Error al parsear fecha de cita', [
-                    'fecha_cita' => $this->citasAgendadas[0]['fecha_cita'],
-                    'error' => $e->getMessage()
-                ]);
+        if ($citaActual) {
+            // Usar la fecha ya formateada o formatearla si es necesario
+            if (!empty($citaActual['fecha_cita'])) {
+                $fechaCitaActual = $citaActual['fecha_cita'];
+                Log::info('[DetalleVehiculo] Usando fecha_cita de la cita', ['fecha' => $fechaCitaActual]);
+            } elseif (!empty($citaActual['scheduled_start_date'])) {
+                $fechaCitaActual = $this->formatearFechaC4C($citaActual['scheduled_start_date']);
+                Log::info('[DetalleVehiculo] Usando scheduled_start_date de la cita', ['fecha' => $fechaCitaActual]);
             }
         }
 
+        // CASO 2: Si tiene fecha de último servicio y coincide con la cita -> EN TRABAJO
+        if ($tieneFechaUltServ && $fechaUltServ && $fechaCitaActual) {
+            // Usar la función fechasCoinciden para manejar la comparación de fechas
+            if ($this->fechasCoinciden($fechaUltServ, $fechaCitaActual)) {
+                $estadoBase['etapas']['cita_confirmada']['activo'] = false;
+                $estadoBase['etapas']['cita_confirmada']['completado'] = true;
+                
+                $estadoBase['etapas']['en_trabajo']['activo'] = true;
+                
+                Log::info('[DetalleVehiculo] CASO 2: En trabajo - Fechas coinciden');
+                return $estadoBase;
+            } else {
+                Log::info('[DetalleVehiculo] CASO 2: Fechas no coinciden', [
+                    'fecha_ult_serv' => $fechaUltServ,
+                    'fecha_cita_actual' => $fechaCitaActual
+                ]);
+            }
+        }
+        
         // CASO 3: Si tiene fecha de FACTURA -> TRABAJO CONCLUIDO (independientemente de otras fechas)
         if ($tieneFechaFactura) {
             $estadoBase['etapas']['cita_confirmada']['activo'] = false;
@@ -1367,39 +1372,14 @@ class DetalleVehiculo extends Page
             $estadoBase['etapas']['trabajo_concluido']['activo'] = true;
             $estadoBase['etapas']['trabajo_concluido']['completado'] = true;
             
-            Log::info('[DetalleVehiculo] CASO 3: Trabajo concluido - PE_FEC_FACTURA presente');
+            Log::info('[DetalleVehiculo] CASO 3: Trabajo concluido (tiene factura)');
+            return $estadoBase;
         }
-        // CASO 2: Si tiene PE_FEC_ULT_SERV pero NO tiene PE_FEC_FACTURA -> EN TRABAJO
-        // SOLO si la fecha de la cita coincide con PE_FEC_ULT_SERV
-        else if ($tieneFechaUltServ && !$tieneFechaFactura && $this->fechasCoinciden($fechaUltServ, $fechaCitaActual)) {
-            $estadoBase['etapas']['cita_confirmada']['activo'] = false;
-            $estadoBase['etapas']['cita_confirmada']['completado'] = true;
-            
-            $estadoBase['etapas']['en_trabajo']['activo'] = true;
-            $estadoBase['etapas']['en_trabajo']['completado'] = true;
-            
-            $estadoBase['etapas']['trabajo_concluido']['activo'] = false;
-            $estadoBase['etapas']['trabajo_concluido']['completado'] = false;
-            
-            Log::info('[DetalleVehiculo] CASO 2: En trabajo - PE_FEC_ULT_SERV presente, PE_FEC_FACTURA vacía y fechas coinciden');
-        }
-        // CASO 1: Sin fechas SAP válidas o fechas no coinciden -> SOLO CITA CONFIRMADA
-        else {
-            $estadoBase['etapas']['cita_confirmada']['activo'] = true;
-            $estadoBase['etapas']['cita_confirmada']['completado'] = true;
-            
-            $estadoBase['etapas']['en_trabajo']['activo'] = false;
-            $estadoBase['etapas']['en_trabajo']['completado'] = false;
-            
-            $estadoBase['etapas']['trabajo_concluido']['activo'] = false;
-            $estadoBase['etapas']['trabajo_concluido']['completado'] = false;
-            
-            $estadoBase['etapas']['entregado']['activo'] = false;
-            $estadoBase['etapas']['entregado']['completado'] = false;
-            
-            $razon = !$tieneFechaUltServ ? 'Sin PE_FEC_ULT_SERV' : 
-                    ($tieneFechaFactura ? 'PE_FEC_FACTURA presente' : 'Fechas no coinciden');
-            Log::info("[DetalleVehiculo] CASO 1: Solo cita confirmada - $razon");
+        
+        // CASO 1: Solo cita confirmada (por defecto)
+        $razon = !$tieneFechaUltServ ? 'Sin PE_FEC_ULT_SERV' : 
+                ($tieneFechaFactura ? 'PE_FEC_FACTURA presente' : 'Fechas no coinciden');
+        Log::info("[DetalleVehiculo] CASO 1: Solo cita confirmada - $razon");
         }
         
         return $estadoBase;
@@ -1407,6 +1387,9 @@ class DetalleVehiculo extends Page
     
     /**
      * Compara si dos fechas son iguales, independientemente de su formato
+     * @param string|null $fechaSAP Fecha de SAP (formato YYYY-MM-DD)
+     * @param string|null $fechaCita Fecha de la cita (puede estar en formato d/m/Y o YYYY-MM-DD)
+     * @return bool
      */
     protected function fechasCoinciden(?string $fechaSAP, ?string $fechaCita): bool
     {
@@ -1419,45 +1402,59 @@ class DetalleVehiculo extends Page
         }
 
         try {
-            // Log de depuración
-            Log::info('[DetalleVehiculo] Comparando fechas', [
+            // Log de depuración con las fechas originales
+            Log::info('[DetalleVehiculo] Iniciando comparación de fechas', [
                 'fechaSAP_original' => $fechaSAP,
                 'fechaCita_original' => $fechaCita
             ]);
-
-            // Intentar parsear la fecha de SAP (formato YYYY-MM-DD)
-            $fechaSAPObj = \Carbon\Carbon::createFromFormat('Y-m-d', $fechaSAP);
             
-            // Intentar parsear la fecha de la cita en diferentes formatos
-            $fechaCitaObj = null;
+            // Función auxiliar para parsear fechas en diferentes formatos
+            $parsearFecha = function($fecha) {
+                // Si ya está en formato Y-m-d, devolver directamente
+                if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
+                    return $fecha;
+                }
+                
+                // Intentar parsear como d/m/Y
+                if (preg_match('/^\d{1,2}\/\d{1,2}\/\d{4}$/', $fecha)) {
+                    return \Carbon\Carbon::createFromFormat('d/m/Y', $fecha)->format('Y-m-d');
+                }
+                
+                // Intentar parsear con Carbon
+                try {
+                    return \Carbon\Carbon::parse($fecha)->format('Y-m-d');
+                } catch (\Exception $e) {
+                    Log::error('[DetalleVehiculo] No se pudo parsear la fecha', [
+                        'fecha' => $fecha,
+                        'error' => $e->getMessage()
+                    ]);
+                    return null;
+                }
+            };
             
-            // Probar con formato dd/mm/yyyy primero
-            if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $fechaCita)) {
-                $fechaCitaObj = \Carbon\Carbon::createFromFormat('d/m/Y', $fechaCita);
-            } 
-            // Si no coincide, probar con Y-m-d
-            else if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaCita)) {
-                $fechaCitaObj = \Carbon\Carbon::createFromFormat('Y-m-d', $fechaCita);
-            }
+            // Parsear ambas fechas
+            $fechaSAPFormateada = $parsearFecha($fechaSAP);
+            $fechaCitaFormateada = $parsearFecha($fechaCita);
             
-            // Si no se pudo parsear alguna fecha, devolver false
-            if (!$fechaSAPObj || !$fechaCitaObj) {
-                Log::warning('[DetalleVehiculo] No se pudo parsear alguna de las fechas', [
+            if (!$fechaSAPFormateada || !$fechaCitaFormateada) {
+                Log::error('[DetalleVehiculo] No se pudieron formatear una o ambas fechas', [
                     'fechaSAP' => $fechaSAP,
-                    'fechaCita' => $fechaCita
+                    'fechaCita' => $fechaCita,
+                    'fechaSAPFormateada' => $fechaSAPFormateada,
+                    'fechaCitaFormateada' => $fechaCitaFormateada
                 ]);
                 return false;
             }
             
-            // Formatear ambas fechas a Y-m-d para comparación
-            $fechaSAPFormatted = $fechaSAPObj->format('Y-m-d');
-            $fechaCitaFormatted = $fechaCitaObj->format('Y-m-d');
+            // Comparar las fechas formateadas
+            $coinciden = $fechaSAPFormateada === $fechaCitaFormateada;
             
-            $coinciden = $fechaSAPFormatted === $fechaCitaFormatted;
-            
+            // Log detallado del resultado
             Log::info('[DetalleVehiculo] Resultado comparación fechas', [
-                'fechaSAP_formateada' => $fechaSAPFormatted,
-                'fechaCita_formateada' => $fechaCitaFormatted,
+                'fechaSAP_original' => $fechaSAP,
+                'fechaCita_original' => $fechaCita,
+                'fechaSAP_formateada' => $fechaSAPFormateada,
+                'fechaCita_formateada' => $fechaCitaFormateada,
                 'coinciden' => $coinciden ? 'SÍ' : 'NO'
             ]);
             
