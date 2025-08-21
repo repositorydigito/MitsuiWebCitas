@@ -1401,6 +1401,8 @@ class DetalleVehiculo extends Page
         if ($fechaUltServ) {
             $fechaUltServ = substr($fechaUltServ, 0, 10);
         }
+        
+        Log::info('[DetalleVehiculo] Comparando fechas para estado', [
             'fecha_ult_serv' => $fechaUltServ,
             'fecha_cita_actual' => $fechaCitaActual,
             'tiene_fecha_ult_serv' => $tieneFechaUltServ
