@@ -1305,6 +1305,8 @@ class DetalleVehiculo extends Page
     {
         $tieneFechaUltServ = $this->datosAsesorSAP['tiene_fecha_ult_serv'];
         $tieneFechaFactura = $this->datosAsesorSAP['tiene_fecha_factura'];
+        $fechaUltServ = $this->datosAsesorSAP['fecha_ult_serv'] ?? null;
+        $fechaCitaActual = $this->citasAgendadas[0]['fecha_cita'] ?? null;
 
         // CASO 3: Si tiene fecha de FACTURA -> TRABAJO CONCLUIDO (independientemente de otras fechas)
         if ($tieneFechaFactura) {
@@ -1320,7 +1322,8 @@ class DetalleVehiculo extends Page
             Log::info('[DetalleVehiculo] CASO 3: Trabajo concluido - PE_FEC_FACTURA presente');
         }
         // CASO 2: Si tiene PE_FEC_ULT_SERV pero NO tiene PE_FEC_FACTURA -> EN TRABAJO
-        else if ($tieneFechaUltServ && !$tieneFechaFactura) {
+        // SOLO si la fecha de la cita coincide con PE_FEC_ULT_SERV
+        else if ($tieneFechaUltServ && !$tieneFechaFactura && $this->fechasCoinciden($fechaUltServ, $fechaCitaActual)) {
             $estadoBase['etapas']['cita_confirmada']['activo'] = false;
             $estadoBase['etapas']['cita_confirmada']['completado'] = true;
             
@@ -1330,9 +1333,9 @@ class DetalleVehiculo extends Page
             $estadoBase['etapas']['trabajo_concluido']['activo'] = false;
             $estadoBase['etapas']['trabajo_concluido']['completado'] = false;
             
-            Log::info('[DetalleVehiculo] CASO 2: En trabajo - PE_FEC_ULT_SERV presente y PE_FEC_FACTURA vacía');
+            Log::info('[DetalleVehiculo] CASO 2: En trabajo - PE_FEC_ULT_SERV presente, PE_FEC_FACTURA vacía y fechas coinciden');
         }
-        // CASO 1: Sin fechas SAP válidas -> SOLO CITA CONFIRMADA (cita verde, resto gris)
+        // CASO 1: Sin fechas SAP válidas o fechas no coinciden -> SOLO CITA CONFIRMADA
         else {
             $estadoBase['etapas']['cita_confirmada']['activo'] = true;
             $estadoBase['etapas']['cita_confirmada']['completado'] = true;
@@ -1346,10 +1349,33 @@ class DetalleVehiculo extends Page
             $estadoBase['etapas']['entregado']['activo'] = false;
             $estadoBase['etapas']['entregado']['completado'] = false;
             
-            Log::info('[DetalleVehiculo] CASO 1: Solo cita confirmada - Sin fechas SAP válidas');
+            $razon = !$tieneFechaUltServ ? 'Sin PE_FEC_ULT_SERV' : 
+                    ($tieneFechaFactura ? 'PE_FEC_FACTURA presente' : 'Fechas no coinciden');
+            Log::info("[DetalleVehiculo] CASO 1: Solo cita confirmada - $razon");
         }
         
         return $estadoBase;
+    }
+    
+    /**
+     * Compara si dos fechas son iguales, independientemente de su formato
+     */
+    protected function fechasCoinciden(?string $fechaSAP, ?string $fechaCita): bool
+    {
+        if (!$fechaSAP || !$fechaCita) {
+            return false;
+        }
+
+        try {
+            // Normalizar fechas a formato Y-m-d para comparación
+            $fechaSAP = \Carbon\Carbon::parse($fechaSAP)->format('Y-m-d');
+            $fechaCita = \Carbon\Carbon::parse($fechaCita)->format('Y-m-d');
+            
+            return $fechaSAP === $fechaCita;
+        } catch (\Exception $e) {
+            Log::error("[DetalleVehiculo] Error al comparar fechas: " . $e->getMessage());
+            return false;
+        }
     }
 
     /**
