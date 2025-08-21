@@ -1380,7 +1380,6 @@ class DetalleVehiculo extends Page
         $razon = !$tieneFechaUltServ ? 'Sin PE_FEC_ULT_SERV' : 
                 ($tieneFechaFactura ? 'PE_FEC_FACTURA presente' : 'Fechas no coinciden');
         Log::info("[DetalleVehiculo] CASO 1: Solo cita confirmada - $razon");
-        }
         
         return $estadoBase;
     }
