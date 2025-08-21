@@ -1334,20 +1334,52 @@ class DetalleVehiculo extends Page
         
         // Intentar obtener la fecha de la cita de la base de datos local primero
         $fechaCitaActual = null;
-        if ($citaActual && isset($citaActual['id'])) {
-            // Si la cita tiene un ID local (formato 'local-123'), extraer el ID numérico
-            $citaId = is_numeric($citaActual['id']) ? $citaActual['id'] : 
-                     (strpos($citaActual['id'], 'local-') === 0 ? substr($citaActual['id'], 6) : null);
+        if ($citaActual) {
+            // Intentar obtener el ID de diferentes maneras
+            $citaId = null;
+            $candidatosId = [];
             
-            if ($citaId) {
-                $citaLocal = \App\Models\Appointment::find($citaId);
-                if ($citaLocal && $citaLocal->appointment_date) {
-                    $fechaCitaActual = $citaLocal->appointment_date->format('Y-m-d');
-                    Log::info('[DetalleVehiculo] Usando fecha de cita desde la base de datos local', [
-                        'cita_id' => $citaId,
-                        'fecha_cita' => $fechaCitaActual
-                    ]);
+            // 1. Verificar si el ID está en el formato numérico directo
+            if (isset($citaActual['id']) && is_numeric($citaActual['id'])) {
+                $candidatosId[] = (int)$citaActual['id'];
+            } 
+            // 2. Verificar si el ID está en el formato 'local-123'
+            elseif (isset($citaActual['id']) && strpos($citaActual['id'], 'local-') === 0) {
+                $candidatosId[] = (int)substr($citaActual['id'], 6);
+            }
+            // 3. Verificar si hay un número de cita disponible
+            if (isset($citaActual['numero_cita'])) {
+                if (is_numeric($citaActual['numero_cita'])) {
+                    $candidatosId[] = (int)$citaActual['numero_cita'];
+                } elseif (is_string($citaActual['numero_cita']) && strpos($citaActual['numero_cita'], 'CITA-') === 0) {
+                    $candidatosId[] = (int)substr($citaActual['numero_cita'], 5);
                 }
+            }
+            
+            Log::info('[DetalleVehiculo] Buscando cita en la base de datos', [
+                'cita_actual' => $citaActual,
+                'candidatos_id' => $candidatosId
+            ]);
+            
+            // Probar con cada candidato hasta encontrar una cita válida
+            foreach ($candidatosId as $id) {
+                $citaLocal = \App\Models\Appointment::find($id);
+                if ($citaLocal) {
+                    $fechaCitaActual = $citaLocal->appointment_date ? $citaLocal->appointment_date->format('Y-m-d') : null;
+                    Log::info('[DetalleVehiculo] Cita encontrada en la base de datos', [
+                        'cita_id' => $id,
+                        'fecha_cita' => $fechaCitaActual,
+                        'appointment_date' => $citaLocal->appointment_date,
+                        'status' => $citaLocal->status
+                    ]);
+                    break; // Usar el primer ID que encuentre
+                }
+            }
+            
+            if (!$fechaCitaActual) {
+                Log::warning('[DetalleVehiculo] No se encontró la cita en la base de datos con ninguno de los IDs', [
+                    'candidatos_id' => $candidatosId
+                ]);
             }
         }
         
