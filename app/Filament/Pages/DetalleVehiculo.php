@@ -311,18 +311,11 @@ class DetalleVehiculo extends Page
                             'fecha_formateada' => $this->formatearFechaC4C($cita['scheduled_start_date'] ?? '')
                         ]);
 
-                        // Obtener información básica del estado sin procesamiento SAP
-                        $estadoCodigo = $cita['status']['appointment_code'] ?? $cita['appointment_status'] ?? '1';
-                        $estadoInfo = [
-                            '1' => ['nombre' => 'Generada'],
-                            '2' => ['nombre' => 'Confirmada'],
-                            '3' => ['nombre' => 'En Progreso'],
-                            '4' => ['nombre' => 'Completada'],
-                            '5' => ['nombre' => 'Cancelada']
-                        ][$estadoCodigo] ?? ['nombre' => 'Pendiente'];
+                        // Mapear campos de WSCitas a la estructura de la vista (estructura real)
+                        $estadoInfo = $this->obtenerInformacionEstadoCompleta($cita['status']['appointment_code'] ?? $cita['appointment_status'] ?? '1');
 
-                        // Enriquecer con datos SAP si están disponibles (sin procesar lógica de estados)
-                        $citaEnriquecida = $cita; // Copia simple para evitar procesamiento adicional
+                        // Enriquecer con datos SAP si están disponibles
+                        $citaEnriquecida = $this->enriquecerCitaConDatosSAP($cita);
 
                         // Obtener maintenance_type desde la base de datos local
                         $maintenanceTypeLocal = $this->obtenerMaintenanceTypeLocal($cita['uuid'] ?? $cita['id'] ?? '');
@@ -337,7 +330,8 @@ class DetalleVehiculo extends Page
                             'hora_cita' => $this->formatearHoraC4C($cita['dates']['start_time'] ?? $cita['start_time'] ?? ''),
                             'probable_entrega' => $citaEnriquecida['probable_entrega'],
                             'sede' => (\App\Models\Local::where('code', $cita['center']['id'] ?? $cita['center_id'] ?? '')->value('name') ?: ($cita['center']['id'] ?? $cita['center_id'] ?? 'No especificado')),
-                            'asesor' => $citaEnriquecida['asesor'],                            'whatsapp' => $citaEnriquecida['whatsapp'],
+                            'asesor' => $citaEnriquecida['asesor'],
+                            'whatsapp' => $citaEnriquecida['whatsapp'],
                             'correo' => $citaEnriquecida['correo'],
                             'comentarios' => $cita['subject'] ?? $cita['subject_name'] ?? '',
                             'status_raw' => $cita['status']['appointment_code'] ?? $cita['appointment_status'] ?? '1',
@@ -1317,8 +1311,7 @@ class DetalleVehiculo extends Page
         $estadoBase = $estados[$appointmentStatus] ?? $estados['1'];
 
         // Aplicar lógica SAP para modificar estados dinámicamente
-        // Solo si no estamos en medio de cargar las citas para evitar recursión
-        if ($this->datosAsesorSAP && !empty($this->citasAgendadas)) {
+        if ($this->datosAsesorSAP) {
             $estadoBase = $this->aplicarLogicaSAPAEstado($estadoBase);
         }
 
@@ -1336,22 +1329,17 @@ class DetalleVehiculo extends Page
         $tieneFechaFactura = $this->datosAsesorSAP['tiene_fecha_factura'] ?? false;
         $fechaUltServ = $this->datosAsesorSAP['fecha_ult_serv'] ?? null;
         
-        // Log detallado de citasAgendadas
-        Log::info('[DetalleVehiculo] Estructura de citasAgendadas:', [
-            'citasAgendadas' => $this->citasAgendadas,
-            'count' => is_countable($this->citasAgendadas) ? count($this->citasAgendadas) : 'No contable',
-            'type' => gettype($this->citasAgendadas)
-        ]);
-        
         // Obtener la fecha de la cita del array de citas transformado
-        $citaActual = null;
-        $fechaCitaActual = null;
+        $citaActual = $this->citasAgendadas[0] ?? null;
+        $fechaCitaActual = $citaActual['fecha_cita'] ?? null;
         
-        if (is_array($this->citasAgendadas) && count($this->citasAgendadas) > 0) {
-            $citaActual = $this->citasAgendadas[0];
-            $fechaCitaActual = $citaActual['fecha_cita'] ?? 
-                             $citaActual['scheduled_start_date'] ?? 
-                             $citaActual['start_date_time'] ?? null;
+        // Asegurarse de que las fechas estén en el mismo formato para comparación (YYYY-MM-DD)
+        if ($fechaUltServ) {
+            $fechaUltServ = substr($fechaUltServ, 0, 10);
+        }
+        
+        if ($fechaCitaActual) {
+            $fechaCitaActual = substr($fechaCitaActual, 0, 10);
         }
         
         // Asegurarse de que las fechas estén en el mismo formato para comparación (YYYY-MM-DD)
@@ -1368,8 +1356,7 @@ class DetalleVehiculo extends Page
             'cita_completa' => $citaActual,
             'fecha_ult_serv' => $fechaUltServ,
             'fecha_cita_actual' => $fechaCitaActual ?? 'No se encontró fecha de cita',
-            'citas_agendadas_count' => is_countable($this->citasAgendadas) ? count($this->citasAgendadas) : 0,
-            'cita_keys' => $citaActual ? array_keys($citaActual) : 'No hay cita actual'
+            'citas_agendadas_count' => count($this->citasAgendadas)
         ]);
 
         // CASO 1: Si tiene fecha de FACTURA -> TRABAJO CONCLUIDO (tiene prioridad sobre los demás estados)
