@@ -1165,30 +1165,43 @@ class DetalleVehiculo extends Page
         }
 
         try {
-            // Si viene como "00", mostrar como hora válida
-            if ($hora === '00') {
-                return '00:00';
-            }
-
-            // Si viene como "00:00:00", mostrar solo HH:MM
-            if ($hora === '00:00:00') {
-                return '00:00';
-            }
-
-            // Si viene solo como número (ej: "14"), convertir a formato hora
-            if (is_numeric($hora) && strlen($hora) <= 2) {
-                return str_pad($hora, 2, '0', STR_PAD_LEFT) . ':00';
-            }
-
-            // Si viene en formato HH:MM:SS, extraer solo HH:MM
-            if (str_contains($hora, ':')) {
-                $partes = explode(':', $hora);
-                return $partes[0] . ':' . ($partes[1] ?? '00');
-            }
-
-            return $hora;
+            // Crear un objeto Carbon con la zona horaria UTC
+            $horaUTC = \Carbon\Carbon::createFromFormat('H:i:s', $hora, 'UTC');
+            
+            // Convertir a la zona horaria de Perú (UTC-5)
+            $horaPeru = $horaUTC->copy()->setTimezone('America/Lima');
+            
+            // Devolver solo la hora y minutos en formato HH:MM
+            return $horaPeru->format('H:i');
+            
         } catch (\Exception $e) {
-            return '';
+            // Si hay algún error, intentar con el formato antiguo como fallback
+            try {
+                // Si viene como "00", mostrar como hora válida
+                if ($hora === '00') {
+                    return '00:00';
+                }
+
+                // Si viene como "00:00:00", mostrar solo HH:MM
+                if ($hora === '00:00:00') {
+                    return '00:00';
+                }
+
+                // Si viene solo como número (ej: "14"), convertir a formato hora
+                if (is_numeric($hora) && strlen($hora) <= 2) {
+                    return str_pad($hora, 2, '0', STR_PAD_LEFT) . ':00';
+                }
+
+                // Si viene en formato HH:MM:SS, extraer solo HH:MM
+                if (str_contains($hora, ':')) {
+                    $partes = explode(':', $hora);
+                    return $partes[0] . ':' . ($partes[1] ?? '00');
+                }
+
+                return $hora;
+            } catch (\Exception $e) {
+                return '';
+            }
         }
     }
 
