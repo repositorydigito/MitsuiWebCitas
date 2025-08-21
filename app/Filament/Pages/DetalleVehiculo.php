@@ -1328,9 +1328,23 @@ class DetalleVehiculo extends Page
         $tieneFechaFactura = $this->datosAsesorSAP['tiene_fecha_factura'] ?? false;
         $fechaUltServ = $this->datosAsesorSAP['fecha_ult_serv'] ?? null;
         
+        // Log detallado de citasAgendadas
+        Log::info('[DetalleVehiculo] Estructura de citasAgendadas:', [
+            'citasAgendadas' => $this->citasAgendadas,
+            'count' => is_countable($this->citasAgendadas) ? count($this->citasAgendadas) : 'No contable',
+            'type' => gettype($this->citasAgendadas)
+        ]);
+        
         // Obtener la fecha de la cita del array de citas transformado
-        $citaActual = $this->citasAgendadas[0] ?? null;
-        $fechaCitaActual = $citaActual['fecha_cita'] ?? null;
+        $citaActual = null;
+        $fechaCitaActual = null;
+        
+        if (is_array($this->citasAgendadas) && count($this->citasAgendadas) > 0) {
+            $citaActual = $this->citasAgendadas[0];
+            $fechaCitaActual = $citaActual['fecha_cita'] ?? 
+                             $citaActual['scheduled_start_date'] ?? 
+                             $citaActual['start_date_time'] ?? null;
+        }
         
         // Asegurarse de que las fechas estén en el mismo formato para comparación (YYYY-MM-DD)
         if ($fechaUltServ) {
@@ -1346,7 +1360,8 @@ class DetalleVehiculo extends Page
             'cita_completa' => $citaActual,
             'fecha_ult_serv' => $fechaUltServ,
             'fecha_cita_actual' => $fechaCitaActual ?? 'No se encontró fecha de cita',
-            'citas_agendadas_count' => count($this->citasAgendadas)
+            'citas_agendadas_count' => is_countable($this->citasAgendadas) ? count($this->citasAgendadas) : 0,
+            'cita_keys' => $citaActual ? array_keys($citaActual) : 'No hay cita actual'
         ]);
 
         // CASO 1: Si tiene fecha de FACTURA -> TRABAJO CONCLUIDO (tiene prioridad sobre los demás estados)
