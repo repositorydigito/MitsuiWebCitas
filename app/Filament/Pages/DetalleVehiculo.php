@@ -1261,7 +1261,7 @@ class DetalleVehiculo extends Page
                 'nombre' => 'Confirmada',
                 'etapas' => [
                     'cita_confirmada' => ['activo' => false, 'completado' => true],
-                    'en_trabajo' => ['activo' => true, 'completado' => true],
+                    'en_trabajo' => ['activo' => false, 'completado' => false], // ✅ CORREGIDO: Inicialmente solo confirmada
                     'trabajo_concluido' => ['activo' => false, 'completado' => false],
                     'entregado' => ['activo' => false, 'completado' => false],
                 ]
@@ -1340,6 +1340,14 @@ class DetalleVehiculo extends Page
         // Obtener la fecha de la cita del array de citas transformado
         $citaActual = $this->citasAgendadas[0] ?? null;
         
+        Log::info('🔎 [ESTADO-FLOW] DEBUG: Analizando estructura de cita actual:', [
+            'cita_actual_existe' => $citaActual ? '✅' : '❌',
+            'estructura_completa' => $citaActual ? array_keys($citaActual) : 'null',
+            'id_raw' => $citaActual['id'] ?? 'NO_ID',
+            'numero_cita_raw' => $citaActual['numero_cita'] ?? 'NO_NUMERO',
+            'fecha_cita_del_array' => $citaActual['fecha_cita'] ?? 'NO_FECHA_ARRAY'
+        ]);
+        
         // Intentar obtener la fecha de la cita de la base de datos local primero
         $fechaCitaActual = null;
         if ($citaActual) {
@@ -1350,33 +1358,69 @@ class DetalleVehiculo extends Page
             // 1. Verificar si el ID está en el formato numérico directo
             if (isset($citaActual['id']) && is_numeric($citaActual['id'])) {
                 $candidatosId[] = (int)$citaActual['id'];
+                Log::info('🔢 [ESTADO-FLOW] ID numérico detectado:', ['id' => (int)$citaActual['id']]);
             } 
             // 2. Verificar si el ID está en el formato 'local-123'
             elseif (isset($citaActual['id']) && strpos($citaActual['id'], 'local-') === 0) {
                 $candidatosId[] = (int)substr($citaActual['id'], 6);
+                Log::info('🏷️ [ESTADO-FLOW] ID local detectado:', ['id_original' => $citaActual['id'], 'id_extraido' => (int)substr($citaActual['id'], 6)]);
             }
             // 3. Verificar si hay un número de cita disponible
             if (isset($citaActual['numero_cita'])) {
                 if (is_numeric($citaActual['numero_cita'])) {
                     $candidatosId[] = (int)$citaActual['numero_cita'];
+                    Log::info('🎫 [ESTADO-FLOW] Número de cita numérico:', ['numero' => (int)$citaActual['numero_cita']]);
                 } elseif (is_string($citaActual['numero_cita']) && strpos($citaActual['numero_cita'], 'CITA-') === 0) {
                     $candidatosId[] = (int)substr($citaActual['numero_cita'], 5);
+                    Log::info('🎫 [ESTADO-FLOW] Número de cita con prefijo:', ['numero_original' => $citaActual['numero_cita'], 'id_extraido' => (int)substr($citaActual['numero_cita'], 5)]);
                 }
             }
             
+            Log::info('🔍 [ESTADO-FLOW] Candidatos de ID para búsqueda en BD:', [
+                'total_candidatos' => count($candidatosId),
+                'candidatos' => $candidatosId
+            ]);
+            
             // Buscar cita en la base de datos
-            foreach ($candidatosId as $id) {
+            foreach ($candidatosId as $index => $id) {
+                Log::info("🔎 [ESTADO-FLOW] Buscando en BD - Intento #{$index}: ID = {$id}");
                 $citaLocal = \App\Models\Appointment::find($id);
                 if ($citaLocal) {
                     $fechaCitaActual = $citaLocal->appointment_date ? $citaLocal->appointment_date->format('Y-m-d') : null;
+                    Log::info('✅ [ESTADO-FLOW] Cita encontrada en BD:', [
+                        'appointment_id' => $citaLocal->id,
+                        'appointment_date_raw' => $citaLocal->appointment_date,
+                        'appointment_date_formatted' => $fechaCitaActual,
+                        'vehicle_plate' => $citaLocal->vehicle_plate ?? 'N/A'
+                    ]);
                     break; // Usar el primer ID que encuentre
+                } else {
+                    Log::info("❌ [ESTADO-FLOW] ID {$id} no encontrado en BD");
                 }
+            }
+            
+            if (!$fechaCitaActual && empty($candidatosId)) {
+                Log::warning('⚠️ [ESTADO-FLOW] No se pudieron extraer IDs candidatos de la cita actual');
             }
         }
         
         // Si no se pudo obtener de la base de datos local, usar el valor del array
         if (!$fechaCitaActual) {
             $fechaCitaActual = $citaActual['fecha_cita'] ?? null;
+            if ($fechaCitaActual) {
+                Log::info('🔄 [ESTADO-FLOW] Usando fecha del array como fallback:', ['fecha_array' => $fechaCitaActual]);
+                // Intentar convertir formato d/m/Y a Y-m-d si es necesario
+                if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $fechaCitaActual)) {
+                    try {
+                        $fechaCitaActual = \Carbon\Carbon::createFromFormat('d/m/Y', $fechaCitaActual)->format('Y-m-d');
+                        Log::info('📅 [ESTADO-FLOW] Fecha convertida de d/m/Y a Y-m-d:', ['fecha_convertida' => $fechaCitaActual]);
+                    } catch (\Exception $e) {
+                        Log::error('❌ [ESTADO-FLOW] Error al convertir fecha:', ['fecha_original' => $fechaCitaActual, 'error' => $e->getMessage()]);
+                    }
+                }
+            } else {
+                Log::warning('⚠️ [ESTADO-FLOW] Tampoco se encontró fecha en el array de cita');
+            }
         }
         
         // Asegurarse de que las fechas estén en el mismo formato para comparación (YYYY-MM-DD)
