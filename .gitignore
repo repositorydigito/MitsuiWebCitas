@@ -37,3 +37,6 @@ test_batch_method.php
 test_soap.php
 .env.example
 .env.example
+.qoder/rules/reglas.md
+.qoder/rules/laravel.md
+.qoder/rules/usar.md

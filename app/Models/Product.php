@@ -34,10 +34,10 @@ class Product extends Model
     ];
 
     protected $casts = [
-        'base_quantity' => 'decimal:14',
-        'quantity' => 'decimal:14',
-        'alt_quantity' => 'decimal:14',
-        'work_time_value' => 'decimal:14',
+        'base_quantity' => 'decimal:2',
+        'quantity' => 'decimal:2',
+        'alt_quantity' => 'decimal:2',
+        'work_time_value' => 'decimal:4',
     ];
 
     /**
