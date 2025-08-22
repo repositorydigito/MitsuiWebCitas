@@ -47,6 +47,7 @@ class PasswordResetMail extends Mailable
                 'resetUrl' => $this->resetUrl,
                 'documentType' => $this->documentType,
                 'documentNumber' => $this->documentNumber,
+                'expiresInMinutes' => 30, // Token expires in 30 minutes
             ]
         );
     }

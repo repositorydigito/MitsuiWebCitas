@@ -67,6 +67,14 @@ class CustomPasswordController extends Controller
 
             return back()->with('status', 'Se ha enviado un enlace de restablecimiento a tu correo electrónico.');
         } catch (\Exception $e) {
+            // Log the specific error for debugging
+            \Log::error('Error sending password reset email', [
+                'error' => $e->getMessage(),
+                'email' => $user->email,
+                'user_id' => $user->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return back()->withErrors(['email' => 'Error al enviar el correo. Inténtalo de nuevo.']);
         }
     }

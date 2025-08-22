@@ -1,3 +1,6 @@
+@php
+    use Illuminate\Support\Facades\Log;
+@endphp
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -18,13 +21,19 @@
         }
         .container {
             background-color: #ffffff;
-            padding: 40px;
+            padding: 0;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         .header {
+            background-color: #0075BF;
+            color: white;
+            padding: 30px 20px;
             text-align: center;
-            margin-bottom: 30px;
+            border-radius: 8px 8px 0 0;
+        }
+        .logo-container {
+            margin-bottom: 20px;
         }
         .logo {
             max-width: 200px;
@@ -36,13 +45,15 @@
             outline: none;
         }
         .title {
-            color: #0075BF;
+            color: white;
             font-size: 24px;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin: 0;
         }
         .content {
-            margin-bottom: 30px;
+            background-color: #f9f9f9;
+            padding: 30px;
+            border-radius: 0 0 8px 8px;
             line-height: 1.5;
         }
         .greeting {
@@ -129,19 +140,32 @@
 </head>
 <body style="margin: 0; padding: 20px; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
     <div class="container">
-        <div class="logo-container">
-            @php
-                // Usar URL absoluta directamente
-                $logoUrl = url('images/logo_Mitsui_Blanco.png');
-                $style = "display: block; margin: 0 auto 15px; width: 200px; height: auto;";
-            @endphp
-            
-            <img src="{{ $logoUrl }}" 
-                 alt="Mitsui Automotriz" 
-                 class="logo"
-                 style="{{ $style }}"
-                 onerror="console.error('Error al cargar la imagen:', this.src)">
-            <h1 class="title">Restablece tu contraseña</h1>
+        <div class="header">
+            <div class="logo-container">
+                @php
+                    // Intentar con EmailImageHelper primero
+                    $logoPath = 'images/logo_Mitsui_Blanco.png';
+                    $logoUrl = \App\Helpers\EmailImageHelper::getImageUrl($logoPath, true);
+                    
+                    // Si falla, usar URL directa como fallback
+                    if (empty($logoUrl)) {
+                        $logoUrl = url('images/logo_Mitsui_Blanco.png');
+                        Log::warning('EmailImageHelper falló, usando URL directa para el logo');
+                    }
+                    
+                    $style = "display: block; margin: 0 auto 15px; width: 200px; height: auto;";
+                    
+                    // Log para depuración
+                    Log::info("URL de la imagen (password reset): " . substr($logoUrl, 0, 100) . '...');
+                @endphp
+                
+                <img src="{{ $logoUrl }}" 
+                     alt="Mitsui Automotriz" 
+                     class="logo"
+                     style="{{ $style }}"
+                     onerror="console.error('Error al cargar la imagen:', this.src); this.onerror=null; this.src='{{ url('images/logo_Mitsui_Blanco.png') }}'">
+            </div>
+            <h1 class="title" style="margin: 0; font-size: 24px; line-height: 1.3; color: white;">Restablece tu contraseña</h1>
         </div>
         
         <div class="content">
@@ -169,12 +193,20 @@
             <!-- Logo adicional al pie del correo -->
             <div style="text-align: center; margin: 30px 0 20px;">
                 @php
-                    $logo2Path = 'images/logomitsui2.svg';
+                    $logo2Path = 'images/logomitsuifooter.png';
                     $logo2Url = \App\Helpers\EmailImageHelper::getImageUrl($logo2Path, true);
+                    
+                    // Si falla, usar URL directa como fallback
+                    if (empty($logo2Url)) {
+                        $logo2Url = asset('images/logomitsuifooter.png');
+                        $logo2Url = str_replace('http://', 'https://', $logo2Url);
+                        Log::warning('EmailImageHelper falló para footer, usando URL directa');
+                    }
                 @endphp
                 <img src="{{ $logo2Url }}" 
                      alt="Mitsui Automotriz" 
-                     style="max-width: 200px; height: auto; margin: 0 auto; display: block;">
+                     style="max-width: 200px; height: auto; margin: 0 auto; display: block;"
+                     onerror="this.onerror=null; this.src='{{ asset('images/logomitsuifooter.png') }}'">
             </div>
         </div>
         
