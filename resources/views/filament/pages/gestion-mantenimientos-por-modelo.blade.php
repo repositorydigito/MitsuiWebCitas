@@ -86,119 +86,93 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     @php
-                        // Agrupar los mantenimientos por marca, código y kilómetros
-                        $grupos = $this->mantenimientosPaginados->groupBy(['brand', 'code', 'kilometers']);
-                        
-                        // DEBUG: Log información de agrupación
-                        \Log::info('DEBUG - Agrupación en vista:', [
-                            'total_items_before_grouping' => $this->mantenimientosPaginados->count(),
-                            'groups_count' => $grupos->count(),
-                            'groups_structure' => $grupos->map(function($porCodigo, $marca) {
-                                return [
-                                    'brand' => $marca,
-                                    'codes' => $porCodigo->map(function($porKilometros, $codigo) {
-                                        return [
-                                            'code' => $codigo,
-                                            'kilometers_groups' => $porKilometros->map(function($mantenimientos, $kilometros) {
-                                                return [
-                                                    'kilometers' => $kilometros,
-                                                    'records_count' => $mantenimientos->count(),
-                                                    'tipos_valor_trabajo' => $mantenimientos->pluck('tipo_valor_trabajo')->toArray()
-                                                ];
-                                            })->toArray()
-                                        ];
-                                    })->toArray()
-                                ];
-                            })->toArray()
+                        // Los datos ya vienen agrupados desde el componente Livewire
+                        // DEBUG: Log información de datos recibidos
+                        \Log::info('DEBUG - Datos en vista (ya agrupados):', [
+                            'total_items_in_page' => $this->mantenimientosPaginados->count(),
+                            'sample_item' => $this->mantenimientosPaginados->first()
                         ]);
                     @endphp
                     
-                    @forelse($grupos as $marca => $porCodigo)
-                        @foreach($porCodigo as $codigo => $porKilometros)
-                            @foreach($porKilometros as $kilometros => $mantenimientos)
-                                @php
-                                    $primerMantenimiento = $mantenimientos->first();
-                                    $todosLosTipos = $mantenimientos->pluck('tipo_valor_trabajo')->filter()->implode(', ');
-                                    $ids = $mantenimientos->pluck('id')->toArray();
-                                    $isActive = $mantenimientos->contains('is_active', true);
-                                @endphp
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        {{ $primerMantenimiento['name'] }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ $codigo }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                            @if($marca === 'Toyota') bg-red-100 text-red-800
-                                            @elseif($marca === 'Lexus') bg-blue-100 text-blue-800
-                                            @else bg-orange-100 text-orange-800
-                                            @endif">
-                                        {{ $marca }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-700">
-                                    {{ $todosLosTipos }}
-                                </td>
-                                <td class="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {{ number_format($kilometros, 0, ',', '.') }} km
-                                </td>
-                                <td class="hidden md:table-cell px-6 py-4 text-sm text-gray-500">
-                                    {{ $primerMantenimiento['description'] }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <div class="flex items-center space-x-2">
-                                        <!-- Toggle Switch -->
-                                        <button
-                                            type="button"
-                                            wire:click="toggleEstado({{ $primerMantenimiento['id'] }})"
-                                            @class([
-                                                'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-                                                'bg-primary-600' => $isActive,
-                                                'bg-gray-200' => !$isActive,
-                                            ])
-                                            role="switch"
-                                            aria-checked="{{ $isActive ? 'true' : 'false' }}"
-                                        >
-                                            <span
-                                                aria-hidden="true"
-                                                @class([
-                                                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
-                                                    'translate-x-5' => $isActive,
-                                                    'translate-x-0' => !$isActive,
-                                                ])
-                                            ></span>
-                                        </button>
+                    @forelse($this->mantenimientosPaginados as $mantenimiento)
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {{ $mantenimiento['name'] }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ $mantenimiento['code'] }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    @if($mantenimiento['brand'] === 'Toyota') bg-red-100 text-red-800
+                                    @elseif($mantenimiento['brand'] === 'Lexus') bg-blue-100 text-blue-800
+                                    @else bg-orange-100 text-orange-800
+                                    @endif">
+                                {{ $mantenimiento['brand'] }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-700">
+                            {{ $mantenimiento['tipos_valor_trabajo_grupo'] ?? $mantenimiento['tipo_valor_trabajo'] }}
+                            @if(isset($mantenimiento['grupo_size']) && $mantenimiento['grupo_size'] > 1)
+                                <span class="text-xs text-gray-400 ml-2">({{ $mantenimiento['grupo_size'] }} tipos)</span>
+                            @endif
+                        </td>
+                        <td class="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ number_format($mantenimiento['kilometers'], 0, ',', '.') }} km
+                        </td>
+                        <td class="hidden md:table-cell px-6 py-4 text-sm text-gray-500">
+                            {{ $mantenimiento['description'] }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex items-center space-x-2">
+                                <!-- Toggle Switch -->
+                                <button
+                                    type="button"
+                                    wire:click="toggleEstado({{ $mantenimiento['id'] }})"
+                                    @class([
+                                        'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+                                        'bg-primary-600' => $mantenimiento['is_active_grupo'] ?? $mantenimiento['is_active'],
+                                        'bg-gray-200' => !($mantenimiento['is_active_grupo'] ?? $mantenimiento['is_active']),
+                                    ])
+                                    role="switch"
+                                    aria-checked="{{ ($mantenimiento['is_active_grupo'] ?? $mantenimiento['is_active']) ? 'true' : 'false' }}"
+                                >
+                                    <span
+                                        aria-hidden="true"
+                                        @class([
+                                            'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                                            'translate-x-5' => $mantenimiento['is_active_grupo'] ?? $mantenimiento['is_active'],
+                                            'translate-x-0' => !($mantenimiento['is_active_grupo'] ?? $mantenimiento['is_active']),
+                                        ])
+                                    ></span>
+                                </button>
 
-                                        <!-- Botón Editar -->
-                                        <button
-                                            type="button"
-                                            wire:click="editarMantenimiento({{ $primerMantenimiento['id'] }})"
-                                            class="text-primary-600 hover:text-primary-900"
-                                            title="Editar"
-                                        >
-                                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                            </svg>
-                                        </button>
+                                <!-- Botón Editar -->
+                                <button
+                                    type="button"
+                                    wire:click="editarMantenimiento({{ $mantenimiento['id'] }})"
+                                    class="text-primary-600 hover:text-primary-900"
+                                    title="Editar"
+                                >
+                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                </button>
 
-                                        <!-- Botón Eliminar -->
-                                        <button
-                                            type="button"
-                                            wire:click="confirmarEliminacion({{ $primerMantenimiento['id'] }})"
-                                            class="text-red-600 hover:text-red-900"
-                                            title="Eliminar"
-                                        >
-                                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            @endforeach
-                        @endforeach
+                                <!-- Botón Eliminar -->
+                                <button
+                                    type="button"
+                                    wire:click="confirmarEliminacion({{ $mantenimiento['id'] }})"
+                                    class="text-red-600 hover:text-red-900"
+                                    title="Eliminar"
+                                >
+                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
                     @empty
                         <tr>
                             <td colspan="7" class="px-6 py-4 text-center text-gray-500">

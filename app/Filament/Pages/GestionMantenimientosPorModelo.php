@@ -124,20 +124,42 @@ class GestionMantenimientosPorModelo extends Page
             });
         }
 
-        // DEBUG: Log datos filtrados para diagnosticar
-        \Log::info('DEBUG - Datos después de filtros:', [
-            'filtered_count' => $mantenimientosFiltrados->count(),
+        // NUEVA LÓGICA: Agrupar ANTES de paginar
+        // Primero agrupamos todos los datos filtrados
+        $grupos = $mantenimientosFiltrados->groupBy(function($item) {
+            return $item['brand'] . '|' . $item['code'] . '|' . $item['kilometers'];
+        });
+        
+        // Crear un array de "filas representativas" (una por grupo)
+        $filasGrupos = $grupos->map(function($grupo, $key) {
+            // Tomar el primer elemento como representativo
+            $primerElemento = $grupo->first();
+            // Agregar información del grupo
+            $primerElemento['grupo_size'] = $grupo->count();
+            $primerElemento['tipos_valor_trabajo_grupo'] = $grupo->pluck('tipo_valor_trabajo')->filter()->implode(', ');
+            $primerElemento['is_active_grupo'] = $grupo->contains('is_active', true);
+            return $primerElemento;
+        })->values();
+
+        // DEBUG: Log datos agrupados para diagnosticar
+        \Log::info('DEBUG - Datos después de agrupación:', [
+            'total_records' => $mantenimientosFiltrados->count(),
+            'grupos_count' => $grupos->count(),
+            'filas_grupos_count' => $filasGrupos->count(),
             'current_page' => $this->currentPage,
-            'per_page' => $this->perPage
+            'per_page' => $this->perPage,
+            'sample_group' => $filasGrupos->first()
         ]);
 
-        if ($mantenimientosFiltrados->count() > 0 && $this->currentPage > ceil($mantenimientosFiltrados->count() / $this->perPage)) {
+        // Ajustar página si es necesario
+        if ($filasGrupos->count() > 0 && $this->currentPage > ceil($filasGrupos->count() / $this->perPage)) {
             $this->currentPage = 1;
         }
 
+        // Ahora paginar las filas de grupos
         return new LengthAwarePaginator(
-            $mantenimientosFiltrados->forPage($this->currentPage, $this->perPage),
-            $mantenimientosFiltrados->count(),
+            $filasGrupos->forPage($this->currentPage, $this->perPage),
+            $filasGrupos->count(),
             $this->perPage,
             $this->currentPage,
             [
