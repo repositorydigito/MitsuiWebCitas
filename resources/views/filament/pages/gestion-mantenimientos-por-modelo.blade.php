@@ -85,72 +85,97 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($this->mantenimientosPaginados as $mantenimiento)
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                {{ $mantenimiento['name'] }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $mantenimiento['code'] }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                    @if($mantenimiento['brand'] === 'Toyota') bg-red-100 text-red-800
-                                    @elseif($mantenimiento['brand'] === 'Lexus') bg-blue-100 text-blue-800
-                                    @else bg-orange-100 text-orange-800
-                                    @endif">
-                                    {{ $mantenimiento['brand'] }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                                {{ $mantenimiento['tipo_valor_trabajo'] ?? 'No definido' }}
-                            </td>
-                            <td class="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ number_format($mantenimiento['kilometers']) }} Km
-                            </td>
-                            <td class="hidden md:table-cell px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                                {{ $mantenimiento['description'] ?? 'Sin descripción' }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                <div class="flex justify-center items-center gap-6">
-                                    <button
-                                        wire:click="editarMantenimiento({{ $mantenimiento['id'] }})"
-                                        class="text-primary-600 hover:text-primary-900 flex"
-                                        title="Editar"
-                                    >
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                        </svg>
-                                        Editar
-                                    </button>
+                    @php
+                        // Agrupar los mantenimientos por marca, código y kilómetros
+                        $grupos = $this->mantenimientosPaginados->groupBy(['brand', 'code', 'kilometers']);
+                    @endphp
+                    
+                    @forelse($grupos as $marca => $porCodigo)
+                        @foreach($porCodigo as $codigo => $porKilometros)
+                            @foreach($porKilometros as $kilometros => $mantenimientos)
+                                @php
+                                    $primerMantenimiento = $mantenimientos->first();
+                                    $todosLosTipos = $mantenimientos->pluck('tipo_valor_trabajo')->filter()->implode(', ');
+                                    $ids = $mantenimientos->pluck('id')->toArray();
+                                    $isActive = $mantenimientos->contains('is_active', true);
+                                @endphp
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        {{ $primerMantenimiento['name'] }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {{ $codigo }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                            @if($marca === 'Toyota') bg-red-100 text-red-800
+                                            @elseif($marca === 'Lexus') bg-blue-100 text-blue-800
+                                            @else bg-orange-100 text-orange-800
+                                            @endif">
+                                        {{ $marca }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-700">
+                                    {{ $todosLosTipos }}
+                                </td>
+                                <td class="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ number_format($kilometros, 0, ',', '.') }} km
+                                </td>
+                                <td class="hidden md:table-cell px-6 py-4 text-sm text-gray-500">
+                                    {{ $primerMantenimiento['description'] }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div class="flex items-center space-x-2">
+                                        <!-- Toggle Switch -->
+                                        <button
+                                            type="button"
+                                            wire:click="toggleEstado({{ $primerMantenimiento['id'] }})"
+                                            @class([
+                                                'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+                                                'bg-primary-600' => $isActive,
+                                                'bg-gray-200' => !$isActive,
+                                            ])
+                                            role="switch"
+                                            aria-checked="{{ $isActive ? 'true' : 'false' }}"
+                                        >
+                                            <span
+                                                aria-hidden="true"
+                                                @class([
+                                                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                                                    'translate-x-5' => $isActive,
+                                                    'translate-x-0' => !$isActive,
+                                                ])
+                                            ></span>
+                                        </button>
 
-                                    <button
-                                        wire:click="eliminarMantenimiento({{ $mantenimiento['id'] }})"
-                                        class="text-primary-600 hover:text-primary-900 flex"
-                                        title="Eliminar"
-                                        onclick="return confirm('¿Estás seguro de que deseas eliminar este mantenimiento por modelo?')"
-                                    >
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                        </svg>
-                                        Eliminar
-                                    </button>
+                                        <!-- Botón Editar -->
+                                        <button
+                                            type="button"
+                                            wire:click="editarMantenimiento({{ $primerMantenimiento['id'] }})"
+                                            class="text-primary-600 hover:text-primary-900"
+                                            title="Editar"
+                                        >
+                                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                        </button>
 
-                                    <div class="inline-flex items-center">
-                                        <label class="relative inline-block">
-                                            <input
-                                                type="checkbox"
-                                                id="toggle-{{ $mantenimiento['id'] }}"
-                                                wire:click="toggleEstado({{ $mantenimiento['id'] }})"
-                                                @if($estadoMantenimientos[$mantenimiento['id']]) checked @endif
-                                                class="toggle-checkbox"
-                                            />
-                                            <span class="toggle-label"></span>
-                                        </label>
+                                        <!-- Botón Eliminar -->
+                                        <button
+                                            type="button"
+                                            wire:click="confirmarEliminacion({{ $primerMantenimiento['id'] }})"
+                                            class="text-red-600 hover:text-red-900"
+                                            title="Eliminar"
+                                        >
+                                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
                                     </div>
-                                </div>
-                            </td>
-                        </tr>
+                                </td>
+                            </tr>
+                            @endforeach
+                        @endforeach
                     @empty
                         <tr>
                             <td colspan="7" class="px-6 py-4 text-center text-gray-500">
@@ -332,15 +357,20 @@
                                 <div class="flex md:flex-row flex-col justify-between gap-2">
                                     <!-- Campo Tipo Valor Trabajo -->
                                     <div class="flex flex-col w-full">
-                                        <label for="tipo_valor_trabajo" class="text-sm font-medium text-gray-700 mb-1">Tipo Valor Trabajo</label>
+                                        <div class="flex items-center justify-between">
+                                            <label for="tipo_valor_trabajo" class="text-sm font-medium text-gray-700 mb-1">Tipos de Valor Trabajo</label>
+                                            <span class="text-xs text-gray-500">Separados por comas</span>
+                                        </div>
                                         <input
                                             type="text"
                                             id="tipo_valor_trabajo"
                                             wire:model="mantenimientoEnEdicion.tipo_valor_trabajo"
                                             class="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                            placeholder="Ej: HILUX-2275, RAV4-1085"
+                                            placeholder="Ej: HILUX-2275, RAV4-1085, COROLLA-1234"
+                                            title="Ingrese los tipos de valor de trabajo separados por comas"
                                         >
                                         @error('mantenimientoEnEdicion.tipo_valor_trabajo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                        <p class="text-xs text-gray-500 mt-1">Ejemplo: HILUX-2275, RAV4-1085, COROLLA-1234</p>
                                     </div>
                                     <!-- Campo Activo -->
                                     <div class="flex items-center gap-2 w-full">

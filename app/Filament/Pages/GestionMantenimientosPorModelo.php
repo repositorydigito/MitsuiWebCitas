@@ -184,16 +184,35 @@ class GestionMantenimientosPorModelo extends Page
     public function editarMantenimiento(int $id): void
     {
         try {
-            $mantenimiento = $this->mantenimientosModelo->firstWhere('id', $id);
-            if ($mantenimiento) {
+            // Encontrar el mantenimiento seleccionado
+            $mantenimientoSeleccionado = $this->mantenimientosModelo->firstWhere('id', $id);
+            
+            if ($mantenimientoSeleccionado) {
+                // Obtener todos los mantenimientos con el mismo código
+                $mantenimientosGrupo = $this->mantenimientosModelo
+                    ->where('code', $mantenimientoSeleccionado['code'])
+                    ->where('brand', $mantenimientoSeleccionado['brand'])
+                    ->where('kilometers', $mantenimientoSeleccionado['kilometers']);
+                
+                // Preparar los datos para el formulario
                 $this->accionFormulario = 'editar';
-                $this->mantenimientoEnEdicion = $mantenimiento;
+                $this->mantenimientoEnEdicion = [
+                    'id' => $id,
+                    'name' => $mantenimientoSeleccionado['name'],
+                    'code' => $mantenimientoSeleccionado['code'],
+                    'brand' => $mantenimientoSeleccionado['brand'],
+                    'tipo_valor_trabajo' => $mantenimientosGrupo->pluck('tipo_valor_trabajo')->implode(', '),
+                    'kilometers' => $mantenimientoSeleccionado['kilometers'],
+                    'description' => $mantenimientoSeleccionado['description'],
+                    'is_active' => $mantenimientoSeleccionado['is_active'],
+                ];
+                
                 $this->isFormModalOpen = true;
             }
         } catch (\Exception $e) {
             \Filament\Notifications\Notification::make()
-                ->title('Error al editar mantenimiento')
-                ->body('Ha ocurrido un error: '.$e->getMessage())
+                ->title('Error al cargar el mantenimiento')
+                ->body('Ha ocurrido un error al cargar los datos del mantenimiento: '.$e->getMessage())
                 ->danger()
                 ->send();
         }
@@ -201,12 +220,16 @@ class GestionMantenimientosPorModelo extends Page
 
     public function guardarMantenimiento(): void
     {
+        // Iniciar transacción para asegurar la consistencia de los datos
+        \DB::beginTransaction();
+        
         try {
+            // Validar los datos del formulario
             $this->validate([
                 'mantenimientoEnEdicion.name' => 'required|string|max:255',
                 'mantenimientoEnEdicion.code' => 'required|string|max:50',
                 'mantenimientoEnEdicion.brand' => 'required|in:Toyota,Lexus,Hino',
-                'mantenimientoEnEdicion.tipo_valor_trabajo' => 'required|string|max:100',
+                'mantenimientoEnEdicion.tipo_valor_trabajo' => 'required|string|max:1000',
                 'mantenimientoEnEdicion.kilometers' => 'required|integer|min:1',
             ], [
                 'mantenimientoEnEdicion.name.required' => 'El nombre es obligatorio',
@@ -218,63 +241,100 @@ class GestionMantenimientosPorModelo extends Page
                 'mantenimientoEnEdicion.kilometers.integer' => 'Los kilómetros deben ser un número',
             ]);
 
-            // Validar duplicados
-            $excludeId = $this->accionFormulario === 'editar' ? $this->mantenimientoEnEdicion['id'] : null;
-            if (ModelMaintenance::existeMantenimientoPorTipoValorTrabajo(
-                $this->mantenimientoEnEdicion['brand'],
-                $this->mantenimientoEnEdicion['tipo_valor_trabajo'],
-                $this->mantenimientoEnEdicion['kilometers'],
-                $excludeId
-            )) {
-                \Filament\Notifications\Notification::make()
-                    ->title('Error de duplicado')
-                    ->body('Ya existe un mantenimiento para esta marca, tipo valor trabajo y kilómetros')
-                    ->danger()
-                    ->send();
-                return;
+            // Procesar los tipos de valor de trabajo
+            $tiposValorTrabajo = array_map('trim', 
+                explode(',', $this->mantenimientoEnEdicion['tipo_valor_trabajo'])
+            );
+            
+            // Eliminar valores vacíos
+            $tiposValorTrabajo = array_filter($tiposValorTrabajo, function($value) {
+                return !empty($value);
+            });
+
+            if (empty($tiposValorTrabajo)) {
+                throw new \Exception('Debe ingresar al menos un tipo de valor de trabajo');
             }
 
-            // Validar código único
-            $codeExists = ModelMaintenance::where('code', $this->mantenimientoEnEdicion['code']);
-            if ($excludeId) {
-                $codeExists->where('id', '!=', $excludeId);
-            }
-            if ($codeExists->exists()) {
-                \Filament\Notifications\Notification::make()
-                    ->title('Código duplicado')
-                    ->body('El código ya existe, debe ser único')
-                    ->danger()
-                    ->send();
-                return;
+            // Validar cada tipo de valor de trabajo
+            foreach ($tiposValorTrabajo as $tipo) {
+                if (strlen($tipo) > 100) {
+                    throw new \Exception("El tipo de valor de trabajo '{$tipo}' excede el máximo de 100 caracteres");
+                }
             }
 
-            if ($this->accionFormulario === 'editar' && ! empty($this->mantenimientoEnEdicion['id'])) {
-                $mantenimiento = ModelMaintenance::findOrFail($this->mantenimientoEnEdicion['id']);
-            } else {
-                $mantenimiento = new ModelMaintenance;
+            // Verificar que no existan conflictos con combinaciones únicas (solo para nuevos registros)
+            if ($this->accionFormulario === 'crear') {
+                foreach ($tiposValorTrabajo as $tipo) {
+                    $existingRecord = ModelMaintenance::where('brand', $this->mantenimientoEnEdicion['brand'])
+                        ->where('kilometers', $this->mantenimientoEnEdicion['kilometers'])
+                        ->where('tipo_valor_trabajo', $tipo);
+                    
+                    if ($existingRecord->exists()) {
+                        $existingName = $existingRecord->first()->name;
+                        throw new \Exception("El tipo de valor de trabajo '{$tipo}' ya existe para la marca {$this->mantenimientoEnEdicion['brand']} con {$this->mantenimientoEnEdicion['kilometers']} km en el mantenimiento '{$existingName}'");
+                    }
+                }
             }
 
-            $mantenimiento->name = $this->mantenimientoEnEdicion['name'];
-            $mantenimiento->code = $this->mantenimientoEnEdicion['code'];
-            $mantenimiento->brand = $this->mantenimientoEnEdicion['brand'];
-            $mantenimiento->tipo_valor_trabajo = $this->mantenimientoEnEdicion['tipo_valor_trabajo'];
-            $mantenimiento->kilometers = $this->mantenimientoEnEdicion['kilometers'];
-            $mantenimiento->description = $this->mantenimientoEnEdicion['description'] ?? null;
-            $mantenimiento->is_active = $this->mantenimientoEnEdicion['is_active'] ?? true;
-            $mantenimiento->save();
+            // Si estamos editando, eliminar los registros antiguos con este código, marca y kilómetros
+            if ($this->accionFormulario === 'editar') {
+                ModelMaintenance::where('code', $this->mantenimientoEnEdicion['code'])
+                    ->where('brand', $this->mantenimientoEnEdicion['brand'])
+                    ->where('kilometers', $this->mantenimientoEnEdicion['kilometers'])
+                    ->delete();
+            }
 
+            // Crear un nuevo registro para cada tipo de valor de trabajo
+            $savedCount = 0;
+            $skippedCount = 0;
+            
+            foreach ($tiposValorTrabajo as $tipo) {
+                // Para edición, ya eliminamos los registros anteriores, así que no hay que verificar duplicados
+                // Para creación, ya verificamos duplicados arriba
+                
+                $mantenimiento = new ModelMaintenance();
+                $mantenimiento->name = $this->mantenimientoEnEdicion['name'];
+                $mantenimiento->code = $this->mantenimientoEnEdicion['code'];
+                $mantenimiento->brand = $this->mantenimientoEnEdicion['brand'];
+                $mantenimiento->tipo_valor_trabajo = $tipo;
+                $mantenimiento->kilometers = $this->mantenimientoEnEdicion['kilometers'];
+                $mantenimiento->description = $this->mantenimientoEnEdicion['description'] ?? null;
+                $mantenimiento->is_active = $this->mantenimientoEnEdicion['is_active'] ?? true;
+                
+                if ($mantenimiento->save()) {
+                    $savedCount++;
+                }
+            }
+            
+            if ($savedCount === 0) {
+                throw new \Exception('No se pudo guardar ningún mantenimiento');
+            }
+            
+            // Confirmar la transacción
+            \DB::commit();
+            
+            // Mostrar mensaje de éxito
+            $message = $savedCount === 1 
+                ? 'Se ha guardado 1 tipo de valor de trabajo correctamente' 
+                : "Se han guardado {$savedCount} tipos de valor de trabajo correctamente";
+            
             \Filament\Notifications\Notification::make()
                 ->title('Mantenimiento guardado')
-                ->body('El mantenimiento por modelo ha sido guardado correctamente')
+                ->body($message)
                 ->success()
                 ->send();
-
+            
             $this->isFormModalOpen = false;
             $this->cargarMantenimientosModelo();
+            
         } catch (\Exception $e) {
+            // Revertir la transacción en caso de error
+            \DB::rollBack();
+            
+            // Mostrar mensaje de error
             \Filament\Notifications\Notification::make()
                 ->title('Error al guardar mantenimiento')
-                ->body('Ha ocurrido un error: '.$e->getMessage())
+                ->body('Ha ocurrido un error: ' . $e->getMessage())
                 ->danger()
                 ->send();
         }
