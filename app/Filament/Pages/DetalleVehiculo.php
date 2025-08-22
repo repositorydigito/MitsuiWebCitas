@@ -312,7 +312,7 @@ class DetalleVehiculo extends Page
                         ]);
 
                         // Mapear campos de WSCitas a la estructura de la vista (estructura real)
-                        $estadoInfo = $this->obtenerInformacionEstadoCompleta($cita['status']['appointment_code'] ?? $cita['appointment_status'] ?? '1');
+                        $estadoInfo = $this->obtenerInformacionEstadoCompleta($cita['status']['appointment_code'] ?? $cita['appointment_status'] ?? '1', $cita);
 
                         // Enriquecer con datos SAP si están disponibles
                         $citaEnriquecida = $this->enriquecerCitaConDatosSAP($cita);
@@ -406,7 +406,7 @@ class DetalleVehiculo extends Page
                 $this->citasAgendadas = [];
 
                 foreach ($citasLocales as $cita) {
-                    $estadoInfo = $this->obtenerInformacionEstadoCompletaLocal($cita->status);
+                    $estadoInfo = $this->obtenerInformacionEstadoCompletaLocal($cita->status, $cita);
 
                     // Crear datos base de la cita local
                     $citaLocal = [
@@ -509,10 +509,21 @@ class DetalleVehiculo extends Page
     /**
      * Obtener información de estado para citas locales
      */
-    protected function obtenerInformacionEstadoCompletaLocal(string $statusLocal): array
+    protected function obtenerInformacionEstadoCompletaLocal(string $statusLocal, $appointment = null): array
     {
         $estadoC4C = $this->mapearEstadoLocalAC4C($statusLocal);
-        return $this->obtenerInformacionEstadoCompleta($estadoC4C);
+        
+        // Preparar datos de la cita si están disponibles
+        $appointmentData = null;
+        if ($appointment) {
+            $appointmentData = [
+                'appointment_date' => $appointment->appointment_date,
+                'appointment_time' => $appointment->appointment_time,
+                'scheduled_start_date' => $appointment->appointment_date ? $appointment->appointment_date->format('Y-m-d') : null,
+            ];
+        }
+        
+        return $this->obtenerInformacionEstadoCompleta($estadoC4C, $appointmentData);
     }
 
     /**
@@ -1243,8 +1254,15 @@ class DetalleVehiculo extends Page
      * Obtener información completa del estado para mostrar dinámicamente
      * Ahora incluye lógica basada en datos SAP
      */
-    protected function obtenerInformacionEstadoCompleta(string $appointmentStatus): array
+    protected function obtenerInformacionEstadoCompleta(string $appointmentStatus, array $currentAppointmentData = null): array
     {
+        Log::info('📊 [ESTADO-FLOW] === MÉTODO obtenerInformacionEstadoCompleta EJECUTÁNDOSE ===', [
+            'appointment_status' => $appointmentStatus,
+            'citas_agendadas_count' => count($this->citasAgendadas),
+            'tiene_datos_sap' => !empty($this->datosAsesorSAP),
+            'current_appointment_provided' => !empty($currentAppointmentData),
+            'current_appointment_keys' => $currentAppointmentData ? array_keys($currentAppointmentData) : 'null'
+        ]);
         $estados = [
             '1' => [
                 'codigo' => '1',
@@ -1312,7 +1330,7 @@ class DetalleVehiculo extends Page
 
         // Aplicar lógica SAP para modificar estados dinámicamente
         if ($this->datosAsesorSAP) {
-            $estadoBase = $this->aplicarLogicaSAPAEstado($estadoBase);
+            $estadoBase = $this->aplicarLogicaSAPAEstado($estadoBase, $currentAppointmentData);
         }
 
         return $estadoBase;
@@ -1322,7 +1340,7 @@ class DetalleVehiculo extends Page
      * Aplicar lógica SAP para modificar estados dinámicamente
      * Lógica progresiva según el proceso actual
      */
-    protected function aplicarLogicaSAPAEstado(array $estadoBase): array
+    protected function aplicarLogicaSAPAEstado(array $estadoBase, array $currentAppointmentData = null): array
     {
         Log::info('🚀 [ESTADO-FLOW] === INICIANDO EVALUACIÓN DE ESTADO SAP ===');
         
@@ -1337,7 +1355,43 @@ class DetalleVehiculo extends Page
             'fecha_ult_serv_raw' => $fechaUltServ,
         ]);
         
-        // Obtener la fecha de la cita del array de citas transformado
+        // ✅ PRIORIDAD: Usar los datos de la cita actual si están disponibles
+        $fechaCitaActual = null;
+        if ($currentAppointmentData) {
+            Log::info('🎯 [ESTADO-FLOW] Usando datos de cita actual (primera prioridad):', [
+                'available_keys' => array_keys($currentAppointmentData),
+                'scheduled_start_date' => $currentAppointmentData['scheduled_start_date'] ?? 'NO_DISPONIBLE',
+                'appointment_date' => $currentAppointmentData['appointment_date'] ?? 'NO_DISPONIBLE'
+            ]);
+            
+            // Intentar obtener fecha de diferentes campos
+            if (isset($currentAppointmentData['scheduled_start_date'])) {
+                $fechaCitaActual = $currentAppointmentData['scheduled_start_date'];
+                Log::info('✅ [ESTADO-FLOW] Fecha obtenida de scheduled_start_date:', ['fecha' => $fechaCitaActual]);
+            } elseif (isset($currentAppointmentData['appointment_date'])) {
+                $fechaCitaActual = $currentAppointmentData['appointment_date'];
+                Log::info('✅ [ESTADO-FLOW] Fecha obtenida de appointment_date:', ['fecha' => $fechaCitaActual]);
+            }
+            
+            // Normalizar fecha si se obtuvo
+            if ($fechaCitaActual) {
+                // Si es objeto Carbon, convertir a string
+                if (is_object($fechaCitaActual) && method_exists($fechaCitaActual, 'format')) {
+                    $fechaCitaActual = $fechaCitaActual->format('Y-m-d');
+                }
+                // Si es string, normalizar formato
+                elseif (is_string($fechaCitaActual)) {
+                    $fechaCitaActual = substr($fechaCitaActual, 0, 10); // Solo YYYY-MM-DD
+                }
+                Log::info('✅ [ESTADO-FLOW] Fecha normalizada de cita actual:', ['fecha_final' => $fechaCitaActual]);
+            }
+        }
+        
+        // ⚙️ FALLBACK: Solo si no se obtuvo fecha de currentAppointmentData, usar método anterior
+        if (!$fechaCitaActual) {
+            Log::info('⚠️ [ESTADO-FLOW] No hay datos de cita actual, usando método fallback...');
+            
+            // Obtener la fecha de la cita del array de citas transformado
         $citaActual = $this->citasAgendadas[0] ?? null;
         
         Log::info('🔎 [ESTADO-FLOW] DEBUG: Analizando estructura de cita actual:', [
@@ -1422,6 +1476,7 @@ class DetalleVehiculo extends Page
                 Log::warning('⚠️ [ESTADO-FLOW] Tampoco se encontró fecha en el array de cita');
             }
         }
+        }
         
         // Asegurarse de que las fechas estén en el mismo formato para comparación (YYYY-MM-DD)
         if ($fechaUltServ) {
@@ -1430,11 +1485,6 @@ class DetalleVehiculo extends Page
         
         if ($fechaCitaActual) {
             $fechaCitaActual = substr($fechaCitaActual, 0, 10);
-        }
-        
-        // Asegurarse de que las fechas estén en el mismo formato para comparación (YYYY-MM-DD)
-        if ($fechaUltServ) {
-            $fechaUltServ = substr($fechaUltServ, 0, 10);
         }
         
         Log::info('📅 [ESTADO-FLOW] Fechas normalizadas para comparación:', [
@@ -1446,23 +1496,8 @@ class DetalleVehiculo extends Page
         
         Log::info('🔍 [ESTADO-FLOW] === EVALUANDO PRIORIDADES DE ESTADO ===');
         
-        // Lógica de estados según SAP
-        if ($tieneFechaUltServ && $fechaUltServ) {
-            Log::info('⚙️ [ESTADO-FLOW] CONDICIÓN INICIAL: Tiene fecha último servicio');
-            // Si tiene fecha de último servicio, cambiar a En Trabajo
-            $estadoBase['etapas']['cita_confirmada']['activo'] = false;
-            $estadoBase['etapas']['cita_confirmada']['completado'] = true;
-            
-            $estadoBase['etapas']['en_trabajo']['activo'] = true;
-            $estadoBase['etapas']['en_trabajo']['completado'] = false;
-            
-            $estadoBase['etapas']['trabajo_concluido']['activo'] = false;
-            $estadoBase['etapas']['trabajo_concluido']['completado'] = false;
-            
-            Log::info('📝 [ESTADO-FLOW] Estado base configurado a EN_TRABAJO (puede ser sobreescrito)');
-        } else {
-            Log::info('❌ [ESTADO-FLOW] Sin fecha último servicio - manteniendo estado base');
-        }
+        // ✅ ELIMINADO: La lógica automática que configuraba "En Trabajo" solo por tener fecha_ult_serv
+        // Ahora solo cambia a "En Trabajo" si las fechas coinciden EXACTAMENTE
         
         // CASO 1: Si tiene fecha de FACTURA -> TRABAJO CONCLUIDO (tiene prioridad sobre los demás estados)
         if ($tieneFechaFactura) {
