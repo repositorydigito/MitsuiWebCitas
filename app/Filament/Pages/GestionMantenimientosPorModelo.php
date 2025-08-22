@@ -340,6 +340,67 @@ class GestionMantenimientosPorModelo extends Page
         }
     }
 
+    public function confirmarEliminacion(int $id): void
+    {
+        try {
+            // Buscar el mantenimiento para obtener información del grupo
+            $mantenimiento = ModelMaintenance::findOrFail($id);
+            
+            // Obtener todos los mantenimientos del mismo grupo (mismo código, marca y kilómetros)
+            $mantenimientosGrupo = ModelMaintenance::where('code', $mantenimiento->code)
+                ->where('brand', $mantenimiento->brand)
+                ->where('kilometers', $mantenimiento->kilometers)
+                ->get();
+            
+            $tiposValorTrabajo = $mantenimientosGrupo->pluck('tipo_valor_trabajo')->filter()->implode(', ');
+            
+            // Mostrar confirmación con JavaScript nativo
+            $mensaje = "¿Estás seguro de que deseas eliminar el mantenimiento '{$mantenimiento->name}'?\n\n";
+            $mensaje .= "Esto eliminará todos los tipos de valor de trabajo asociados:\n{$tiposValorTrabajo}\n\n";
+            $mensaje .= "Esta acción no se puede deshacer.";
+            
+            // Ejecutar confirmación directamente
+            $this->js("if (confirm('{$mensaje}')) { \$wire.eliminarGrupoMantenimiento({$id}); }");
+            
+        } catch (\Exception $e) {
+            \Filament\Notifications\Notification::make()
+                ->title('Error')
+                ->body('Ha ocurrido un error al preparar la eliminación: ' . $e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
+    public function eliminarGrupoMantenimiento(int $id): void
+    {
+        try {
+            // Buscar el mantenimiento de referencia
+            $mantenimiento = ModelMaintenance::findOrFail($id);
+            $nombreMantenimiento = $mantenimiento->name;
+            
+            // Eliminar todos los mantenimientos del mismo grupo (mismo código, marca y kilómetros)
+            $eliminados = ModelMaintenance::where('code', $mantenimiento->code)
+                ->where('brand', $mantenimiento->brand)
+                ->where('kilometers', $mantenimiento->kilometers)
+                ->delete();
+
+            // Recargar la lista
+            $this->cargarMantenimientosModelo();
+
+            \Filament\Notifications\Notification::make()
+                ->title('Mantenimientos eliminados')
+                ->body("El grupo de mantenimientos '{$nombreMantenimiento}' ha sido eliminado correctamente ({$eliminados} registros)")
+                ->success()
+                ->send();
+        } catch (\Exception $e) {
+            \Filament\Notifications\Notification::make()
+                ->title('Error al eliminar mantenimientos')
+                ->body('Ha ocurrido un error: '.$e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
     public function eliminarMantenimiento(int $id): void
     {
         try {
