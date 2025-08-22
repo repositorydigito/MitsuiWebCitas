@@ -1,1 +1,0 @@
-<img src="{{ asset("images/logomitsui2.svg") }}" alt="Logo Mitsui" class="header-logo" style="height: 48px; width: auto;">

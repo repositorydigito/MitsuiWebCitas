@@ -1,1 +1,0 @@
-<div id="corporate-theme-enhancer"></div>

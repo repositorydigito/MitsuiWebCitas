@@ -1,0 +1,8 @@
+---
+inclusion: always
+---
+usa codebase
+usa context7
+responde en espaniol
+aplica el principio kiss y yagni
+
