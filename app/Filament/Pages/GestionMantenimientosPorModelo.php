@@ -73,6 +73,15 @@ class GestionMantenimientosPorModelo extends Page
                 ];
             });
 
+            // DEBUG: Log datos para diagnosticar problema de agrupación
+            \Log::info('DEBUG - Datos cargados para agrupación:', [
+                'total_records' => $this->mantenimientosModelo->count(),
+                'sample_data' => $this->mantenimientosModelo->take(5)->toArray(),
+                'grouping_keys' => $this->mantenimientosModelo->map(function($item) {
+                    return $item['brand'] . '|' . $item['code'] . '|' . $item['kilometers'];
+                })->unique()->values()->toArray()
+            ]);
+
             // Inicializar el estado de los mantenimientos
             foreach ($this->mantenimientosModelo as $mantenimiento) {
                 $this->estadoMantenimientos[$mantenimiento['id']] = $mantenimiento['is_active'];
@@ -114,6 +123,13 @@ class GestionMantenimientosPorModelo extends Page
                 return str_contains(strtolower($mantenimiento['tipo_valor_trabajo'] ?? ''), strtolower($this->filtroModelo));
             });
         }
+
+        // DEBUG: Log datos filtrados para diagnosticar
+        \Log::info('DEBUG - Datos después de filtros:', [
+            'filtered_count' => $mantenimientosFiltrados->count(),
+            'current_page' => $this->currentPage,
+            'per_page' => $this->perPage
+        ]);
 
         if ($mantenimientosFiltrados->count() > 0 && $this->currentPage > ceil($mantenimientosFiltrados->count() / $this->perPage)) {
             $this->currentPage = 1;

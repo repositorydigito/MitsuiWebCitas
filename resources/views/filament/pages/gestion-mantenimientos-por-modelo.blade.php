@@ -88,6 +88,29 @@
                     @php
                         // Agrupar los mantenimientos por marca, código y kilómetros
                         $grupos = $this->mantenimientosPaginados->groupBy(['brand', 'code', 'kilometers']);
+                        
+                        // DEBUG: Log información de agrupación
+                        \Log::info('DEBUG - Agrupación en vista:', [
+                            'total_items_before_grouping' => $this->mantenimientosPaginados->count(),
+                            'groups_count' => $grupos->count(),
+                            'groups_structure' => $grupos->map(function($porCodigo, $marca) {
+                                return [
+                                    'brand' => $marca,
+                                    'codes' => $porCodigo->map(function($porKilometros, $codigo) {
+                                        return [
+                                            'code' => $codigo,
+                                            'kilometers_groups' => $porKilometros->map(function($mantenimientos, $kilometros) {
+                                                return [
+                                                    'kilometers' => $kilometros,
+                                                    'records_count' => $mantenimientos->count(),
+                                                    'tipos_valor_trabajo' => $mantenimientos->pluck('tipo_valor_trabajo')->toArray()
+                                                ];
+                                            })->toArray()
+                                        ];
+                                    })->toArray()
+                                ];
+                            })->toArray()
+                        ]);
                     @endphp
                     
                     @forelse($grupos as $marca => $porCodigo)
