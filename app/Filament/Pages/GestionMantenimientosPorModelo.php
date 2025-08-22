@@ -354,13 +354,16 @@ class GestionMantenimientosPorModelo extends Page
             
             $tiposValorTrabajo = $mantenimientosGrupo->pluck('tipo_valor_trabajo')->filter()->implode(', ');
             
-            // Mostrar confirmación con JavaScript nativo
-            $mensaje = "¿Estás seguro de que deseas eliminar el mantenimiento '{$mantenimiento->name}'?\n\n";
-            $mensaje .= "Esto eliminará todos los tipos de valor de trabajo asociados:\n{$tiposValorTrabajo}\n\n";
+            // Crear mensaje sin saltos de línea para evitar errores de JavaScript
+            $mensaje = "¿Estás seguro de que deseas eliminar el mantenimiento '{$mantenimiento->name}'? ";
+            $mensaje .= "Esto eliminará todos los tipos de valor de trabajo asociados: {$tiposValorTrabajo}. ";
             $mensaje .= "Esta acción no se puede deshacer.";
             
+            // Escapar comillas para JavaScript
+            $mensajeEscapado = addslashes($mensaje);
+            
             // Ejecutar confirmación directamente
-            $this->js("if (confirm('{$mensaje}')) { \$wire.eliminarGrupoMantenimiento({$id}); }");
+            $this->js("if (confirm('{$mensajeEscapado}')) { \$wire.eliminarGrupoMantenimiento({$id}); }");
             
         } catch (\Exception $e) {
             \Filament\Notifications\Notification::make()
