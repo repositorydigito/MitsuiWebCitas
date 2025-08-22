@@ -1324,10 +1324,18 @@ class DetalleVehiculo extends Page
      */
     protected function aplicarLogicaSAPAEstado(array $estadoBase): array
     {
+        Log::info('🚀 [ESTADO-FLOW] === INICIANDO EVALUACIÓN DE ESTADO SAP ===');
+        
         // Obtener datos de SAP
         $tieneFechaUltServ = $this->datosAsesorSAP['tiene_fecha_ult_serv'] ?? false;
         $tieneFechaFactura = $this->datosAsesorSAP['tiene_fecha_factura'] ?? false;
         $fechaUltServ = $this->datosAsesorSAP['fecha_ult_serv'] ?? null;
+        
+        Log::info('📊 [ESTADO-FLOW] Datos SAP recibidos:', [
+            'tiene_fecha_ult_serv' => $tieneFechaUltServ ? '✅' : '❌',
+            'tiene_fecha_factura' => $tieneFechaFactura ? '✅' : '❌',
+            'fecha_ult_serv_raw' => $fechaUltServ,
+        ]);
         
         // Obtener la fecha de la cita del array de citas transformado
         $citaActual = $this->citasAgendadas[0] ?? null;
@@ -1385,9 +1393,18 @@ class DetalleVehiculo extends Page
             $fechaUltServ = substr($fechaUltServ, 0, 10);
         }
         
+        Log::info('📅 [ESTADO-FLOW] Fechas normalizadas para comparación:', [
+            'cita_programada_para' => $fechaCitaActual ?? 'NO_DISPONIBLE',
+            'sap_responde_fecha_ult_serv' => $fechaUltServ ?? 'NO_DISPONIBLE',
+            'fechas_coinciden' => ($fechaCitaActual && $fechaUltServ) ? ($fechaUltServ == $fechaCitaActual ? '✅ SÍ' : '❌ NO') : '❓ INDETERMINADO'
+        ]);
+        
+        
+        Log::info('🔍 [ESTADO-FLOW] === EVALUANDO PRIORIDADES DE ESTADO ===');
         
         // Lógica de estados según SAP
         if ($tieneFechaUltServ && $fechaUltServ) {
+            Log::info('⚙️ [ESTADO-FLOW] CONDICIÓN INICIAL: Tiene fecha último servicio');
             // Si tiene fecha de último servicio, cambiar a En Trabajo
             $estadoBase['etapas']['cita_confirmada']['activo'] = false;
             $estadoBase['etapas']['cita_confirmada']['completado'] = true;
@@ -1397,10 +1414,17 @@ class DetalleVehiculo extends Page
             
             $estadoBase['etapas']['trabajo_concluido']['activo'] = false;
             $estadoBase['etapas']['trabajo_concluido']['completado'] = false;
+            
+            Log::info('📝 [ESTADO-FLOW] Estado base configurado a EN_TRABAJO (puede ser sobreescrito)');
+        } else {
+            Log::info('❌ [ESTADO-FLOW] Sin fecha último servicio - manteniendo estado base');
         }
         
         // CASO 1: Si tiene fecha de FACTURA -> TRABAJO CONCLUIDO (tiene prioridad sobre los demás estados)
         if ($tieneFechaFactura) {
+            Log::info('🥇 [ESTADO-FLOW] PRIORIDAD MÁXIMA: Detectada fecha de factura');
+            Log::info('🏁 [ESTADO-FLOW] ✅ RESULTADO: Estado = "TRABAJO CONCLUIDO"');
+            
             $estadoBase['etapas']['cita_confirmada']['activo'] = false;
             $estadoBase['etapas']['cita_confirmada']['completado'] = true;
             
@@ -1410,14 +1434,24 @@ class DetalleVehiculo extends Page
             $estadoBase['etapas']['trabajo_concluido']['activo'] = true;
             $estadoBase['etapas']['trabajo_concluido']['completado'] = true;
             
-            Log::info('[DetalleVehiculo] CASO 3: Trabajo concluido (tiene factura)');
+            Log::info('📋 [ESTADO-FLOW] CASO 1: Trabajo concluido (tiene fecha factura - máxima prioridad)');
+            Log::info('🚀 [ESTADO-FLOW] === FIN DE EVALUACIÓN (RETORNO TEMPRANO) ===');
             return $estadoBase;
         }
         
         // CASO 2: Si tiene fecha de servicio reciente -> EN TRABAJO
+        Log::info('🥈 [ESTADO-FLOW] SEGUNDA PRIORIDAD: Evaluando fecha último servicio');
+        
         if ($tieneFechaUltServ && $fechaUltServ) {
+            Log::info('🔄 [ESTADO-FLOW] Verificando coincidencia de fechas...');
+            
             // Verificar si la fecha de servicio es igual a la fecha de la cita (comparación directa de strings)
             if ($fechaCitaActual && $fechaUltServ == $fechaCitaActual) {
+                Log::info('🎯 [ESTADO-FLOW] EJEMPLO EXITOSO:');
+                Log::info("    // Cita programada para: {$fechaCitaActual}");
+                Log::info("    // SAP responde: PE_FEC_ULT_SERV = \"{$fechaUltServ}\"");
+                Log::info('    // ✅ RESULTADO: Estado = "En Trabajo"');
+                
                 $estadoBase['etapas']['cita_confirmada']['activo'] = false;
                 $estadoBase['etapas']['cita_confirmada']['completado'] = true;
                 
@@ -1427,24 +1461,39 @@ class DetalleVehiculo extends Page
                 $estadoBase['etapas']['trabajo_concluido']['activo'] = false;
                 $estadoBase['etapas']['trabajo_concluido']['completado'] = false;
                 
-                Log::info('[DetalleVehiculo] CASO 2: Cambiando a EN TRABAJO - Fechas coinciden', [
-                    'fecha_ult_serv' => $fechaUltServ,
-                    'fecha_cita' => $fechaCitaActual,
-                    'tipo_fecha_ult_serv' => gettype($fechaUltServ),
-                    'tipo_fecha_cita' => gettype($fechaCitaActual)
-                ]);
+                Log::info('🏁 [ESTADO-FLOW] ✅ RESULTADO: Estado = "EN TRABAJO"');
+                Log::info('📋 [ESTADO-FLOW] CASO 2: Cambiando a EN TRABAJO - Fechas coinciden perfectamente');
+            } else {
+                Log::info('❌ [ESTADO-FLOW] EJEMPLO FALLIDO:');
+                Log::info("    // Cita programada para: {$fechaCitaActual}");
+                Log::info("    // SAP responde: PE_FEC_ULT_SERV = \"{$fechaUltServ}\"");
+                Log::info('    // ❌ RESULTADO: Fechas NO coinciden - mantiene "Cita Confirmada"');
             }
+        } else {
+            Log::info('❌ [ESTADO-FLOW] Sin fecha último servicio válida en SAP');
         }
         
-        // CASO 1: Solo cita confirmada (por defecto)
-        $razon = !$tieneFechaUltServ ? 'Sin PE_FEC_ULT_SERV' : 
-                ($tieneFechaFactura ? 'PE_FEC_FACTURA presente' : 'Fechas no coinciden');
-        Log::info("[DetalleVehiculo] CASO 1: Solo cita confirmada - $razon", [
-            'tieneFechaUltServ' => $tieneFechaUltServ,
-            'tieneFechaFactura' => $tieneFechaFactura,
-            'fechaUltServ' => $fechaUltServ,
-            'fechaCitaActual' => $fechaCitaActual
+        // CASO 3: Solo cita confirmada (por defecto)
+        Log::info('🥉 [ESTADO-FLOW] POR DEFECTO: Evaluando estado final');
+        
+        $razon = !$tieneFechaUltServ ? 'Sin PE_FEC_ULT_SERV en SAP' : 
+                ($tieneFechaFactura ? 'PE_FEC_FACTURA presente (ya procesado)' : 'Fechas no coinciden');
+                
+        if (!$tieneFechaFactura && (!$tieneFechaUltServ || !$fechaCitaActual || $fechaUltServ != $fechaCitaActual)) {
+            Log::info('🏁 [ESTADO-FLOW] ✅ RESULTADO: Estado = "CITA CONFIRMADA"');
+            Log::info("📋 [ESTADO-FLOW] CASO 3: Solo cita confirmada - Razón: {$razon}");
+        }
+        
+        Log::info('📊 [ESTADO-FLOW] Resumen final de validaciones:', [
+            'tiene_fecha_ult_serv' => $tieneFechaUltServ ? '✅' : '❌',
+            'tiene_fecha_factura' => $tieneFechaFactura ? '✅' : '❌',
+            'fecha_ult_serv' => $fechaUltServ ?? 'null',
+            'fecha_cita_actual' => $fechaCitaActual ?? 'null',
+            'fechas_coinciden' => ($fechaCitaActual && $fechaUltServ) ? ($fechaUltServ == $fechaCitaActual ? 'SÍ' : 'NO') : 'N/A',
+            'razon_estado_final' => $razon
         ]);
+        
+        Log::info('🚀 [ESTADO-FLOW] === FIN DE EVALUACIÓN DE ESTADO SAP ===');
         
         return $estadoBase;
     }
