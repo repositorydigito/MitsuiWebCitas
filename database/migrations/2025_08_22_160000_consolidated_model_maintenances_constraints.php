@@ -49,16 +49,35 @@ return new class extends Migration
 
         // Crear índices únicos
         try {
-            DB::statement('ALTER TABLE model_maintenances 
-                ADD UNIQUE INDEX model_maintenances_code_tipo_valor_trabajo_unique 
-                (code, tipo_valor_trabajo(191))');
+            // Verificar primero si los índices ya existen
+            $existingIndexes = DB::select("SELECT index_name FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'model_maintenances' AND index_name IN ('model_maintenances_code_tipo_valor_trabajo_unique', 'model_maintenances_brand_kilometers_tipo_valor_trabajo_unique')");
+            
+            $existingIndexNames = array_column($existingIndexes, 'index_name');
+            
+            if (!in_array('model_maintenances_code_tipo_valor_trabajo_unique', $existingIndexNames)) {
+                DB::statement('ALTER TABLE model_maintenances 
+                    ADD UNIQUE INDEX model_maintenances_code_tipo_valor_trabajo_unique 
+                    (code, tipo_valor_trabajo)');
+            }
 
-            DB::statement('ALTER TABLE model_maintenances 
-                ADD UNIQUE INDEX model_maintenances_brand_kilometers_tipo_valor_trabajo_unique 
-                (brand, kilometers, tipo_valor_trabajo(191))');
+            if (!in_array('model_maintenances_brand_kilometers_tipo_valor_trabajo_unique', $existingIndexNames)) {
+                DB::statement('ALTER TABLE model_maintenances 
+                    ADD UNIQUE INDEX model_maintenances_brand_kilometers_tipo_valor_trabajo_unique 
+                    (brand, kilometers, tipo_valor_trabajo)');
+            }
         } catch (\Exception $e) {
             \Log::error('Error creating indexes: ' . $e->getMessage());
-            throw $e;
+            
+            // Si falla, intentar con Schema builder como fallback
+            try {
+                Schema::table('model_maintenances', function ($table) {
+                    $table->unique(['code', 'tipo_valor_trabajo'], 'model_maintenances_code_tipo_valor_trabajo_unique');
+                    $table->unique(['brand', 'kilometers', 'tipo_valor_trabajo'], 'model_maintenances_brand_kilometers_tipo_valor_trabajo_unique');
+                });
+            } catch (\Exception $fallbackException) {
+                \Log::error('Fallback index creation also failed: ' . $fallbackException->getMessage());
+                throw $e; // Lanzar el error original
+            }
         }
     }
 
