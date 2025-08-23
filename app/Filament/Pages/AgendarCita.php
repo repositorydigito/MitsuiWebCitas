@@ -399,11 +399,30 @@ class AgendarCita extends Page
     }
 
     /**
+     * ✅ FIX: Limpiar estado del componente
+     */
+    protected function limpiarEstadoHorarios(): void
+    {
+        $this->horariosDisponibles = [];
+        $this->slotsCompletos = [];
+        $this->slotsC4C = [];
+        $this->horaSeleccionada = '';
+    }
+
+    /**
      * ✅ SMART: Convertir horarios simples a estructura completa para la vista
      */
     protected function convertirHorariosParaVista(): void
     {
-        if (empty($this->slotsCompletos) || empty($this->horariosDisponibles)) {
+        // ✅ FIX: Manejar caso cuando slotsCompletos está vacío (datos del cache sin slots)
+        if (empty($this->horariosDisponibles)) {
+            Log::warning('⚠️ [VISTA] No hay horarios disponibles para convertir');
+            return;
+        }
+        
+        if (empty($this->slotsCompletos)) {
+            Log::warning('⚠️ [VISTA] slotsCompletos está vacío, aplicando estructura básica');
+            $this->aplicarEstructuraBasica();
             return;
         }
 
@@ -446,6 +465,38 @@ class AgendarCita extends Page
         ]);
 
         $this->horariosDisponibles = $horariosConDisponibilidad;
+    }
+
+    /**
+     * ✅ FIX: Aplicar estructura básica cuando no hay slotsCompletos
+     */
+    protected function aplicarEstructuraBasica(): void
+    {
+        $horariosConEstructura = [];
+        
+        foreach ($this->horariosDisponibles as $horario) {
+            // ✅ FIX: Detectar si ya tiene estructura o es string simple
+            if (is_array($horario)) {
+                // Ya tiene estructura, mantenerla
+                $horariosConEstructura[] = $horario;
+            } else {
+                // Es string simple, aplicar estructura básica
+                $horariosConEstructura[] = [
+                    'time' => $horario,
+                    'is_available' => true, // Asumir disponible por defecto
+                    'capacity_info' => [],
+                    'local_conflict' => false,
+                    'origen' => 'estructura_basica'
+                ];
+            }
+        }
+        
+        Log::info('✅ [VISTA] Estructura básica aplicada', [
+            'horarios_procesados' => count($horariosConEstructura),
+            'horarios_originales' => count($this->horariosDisponibles)
+        ]);
+        
+        $this->horariosDisponibles = $horariosConEstructura;
     }
 
     /**
@@ -3286,6 +3337,7 @@ class AgendarCita extends Page
     {
         if (empty($this->fechaSeleccionada) || empty($this->localSeleccionado)) {
             $this->horariosDisponibles = [];
+            $this->slotsCompletos = []; // ✅ FIX: Limpiar estado
             $this->debugInfo = [
                 'status' => 'Sin datos',
                 'details' => 'Selecciona fecha y local para cargar horarios',
@@ -3300,22 +3352,34 @@ class AgendarCita extends Page
             $fechaStr = $fecha->format('Y-m-d');
             $codigoLocal = $this->localSeleccionado;
 
-            // ✅ CACHÉ: Crear clave única para esta combinación
-            $cacheKey = "horarios_disponibles:{$codigoLocal}:{$fechaStr}:" . ($this->usarHorariosC4C ? 'c4c' : 'local');
+            // ✅ FIX: Mejorar clave de cache incluyendo timestamp para validación
+            $timestampValidacion = floor(time() / 60); // Revalidar cada minuto
+            $cacheKey = "horarios_disponibles:{$codigoLocal}:{$fechaStr}:" . 
+                       ($this->usarHorariosC4C ? 'c4c' : 'local') . ":{$timestampValidacion}";
             $cacheTtl = 180; // 3 minutos de caché
 
-            // ✅ CACHÉ: Intentar obtener desde caché primero
-            $horariosCache = Cache::get($cacheKey);
-            if ($horariosCache !== null) {
-                Log::info('📦 [Cache] Horarios obtenidos desde caché', [
+            // ✅ FIX: Intentar obtener estructura completa desde caché
+            $datosCache = Cache::get($cacheKey);
+            if ($datosCache !== null && is_array($datosCache)) {
+                Log::info('📦 [Cache] Datos completos obtenidos desde caché', [
                     'cache_key' => $cacheKey,
-                    'total_horarios' => count($horariosCache)
+                    'total_horarios' => count($datosCache['horarios'] ?? []),
+                    'tiene_slots_completos' => !empty($datosCache['slots_completos'])
                 ]);
-                $this->horariosDisponibles = $horariosCache;
+                
+                // ✅ FIX: Restaurar estado completo del componente
+                $this->horariosDisponibles = $datosCache['horarios'] ?? [];
+                $this->slotsCompletos = $datosCache['slots_completos'] ?? [];
+                $this->slotsC4C = $datosCache['slots_c4c'] ?? [];
+                
+                $esDatosDelCache = true;
             } else {
                 Log::info('🔄 [Cache] Generando horarios (no en caché)', [
                     'cache_key' => $cacheKey
                 ]);
+
+                // ✅ FIX: Limpiar estado previo antes de cargar nuevos datos
+                $this->limpiarEstadoHorarios();
 
                 // ✅ LÓGICA EXISTENTE SIN MODIFICAR
                 if ($this->usarHorariosC4C && $this->estadoConexionC4C === 'connected') {
@@ -3324,25 +3388,35 @@ class AgendarCita extends Page
                     $this->cargarHorariosLocales($fechaStr, $codigoLocal);
                 }
 
-                // ✅ CACHÉ: Guardar resultado en caché
-                Cache::put($cacheKey, $this->horariosDisponibles, $cacheTtl);
-                Log::info('💾 [Cache] Horarios guardados en caché', [
+                // ✅ FIX: Guardar estructura completa en caché
+                $datosParaCache = [
+                    'horarios' => $this->horariosDisponibles,
+                    'slots_completos' => $this->slotsCompletos,
+                    'slots_c4c' => $this->slotsC4C,
+                    'timestamp' => time()
+                ];
+                
+                Cache::put($cacheKey, $datosParaCache, $cacheTtl);
+                Log::info('💾 [Cache] Estructura completa guardada en caché', [
                     'cache_key' => $cacheKey,
                     'total_horarios' => count($this->horariosDisponibles),
+                    'slots_completos_count' => count($this->slotsCompletos),
                     'ttl_seconds' => $cacheTtl
                 ]);
+                
+                $esDatosDelCache = false;
             }
 
-            // ✅ SMART: Aplicar validación de capacidad después de cargar horarios
+            // ✅ FIX: Aplicar validación de capacidad SIEMPRE (tanto para cache como datos frescos)
             if (!empty($this->horariosDisponibles)) {
                 Log::info('🔄 [Progressive] Aplicando validación de capacidad', [
                     'total_horarios_originales' => count($this->horariosDisponibles),
                     'fecha' => $this->fechaSeleccionada,
-                    'local' => $this->localSeleccionado
+                    'local' => $this->localSeleccionado,
+                    'origen' => $esDatosDelCache ? 'cache' : 'fresco'
                 ]);
 
-                // ✅ SMART: La validación ya viene aplicada desde el BATCH del AvailabilityService
-                // Convertir horarios simples de vuelta a estructura completa para la vista
+                // ✅ FIX: Asegurar que convertirHorariosParaVista() siempre tenga datos necesarios
                 $this->convertirHorariosParaVista();
 
                 // Actualizar debug info
@@ -3350,15 +3424,16 @@ class AgendarCita extends Page
                     'status' => 'Validación aplicada',
                     'details' => 'Horarios validados con lógica citas_existentes < zTope',
                     'total_slots' => count($this->horariosDisponibles),
-                    'validation_method' => 'Capacidad + zTope'
+                    'validation_method' => 'Capacidad + zTope',
+                    'origen_datos' => $esDatosDelCache ? 'cache' : 'fresco'
                 ];
 
-                // Usar un pequeño delay para asegurar que el DOM se actualice
+                // ✅ FIX: Siempre disparar evento (tanto para cache como datos frescos)
                 $this->dispatch('horarios-cargados-activar-progressive');
             }
         } catch (\Exception $e) {
             Log::error('Error cargando horarios: ' . $e->getMessage());
-            $this->horariosDisponibles = [];
+            $this->limpiarEstadoHorarios();
         }
     }
 
@@ -3697,11 +3772,13 @@ class AgendarCita extends Page
             if ($this->fechaSeleccionada === $fecha) {
                 Log::info("[AgendarCita] Deseleccionando fecha: {$fecha}");
                 $this->fechaSeleccionada = '';
-                $this->horariosDisponibles = [];
-                $this->horaSeleccionada = '';
+                $this->limpiarEstadoHorarios(); // ✅ FIX: Usar método centralizado
 
                 return;
             }
+
+            // ✅ FIX: Limpiar estado previo ANTES de seleccionar nueva fecha
+            $this->limpiarEstadoHorarios();
 
             // Actualizar la fecha seleccionada
             $this->fechaSeleccionada = $fecha;
@@ -3713,10 +3790,9 @@ class AgendarCita extends Page
             // Cargar los horarios disponibles para esta fecha
             $this->cargarHorariosDisponibles();
 
-            // Limpiar la hora seleccionada
-            $this->horaSeleccionada = '';
         } catch (\Exception $e) {
             Log::error('[AgendarCita] Error al seleccionar fecha: ' . $e->getMessage());
+            $this->limpiarEstadoHorarios(); // ✅ FIX: Limpiar estado en caso de error
         }
     }
 
