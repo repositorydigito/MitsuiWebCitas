@@ -308,7 +308,7 @@
 
                                             <div class="flex justify-between">
                                                 <span class="text-xs font-medium text-blue-800">WhatsApp:</span>
-                                                <span class="text-xs text-gray-600">
+                                                <span class="text-xs text-primary-600 font-medium">
                                                     @if(!empty($cita['whatsapp']) && $cita['whatsapp'] !== '-')
                                                         <a href="https://wa.me/{{ str_replace(['+', ' ', '-'], '', $cita['whatsapp']) }}"
                                                            target="_blank" class="text-green-600 hover:text-green-800">
@@ -322,7 +322,7 @@
 
                                             <div class="flex justify-between">
                                                 <span class="text-xs font-medium text-blue-800">Correo:</span>
-                                                <span class="text-xs text-gray-600">
+                                                <span class="text-xs text-primary-600 font-medium underline decoration-primary-500">
                                                     @if(!empty($cita['correo']))
                                                         <a href="mailto:{{ $cita['correo'] }}" class="text-blue-600 hover:text-blue-800">
                                                             {{ $cita['correo'] }}
@@ -384,7 +384,7 @@
                                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                             </svg>
-                                            No se puede editar
+                                            Editar
                                         </button>
                                     @endif
                                     @php
@@ -410,7 +410,7 @@
                                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
                                             </svg>
-                                            No se puede anular
+                                            Anular
                                         </button>
                                     @endif
                                 </div>
