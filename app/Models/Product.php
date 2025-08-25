@@ -219,7 +219,7 @@ class Product extends Model
             'alt_quantity' => (float) ($c4cProduct->zZMENG ?? 0),
             'work_time_value' => (float) ($c4cProduct->zTiempoValorTrabajo ?? 0),
             'unit_code' => $finalUnitCode, // ✅ CORREGIDO: Usa valor determinado arriba
-            'unit_code_1' => $c4cProduct->unitCode1 ?? null,
+            'unit_code_1' => $c4cProduct->zCantidad ?? null,
             'unit_code_2' => $c4cProduct->unitCode2 ?? null,
             'position_number' => $c4cProduct->zPOSNR ?? null,
             'labor_category' => $c4cProduct->zLBRCAT ?? null,

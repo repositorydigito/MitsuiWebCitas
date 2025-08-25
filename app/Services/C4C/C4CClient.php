@@ -1047,6 +1047,7 @@ class C4CClient
                 $packageId = $item['y6s:zID_PAQUETE'] ?? '';
                 $workTime = $item['y6s:zOVPosTiempoTeorico'] ?? '0';
 
+                $zOVPosCantTrab = $item['y6s:zOVPosCantTrab'] ?? '0';
                 $itemsXml .= '
                 <Item actionCode="01" itemBTDReferenceListCompleteTransmissionIndicator="" textListCompleteTransimissionIndicator="">
                     <ProcessingTypeCode>AGN</ProcessingTypeCode>
@@ -1059,7 +1060,7 @@ class C4CClient
                     </ItemRequestedScheduleLine>
                     <yax:zOVPosIDTipoPosicion listID="?" listVersionID="?" listAgencyID="?">' . htmlspecialchars($positionType) . '</yax:zOVPosIDTipoPosicion>
                     <yax:zOVPosTipServ listID="?" listVersionID="" listAgencyID="">P</yax:zOVPosTipServ>
-                    <yax:zOVPosCantTrab>0</yax:zOVPosCantTrab>';
+                    <yax:zOVPosCantTrab>' . htmlspecialchars($zOVPosCantTrab) . '</yax:zOVPosCantTrab>';
 
                 // ✅ SOLO INCLUIR CAMPOS DE PAQUETE SI TIENE PACKAGE_ID (OMITIR PARA WILDCARD)
                 if (!empty($packageId)) {
