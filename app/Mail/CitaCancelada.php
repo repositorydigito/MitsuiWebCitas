@@ -37,6 +37,7 @@ class CitaCancelada extends Mailable
     {
         return new Envelope(
             subject: '❌ Tu cita ha sido cancelada',
+            cc: ['citasmantenimiento@mitsuiautomotriz.com'],
         );
     }
 

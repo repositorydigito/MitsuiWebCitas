@@ -37,6 +37,7 @@ class CitaEditada extends Mailable
     {
         return new Envelope(
             subject: '🔄 Tu cita ha sido reprogramada',
+            cc: ['citasmantenimiento@mitsuiautomotriz.com'],
         );
     }
 
