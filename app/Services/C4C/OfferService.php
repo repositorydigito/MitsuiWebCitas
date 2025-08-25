@@ -419,7 +419,7 @@ class OfferService
                 'y6s:zOVVieneDeHCI' => 'X',
                 'y6s:zOVServExpress' => ($appointment->service_mode === 'express') ? 'true' : 'false', // {appointments.service_mode == 'express' ? 'true' : 'false'}
                 'y6s:zOVKilometraje' => '0', // ✅ CORREGIDO: Enviado en 0 para ambos tipos de cliente
-                'y6s:zOVOrdenDBMV3' => '3000694890'
+                'y6s:zOVOrdenDBMV3' => ''
             ]
         ];
 
@@ -945,7 +945,7 @@ class OfferService
                 'y6s:zOVVieneDeHCI' => 'X',
                 'y6s:zOVServExpress' => (strpos($appointment->service_mode, 'express') !== false) ? 'true' : 'false', // ✅ CORREGIDO: Dinámico para wildcard
                 'y6s:zOVKilometraje' => '0', // ✅ HARDCODEADO A 0
-                'y6s:zOVOrdenDBMV3' => '3000694890'
+                'y6s:zOVOrdenDBMV3' => ''
             ]
         ];
 

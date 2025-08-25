@@ -931,7 +931,7 @@ class C4CClient
         $zOVVieneDeHCI = $customerQuote['y6s:zOVVieneDeHCI'] ?? 'X';
         $zOVServExpress = $customerQuote['y6s:zOVServExpress'] ?? 'false';
         $zOVKilometraje = $customerQuote['y6s:zOVKilometraje'] ?? '10';
-        $zOVOrdenDBMV3 = $customerQuote['y6s:zOVOrdenDBMV3'] ?? '3000694890';
+        $zOVOrdenDBMV3 = $customerQuote['y6s:zOVOrdenDBMV3'] ?? '';
 
         return '<?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
@@ -1118,7 +1118,7 @@ class C4CClient
                 <yax:zOVVieneDeHCI>X</yax:zOVVieneDeHCI>
                 <yax:zOVServExpress>' . htmlspecialchars($serviceExpress) . '</yax:zOVServExpress>
                 <yax:zOVKilometraje>' . htmlspecialchars($kilometraje) . '</yax:zOVKilometraje>
-                <yax:zOVOrdenDBMV3>3000694890</yax:zOVOrdenDBMV3>
+                <yax:zOVOrdenDBMV3></yax:zOVOrdenDBMV3>
             </CustomerQuote>
         </glob:CustomerQuoteBundleMaintainRequest_sync_V1>
     </soap:Body>
