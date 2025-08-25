@@ -594,6 +594,7 @@
         <br>
 
         <!-- Servicios adicionales -->
+        @if(count($campanasDisponibles) > 0)
         <div class="mb-4">
             <h2 class="text-xl font-semibold mb-4">5. Elige entre nuestras campañas del mes (opcional)</h2>
 
@@ -658,100 +659,90 @@
             </style>
 
             <!-- Campañas disponibles -->
-            @if(count($campanasDisponibles) > 0)
-                <div class="mt-2" wire:key="campanas-container-{{ $localSeleccionado }}-{{ count($campanasDisponibles) }}">
-                    <div x-data="{
-                        activeSlide: 0,
-                        totalSlides: {{ count($campanasDisponibles) }},
-                        slidesPerView: window.innerWidth < 768 ? 1 : 3,
-                        campanaSeleccionada: @entangle('campanaSeleccionada'),
-                        campanas: @js($campanasDisponibles),
-                        getTituloSeleccionado() {
-                            const campana = this.campanas.find(c => c.id == this.campanaSeleccionada);
-                            return campana ? campana.titulo : 'Ninguna';
-                        },
-                        init() {
-                            window.addEventListener('resize', () => {
-                                this.slidesPerView = window.innerWidth < 768 ? 1 : 3;
-                            });
-                        },
-                        next() {
-                            if (this.activeSlide < this.totalSlides - this.slidesPerView) {
-                                this.activeSlide++;
-                                this.scrollToSlide();
-                            }
-                        },
-                        prev() {
-                            if (this.activeSlide > 0) {
-                                this.activeSlide--;
-                                this.scrollToSlide();
-                            }
-                        },
-                        scrollToSlide() {
-                            const container = this.$refs.carousel;
-                            const slideWidth = container.offsetWidth / this.slidesPerView;
-                            container.scrollTo({
-                                left: this.activeSlide * slideWidth,
-                                behavior: 'smooth'
-                            });
+            <div class="mt-2" wire:key="campanas-container-{{ $localSeleccionado }}-{{ count($campanasDisponibles) }}">
+                <div x-data="{
+                    activeSlide: 0,
+                    totalSlides: {{ count($campanasDisponibles) }},
+                    slidesPerView: window.innerWidth < 768 ? 1 : 3,
+                    campanaSeleccionada: @entangle('campanaSeleccionada'),
+                    campanas: @js($campanasDisponibles),
+                    getTituloSeleccionado() {
+                        const campana = this.campanas.find(c => c.id == this.campanaSeleccionada);
+                        return campana ? campana.titulo : 'Ninguna';
+                    },
+                    init() {
+                        window.addEventListener('resize', () => {
+                            this.slidesPerView = window.innerWidth < 768 ? 1 : 3;
+                        });
+                    },
+                    next() {
+                        if (this.activeSlide < this.totalSlides - this.slidesPerView) {
+                            this.activeSlide++;
+                            this.scrollToSlide();
                         }
-                    }" x-init="init()" class="carousel-container">
-                        <div x-ref="carousel" class="carousel-items">
-                            @foreach($campanasDisponibles as $index => $campana)
-                                <div class="carousel-item" wire:key="campana-{{ $campana['id'] }}">
-                                    <div
-                                        class="border rounded-lg overflow-hidden cursor-pointer"
-                                        :class="campanaSeleccionada == '{{ $campana['id'] }}' ? 'border-primary-500 border-2' : 'border-gray-300'"
-                                        @click="campanaSeleccionada = '{{ $campana['id'] }}'"
-                                    >
-                                        <img src="{{ $campana['imagen'] }}" alt="{{ $campana['titulo'] }}" class="w-full h-96 object-cover" loading="lazy">
-                                        <div class="p-2" :class="campanaSeleccionada == '{{ $campana['id'] }}' ? 'bg-primary-100' : ''">
-                                            <h4 class="text-sm font-medium" :class="campanaSeleccionada == '{{ $campana['id'] }}' ? 'text-primary-800' : ''">{{ $campana['titulo'] }}</h4>
-                                            <p class="text-xs text-gray-400 mt-1">
-                                                @if(isset($campana['fecha_fin']))
-                                                    Válido hasta: {{ \Carbon\Carbon::parse($campana['fecha_fin'])->format('d/m/Y') }}
-                                                @else
-                                                    Campaña permanente
-                                                @endif
-                                            </p>
-                                        </div>                                        
-                                    </div>
+                    },
+                    prev() {
+                        if (this.activeSlide > 0) {
+                            this.activeSlide--;
+                            this.scrollToSlide();
+                        }
+                    },
+                    scrollToSlide() {
+                        const container = this.$refs.carousel;
+                        const slideWidth = container.offsetWidth / this.slidesPerView;
+                        container.scrollTo({
+                            left: this.activeSlide * slideWidth,
+                            behavior: 'smooth'
+                        });
+                    }
+                }" x-init="init()" class="carousel-container">
+                    <div x-ref="carousel" class="carousel-items">
+                        @foreach($campanasDisponibles as $index => $campana)
+                            <div class="carousel-item" wire:key="campana-{{ $campana['id'] }}">
+                                <div
+                                    class="border rounded-lg overflow-hidden cursor-pointer"
+                                    :class="campanaSeleccionada == '{{ $campana['id'] }}' ? 'border-primary-500 border-2' : 'border-gray-300'"
+                                    @click="campanaSeleccionada = '{{ $campana['id'] }}'"
+                                >
+                                    <img src="{{ $campana['imagen'] }}" alt="{{ $campana['titulo'] }}" class="w-full h-96 object-cover" loading="lazy">
+                                    <div class="p-2" :class="campanaSeleccionada == '{{ $campana['id'] }}' ? 'bg-primary-100' : ''">
+                                        <h4 class="text-sm font-medium" :class="campanaSeleccionada == '{{ $campana['id'] }}' ? 'text-primary-800' : ''">{{ $campana['titulo'] }}</h4>
+                                        <p class="text-xs text-gray-400 mt-1">
+                                            @if(isset($campana['fecha_fin']))
+                                                Válido hasta: {{ \Carbon\Carbon::parse($campana['fecha_fin'])->format('d/m/Y') }}
+                                            @else
+                                                Campaña permanente
+                                            @endif
+                                        </p>
+                                    </div>                                        
                                 </div>
-                            @endforeach
-                        </div>
-                        <!-- Botones de navegación -->
-                        <div @click="prev()" x-show="activeSlide > 0" class="carousel-nav carousel-nav-left">
-                            <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                            </svg>
-                        </div>
-                        <div @click="next()" x-show="activeSlide < totalSlides - slidesPerView" class="carousel-nav carousel-nav-right">
-                            <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                            </svg>
-                        </div>
-                        <div class="mt-4 text-center">
-                            <span class="font-semibold">Campaña seleccionada: </span>
-                            <span class="text-primary-700" x-text="getTituloSeleccionado()"></span>
-                        </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    <!-- Botones de navegación -->
+                    <div @click="prev()" x-show="activeSlide > 0" class="carousel-nav carousel-nav-left">
+                        <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </div>
+                    <div @click="next()" x-show="activeSlide < totalSlides - slidesPerView" class="carousel-nav carousel-nav-right">
+                        <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <span class="font-semibold">Campaña seleccionada: </span>
+                        <span class="text-primary-700" x-text="getTituloSeleccionado()"></span>
                     </div>
                 </div>
-            @endif
-
-            @if(count($campanasDisponibles) == 0)
-                <div class="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
-                    <svg class="w-8 h-8 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <p>No hay campañas disponibles en este momento</p>
-                </div>
-            @endif
+            </div>
         </div>
+        @endif
         <br>
 
         <!-- Comentarios -->
         <div class="mb-4">
-            <h2 class="text-xl font-semibold mb-4">6. Comentario u observación</h2>
+            <h2 class="text-xl font-semibold mb-4">Comentario u observación</h2>
             <textarea 
                 id="comentarios" 
                 wire:model="comentarios" 
