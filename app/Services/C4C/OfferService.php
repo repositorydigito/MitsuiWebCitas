@@ -537,7 +537,7 @@ class OfferService
                     'listVersionID' => '',
                     'listAgencyID' => ''
                 ],
-                'y6s:zOVPosCantTrab' => $producto->unit_code_1 ?? '0',
+                'y6s:zOVPosCantTrab' => '0',
                 'y6s:zID_PAQUETE' => $appointment->package_id,                              // {appointments.package_id}
                 'y6s:zTIPO_PAQUETE' => 'Z1',
                 'y6s:zOVPosTiempoTeorico' => $this->formatearTiempoTeorico($producto->work_time_value)   // {products.work_time_value}
