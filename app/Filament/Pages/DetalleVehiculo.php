@@ -677,6 +677,30 @@ class DetalleVehiculo extends Page
         }
     }
 
+    /**
+     * Refrescar citas agendadas - útil para re-aplicar el filtro de 24 horas
+     */
+    public function refrescarCitas(): void
+    {
+        Log::info('[DetalleVehiculo] Refrescando citas agendadas manualmente');
+        
+        if ($this->vehiculo && isset($this->vehiculo['id'])) {
+            $this->cargarCitasAgendadas($this->vehiculo['id']);
+            
+            // Emitir evento para notificar el refresco
+            $this->dispatch('citas-refrescadas', [
+                'count' => count($this->citasAgendadas),
+                'timestamp' => now()->toDateTimeString()
+            ]);
+            
+            \Filament\Notifications\Notification::make()
+                ->title('Citas Actualizadas')
+                ->body('Las citas han sido refrescadas. Se aplicaron los filtros de 24 horas para citas completadas.')
+                ->success()
+                ->send();
+        }
+    }
+
     // Método para ir a agendar cita
     public function agendarCita(): void
     {

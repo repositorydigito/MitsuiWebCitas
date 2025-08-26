@@ -10,6 +10,16 @@
                     class="px-4 py-2 rounded-md w-auto focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 {{ !empty($citasAgendadas) && count($citasAgendadas) > 0 ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-primary-500 text-white hover:bg-primary-700' }}">
                     Agendar cita
                 </button>
+                
+                <!-- Botón para refrescar citas -->
+                <button type="button"
+                    wire:click="refrescarCitas"
+                    class="px-3 py-2 text-sm rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors duration-200">
+                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Actualizar citas
+                </button>
             </div>
 
             <!-- Sección de información general -->
@@ -347,6 +357,20 @@
                                                 <span class="text-xs font-medium text-green-800">Hora de factura:</span>
                                                 <span class="text-xs text-gray-600">{{ $cita['hora_factura'] ?? '-' }}</span>
                                             </div>
+                                            
+                                            <!-- 24-hour visibility notice for completed appointments -->
+                                            @if($concluidoCompletado)
+                                            <div class="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md">
+                                                <div class="flex items-center">
+                                                    <svg class="w-4 h-4 text-amber-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                    <p class="text-xs text-amber-800 font-medium">
+                                                        Trabajo concluido
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            @endif
                                         </div>
                                     @endif
                                 </div>
