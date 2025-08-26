@@ -262,7 +262,7 @@ class DetalleVehiculo extends Page
             Log::info("[DetalleVehiculo] Placa del vehículo: {$placaVehiculo}");
 
             // Obtener el usuario logueado y verificar si tiene datos reales de C4C
-            $user = Auth::user();
+            $user = Auth::user();   
             if (!$user || !$user->hasRealC4cData()) {
                 Log::warning("[DetalleVehiculo] Usuario no tiene datos C4C válidos (es comodín o sin c4c_internal_id)", [
                     'user_id' => $user ? $user->id : 'N/A',
