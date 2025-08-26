@@ -288,6 +288,24 @@ class DetalleVehiculo extends Page
             Log::info("[DetalleVehiculo] Respuesta WSCitas:", $result);
 
             if ($result['success'] && !empty($result['data'])) {
+                // LOG DETALLADO: Datos brutos de C4C
+                Log::info("[DetalleVehiculo] ===== DATOS BRUTOS DE C4C =====", [
+                    'total_citas_c4c' => count($result['data']),
+                    'estructura_primera_cita' => !empty($result['data']) ? array_keys($result['data'][0]) : 'vacio'
+                ]);
+                
+                foreach ($result['data'] as $index => $citaBruta) {
+                    Log::info("[DetalleVehiculo] Cita bruta C4C #{$index}", [
+                        'uuid' => $citaBruta['uuid'] ?? 'N/A',
+                        'license_plate' => $citaBruta['license_plate'] ?? 'N/A',
+                        'scheduled_start_date' => $citaBruta['scheduled_start_date'] ?? 'N/A',
+                        'start_time' => $citaBruta['start_time'] ?? 'N/A',
+                        'appointment_status' => $citaBruta['appointment_status'] ?? 'N/A',
+                        'last_change_date' => $citaBruta['last_change_date'] ?? 'N/A',
+                        'creation_date' => $citaBruta['creation_date'] ?? 'N/A'
+                    ]);
+                }
+                
                 // Filtrar citas solo para este vehículo específico
                 $citasVehiculo = array_filter($result['data'], function($cita) use ($placaVehiculo) {
                     // Verificar diferentes estructuras posibles para la placa
@@ -304,6 +322,12 @@ class DetalleVehiculo extends Page
                     
                     return $placaCita && trim($placaCita) === trim($placaVehiculo);
                 });
+
+                // LOG: Citas filtradas por placa
+                Log::info("[DetalleVehiculo] ===== CITAS FILTRADAS POR PLACA =====", [
+                    'total_citas_filtradas' => count($citasVehiculo),
+                    'placa_vehiculo' => $placaVehiculo
+                ]);
 
                 // NUEVO: Aplicar filtros de visibilidad y remover duplicados
                 $citasVehiculo = $this->aplicarFiltrosVisibilidadYDuplicados($citasVehiculo);
@@ -368,6 +392,22 @@ class DetalleVehiculo extends Page
                         ];
                     }
 
+                    Log::info('[DetalleVehiculo] ===== CITAS TRANSFORMADAS FINALES =====', [
+                        'total_citas_transformadas' => count($this->citasAgendadas)
+                    ]);
+                    
+                    foreach ($this->citasAgendadas as $index => $citaFinal) {
+                        Log::info("[DetalleVehiculo] Cita final #{$index}", [
+                            'id' => $citaFinal['id'] ?? 'N/A',
+                            'numero_cita' => $citaFinal['numero_cita'] ?? 'N/A',
+                            'fecha_cita' => $citaFinal['fecha_cita'] ?? 'N/A',
+                            'hora_cita' => $citaFinal['hora_cita'] ?? 'N/A',
+                            'servicio' => $citaFinal['servicio'] ?? 'N/A',
+                            'sede' => $citaFinal['sede'] ?? 'N/A',
+                            'estado' => $citaFinal['estado'] ?? 'N/A'
+                        ]);
+                    }
+
                     Log::info('[DetalleVehiculo] Citas agendadas cargadas desde WSCitas: ' . count($this->citasAgendadas));
                 } else {
                     Log::info("[DetalleVehiculo] No hay citas pendientes para el vehículo {$placaVehiculo}");
@@ -405,6 +445,7 @@ class DetalleVehiculo extends Page
      */
     protected function aplicarFiltrosVisibilidadYDuplicados(array $citas): array
     {
+        Log::info("[DetalleVehiculo] ===== INICIANDO FILTROS DE VISIBILIDAD Y DEDUPLICACIÓN =====");
         Log::info("[DetalleVehiculo] Aplicando filtros de visibilidad, citas recibidas: " . count($citas));
         
         $citasFiltradas = [];
@@ -454,6 +495,17 @@ class DetalleVehiculo extends Page
             'citas_filtradas' => count($citasFiltradas),
             'citas_finales' => count($citaUnica)
         ]);
+        
+        // LOG FINAL: Mostrar resultado de deduplicación
+        Log::info("[DetalleVehiculo] ===== RESULTADO FINAL DE DEDUPLICACIÓN =====");
+        foreach ($citaUnica as $index => $citaFinal) {
+            Log::info("[DetalleVehiculo] Cita final resultado #{$index}", [
+                'uuid' => $citaFinal['uuid'] ?? $citaFinal['id'] ?? 'N/A',
+                'scheduled_start_date' => $citaFinal['scheduled_start_date'] ?? 'N/A',
+                'appointment_status' => $citaFinal['appointment_status'] ?? 'N/A',
+                'last_change_date' => $citaFinal['last_change_date'] ?? 'N/A'
+            ]);
+        }
         
         return $citaUnica;
     }
