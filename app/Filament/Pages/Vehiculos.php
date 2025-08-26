@@ -194,16 +194,16 @@ class Vehiculos extends Page
                 $placa = $cita->vehicle_plate ?? '';
 
                 if ($placa) {
+                    // ✅ CORREGIDO: Usar la misma estructura que WSCitas para compatibilidad
                     $citasFormateadas[] = [
-                        'vehicle' => [
-                            'plate' => $placa
-                        ],
-                        'status' => [
-                            'appointment_code' => $cita->status === 'pending' ? '1' : '2'
-                        ],
-                        'dates' => [
-                            'scheduled_start_date' => $cita->appointment_date->format('Y-m-d')
-                        ]
+                        'license_plate' => $placa,
+                        'appointment_status' => $cita->status === 'pending' ? '1' : '2',
+                        'appointment_status_name' => $cita->status === 'pending' ? 'Generada' : 'Confirmada',
+                        'scheduled_start_date' => $cita->appointment_date->format('Y-m-d'),
+                        'uuid' => 'local-' . $cita->id,
+                        'id' => $cita->id,
+                        'center_id' => $cita->premise_id ?? 'local',
+                        'source' => 'local_database'
                     ];
                 }
             }
@@ -836,10 +836,10 @@ class Vehiculos extends Page
             Log::info("[VehiculosPage] Is comodin: " . ($user->is_comodin ? 'true' : 'false'));
             Log::info("[VehiculosPage] Has real C4C data: " . ($user->hasRealC4cData() ? 'true' : 'false'));
 
-            // Solo consultar si tiene c4c_internal_id válido
+            // Solo consultar WSCitas si tiene c4c_internal_id válido
             if (!$user->hasRealC4cData()) {
-                Log::warning("[VehiculosPage] Usuario sin datos C4C válidos, saltando consulta WSCitas");
-                return [];
+                Log::warning("[VehiculosPage] Usuario sin datos C4C válidos, consultando base de datos local");
+                return $this->consultarCitasLocales($user);
             }
 
             Log::info("[VehiculosPage] Consultando citas pendientes para c4c_internal_id: {$user->c4c_internal_id}");
