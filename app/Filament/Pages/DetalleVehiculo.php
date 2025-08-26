@@ -401,6 +401,7 @@ class DetalleVehiculo extends Page
      * 2. Estados 3 (En taller), 4 (Diferida), 6 (Cancelada): filtrados (no visibles)
      * 3. Estado 5 (Completada): siempre visible
      * 4. Para duplicados por edición: mostrar solo la más reciente
+     * 5. NUEVA REGLA: Solo una cita activa por vehículo (la más reciente)
      */
     protected function aplicarFiltrosVisibilidadYDuplicados(array $citas): array
     {
@@ -445,16 +446,16 @@ class DetalleVehiculo extends Page
             $citasFiltradas[] = $cita;
         }
         
-        // Regla 4: Remover duplicados - quedarse con la más reciente por fecha de cambio
-        $citasDeduplicadas = $this->removerDuplicadosPorFechaCambio($citasFiltradas);
+        // NUEVA REGLA 5: Solo una cita activa por vehículo
+        $citaUnica = $this->seleccionarSoloCitaMasReciente($citasFiltradas);
         
         Log::info("[DetalleVehiculo] Filtros aplicados", [
             'citas_originales' => count($citas),
             'citas_filtradas' => count($citasFiltradas),
-            'citas_finales' => count($citasDeduplicadas)
+            'citas_finales' => count($citaUnica)
         ]);
         
-        return $citasDeduplicadas;
+        return $citaUnica;
     }
     
     /**
@@ -608,6 +609,83 @@ class DetalleVehiculo extends Page
         }
         
         return $citaMasReciente;
+    }
+    
+    /**
+     * NUEVA REGLA: Seleccionar solo la cita más reciente para este vehículo
+     * Esto resuelve el problema de múltiples citas activas después de ediciones
+     */
+    protected function seleccionarSoloCitaMasReciente(array $citas): array
+    {
+        if (count($citas) <= 1) {
+            return $citas;
+        }
+        
+        Log::info("[DetalleVehiculo] Múltiples citas encontradas, seleccionando solo la más reciente", [
+            'total_citas' => count($citas)
+        ]);
+        
+        // Debug: mostrar todas las citas antes de la selección
+        foreach ($citas as $index => $cita) {
+            Log::info("[DetalleVehiculo] Cita {$index} para selección", [
+                'uuid' => $cita['uuid'] ?? $cita['id'] ?? 'N/A',
+                'fecha_agendada' => $cita['scheduled_start_date'] ?? 'N/A',
+                'hora_inicio' => $cita['start_time'] ?? 'N/A',
+                'fecha_cambio' => $cita['last_change_date'] ?? 'N/A',
+                'fecha_creacion' => $cita['creation_date'] ?? 'N/A',
+                'estado' => $cita['appointment_status'] ?? 'N/A'
+            ]);
+        }
+        
+        $citaMasReciente = $citas[0];
+        
+        foreach ($citas as $cita) {
+            // Criterio 1: Fecha de cambio más reciente
+            $fechaCambioActual = $cita['last_change_date'] ?? '';
+            $fechaCambioMasReciente = $citaMasReciente['last_change_date'] ?? '';
+            
+            if (!empty($fechaCambioActual) && !empty($fechaCambioMasReciente)) {
+                if ($fechaCambioActual > $fechaCambioMasReciente) {
+                    $citaMasReciente = $cita;
+                    continue;
+                }
+            }
+            
+            // Criterio 2: Si no hay fechas de cambio, usar fecha de creación
+            if (empty($fechaCambioActual) && empty($fechaCambioMasReciente)) {
+                $fechaCreacionActual = $cita['creation_date'] ?? '';
+                $fechaCreacionMasReciente = $citaMasReciente['creation_date'] ?? '';
+                
+                if (!empty($fechaCreacionActual) && !empty($fechaCreacionMasReciente)) {
+                    if ($fechaCreacionActual > $fechaCreacionMasReciente) {
+                        $citaMasReciente = $cita;
+                        continue;
+                    }
+                }
+            }
+            
+            // Criterio 3: Si no hay fechas, usar fecha agendada más reciente
+            if (empty($fechaCambioActual) && empty($fechaCambioMasReciente)) {
+                $fechaAgendadaActual = $cita['scheduled_start_date'] ?? '';
+                $fechaAgendadaMasReciente = $citaMasReciente['scheduled_start_date'] ?? '';
+                
+                if (!empty($fechaAgendadaActual) && !empty($fechaAgendadaMasReciente)) {
+                    if ($fechaAgendadaActual > $fechaAgendadaMasReciente) {
+                        $citaMasReciente = $cita;
+                        continue;
+                    }
+                }
+            }
+        }
+        
+        Log::info("[DetalleVehiculo] Cita seleccionada como la más reciente", [
+            'uuid_seleccionado' => $citaMasReciente['uuid'] ?? $citaMasReciente['id'] ?? 'N/A',
+            'fecha_agendada' => $citaMasReciente['scheduled_start_date'] ?? 'N/A',
+            'fecha_cambio' => $citaMasReciente['last_change_date'] ?? 'N/A',
+            'citas_descartadas' => count($citas) - 1
+        ]);
+        
+        return [$citaMasReciente];
     }
 
     /**
