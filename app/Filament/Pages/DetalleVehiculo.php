@@ -399,7 +399,7 @@ class DetalleVehiculo extends Page
      * Reglas de visibilidad según especificación del proyecto:
      * 1. Estados 1 (Generada) y 2 (Confirmada): siempre visibles
      * 2. Estados 3 (En taller), 4 (Diferida), 6 (Cancelada): filtrados (no visibles)
-     * 3. Estado 5 (Completada): visible solo 24 horas después de completarse
+     * 3. Estado 5 (Completada): siempre visible
      * 4. Para duplicados por edición: mostrar solo la más reciente
      */
     protected function aplicarFiltrosVisibilidadYDuplicados(array $citas): array
@@ -433,37 +433,10 @@ class DetalleVehiculo extends Page
                 continue;
             }
             
-            // Regla 3: Estado 5 (Completada) visible solo 24 horas después
+            // Regla 3: Estado 5 (Completada) siempre visible
             if ($estadoCita === '5') {
-                if ($fechaCambio) {
-                    try {
-                        $fechaCambioCarbon = \Carbon\Carbon::parse($fechaCambio);
-                        $limite24Horas = $fechaCambioCarbon->copy()->addHours(24);
-                        
-                        if ($ahora->lessThanOrEqualTo($limite24Horas)) {
-                            Log::debug("[DetalleVehiculo] Cita incluida - Estado 5 dentro de 24 horas", [
-                                'fecha_cambio' => $fechaCambio,
-                                'limite_24h' => $limite24Horas->toDateTimeString()
-                            ]);
-                            $citasFiltradas[] = $cita;
-                        } else {
-                            Log::debug("[DetalleVehiculo] Cita filtrada - Estado 5 fuera de 24 horas", [
-                                'fecha_cambio' => $fechaCambio,
-                                'limite_24h' => $limite24Horas->toDateTimeString()
-                            ]);
-                        }
-                    } catch (\Exception $e) {
-                        Log::warning("[DetalleVehiculo] Error parseando fecha de cambio: {$fechaCambio}", [
-                            'error' => $e->getMessage()
-                        ]);
-                        // Si no se puede parsear la fecha, incluir la cita por seguridad
-                        $citasFiltradas[] = $cita;
-                    }
-                } else {
-                    // Si no hay fecha de cambio, incluir la cita por seguridad
-                    Log::debug("[DetalleVehiculo] Cita incluida - Estado 5 sin fecha de cambio");
-                    $citasFiltradas[] = $cita;
-                }
+                Log::debug("[DetalleVehiculo] Cita incluida - Estado 5 (Completada)");
+                $citasFiltradas[] = $cita;
                 continue;
             }
             
