@@ -458,7 +458,7 @@ class DetalleVehiculo extends Page
     }
     
     /**
-     * Remover duplicados mantenieng la cita más reciente por fecha de cambio
+     * Remover duplicados manteniendo la cita más reciente por fecha de cambio
      * Esto maneja el caso donde una edición crea una nueva cita pero mantiene la anterior
      */
     protected function removerDuplicadosPorFechaCambio(array $citas): array
@@ -467,56 +467,147 @@ class DetalleVehiculo extends Page
             return $citas;
         }
         
-        // Agrupar por criterios que indican que son la "misma" cita
-        // Usando fecha agendada + hora como criterio principal
-        $gruposCitas = [];
+        Log::info("[DetalleVehiculo] Iniciando deduplicación de citas", [
+            'total_citas' => count($citas)
+        ]);
         
-        foreach ($citas as $cita) {
-            $fechaAgendada = $cita['scheduled_start_date'] ?? '';
-            $horaInicio = $cita['start_time'] ?? '';
-            $centroId = $cita['center_id'] ?? '';
-            
-            // Crear clave única para agrupar citas "similares"
-            $claveAgrupacion = $fechaAgendada . '_' . $horaInicio . '_' . $centroId;
-            
-            if (!isset($gruposCitas[$claveAgrupacion])) {
-                $gruposCitas[$claveAgrupacion] = [];
-            }
-            $gruposCitas[$claveAgrupacion][] = $cita;
+        // Debug: mostrar todas las citas recibidas
+        foreach ($citas as $index => $cita) {
+            Log::info("[DetalleVehiculo] Cita {$index}", [
+                'uuid' => $cita['uuid'] ?? $cita['id'] ?? 'N/A',
+                'fecha_agendada' => $cita['scheduled_start_date'] ?? 'N/A',
+                'hora_inicio' => $cita['start_time'] ?? 'N/A',
+                'centro_id' => $cita['center_id'] ?? 'N/A',
+                'fecha_cambio' => $cita['last_change_date'] ?? 'N/A',
+                'estado' => $cita['appointment_status'] ?? 'N/A'
+            ]);
+        }
+        
+        // Enfoque 1: Agrupar por UUID base (las citas editadas pueden compartir parte del UUID)
+        $citasPorUUID = $this->agruparPorUUIDBase($citas);
+        
+        // Enfoque 2: Si no hay duplicados por UUID, agrupar por similitud de fecha/hora/centro
+        if (count($citasPorUUID) === count($citas)) {
+            Log::info("[DetalleVehiculo] No se encontraron duplicados por UUID, verificando similitud fecha/hora");
+            $citasPorUUID = $this->agruparPorSimilitud($citas);
         }
         
         $citasFinales = [];
         
-        foreach ($gruposCitas as $grupo) {
+        foreach ($citasPorUUID as $claveGrupo => $grupo) {
             if (count($grupo) === 1) {
                 // Solo una cita en este grupo, mantenerla
                 $citasFinales[] = $grupo[0];
             } else {
                 // Múltiples citas en el grupo, quedarse con la más reciente
-                Log::info("[DetalleVehiculo] Detectadas citas duplicadas, seleccionando la más reciente", [
+                Log::info("[DetalleVehiculo] Detectadas citas duplicadas en grupo '{$claveGrupo}'", [
                     'cantidad_duplicadas' => count($grupo)
                 ]);
                 
-                $citaMasReciente = $grupo[0];
-                foreach ($grupo as $cita) {
-                    $fechaCambioActual = $cita['last_change_date'] ?? $cita['creation_date'] ?? '';
-                    $fechaCambioMasReciente = $citaMasReciente['last_change_date'] ?? $citaMasReciente['creation_date'] ?? '';
-                    
-                    if ($fechaCambioActual > $fechaCambioMasReciente) {
-                        $citaMasReciente = $cita;
-                    }
-                }
+                $citaMasReciente = $this->seleccionarCitaMasReciente($grupo);
                 
                 Log::info("[DetalleVehiculo] Cita más reciente seleccionada", [
                     'uuid_seleccionado' => $citaMasReciente['uuid'] ?? $citaMasReciente['id'] ?? 'N/A',
-                    'fecha_cambio' => $citaMasReciente['last_change_date'] ?? 'N/A'
+                    'fecha_cambio' => $citaMasReciente['last_change_date'] ?? 'N/A',
+                    'descartadas' => count($grupo) - 1
                 ]);
                 
                 $citasFinales[] = $citaMasReciente;
             }
         }
         
+        Log::info("[DetalleVehiculo] Deduplicación completada", [
+            'citas_originales' => count($citas),
+            'citas_finales' => count($citasFinales),
+            'duplicados_removidos' => count($citas) - count($citasFinales)
+        ]);
+        
         return $citasFinales;
+    }
+    
+    /**
+     * Agrupar citas por base del UUID (para detectar ediciones)
+     */
+    protected function agruparPorUUIDBase(array $citas): array
+    {
+        $grupos = [];
+        
+        foreach ($citas as $cita) {
+            $uuid = $cita['uuid'] ?? $cita['id'] ?? '';
+            
+            if (empty($uuid)) {
+                // Si no tiene UUID, crear grupo único
+                $claveGrupo = 'sin_uuid_' . uniqid();
+                $grupos[$claveGrupo] = [$cita];
+                continue;
+            }
+            
+            // Extraer base del UUID (primeras 3 secciones)
+            $partesUUID = explode('-', $uuid);
+            if (count($partesUUID) >= 3) {
+                $baseUUID = implode('-', array_slice($partesUUID, 0, 3));
+            } else {
+                $baseUUID = $uuid;
+            }
+            
+            if (!isset($grupos[$baseUUID])) {
+                $grupos[$baseUUID] = [];
+            }
+            $grupos[$baseUUID][] = $cita;
+        }
+        
+        return $grupos;
+    }
+    
+    /**
+     * Agrupar citas por similitud de fecha/hora/centro (fallback)
+     */
+    protected function agruparPorSimilitud(array $citas): array
+    {
+        $grupos = [];
+        
+        foreach ($citas as $cita) {
+            $fechaAgendada = $cita['scheduled_start_date'] ?? '';
+            $centroId = $cita['center_id'] ?? '';
+            
+            // Crear clave de similitud más flexible
+            $claveSimilitud = $fechaAgendada . '_' . $centroId;
+            
+            if (!isset($grupos[$claveSimilitud])) {
+                $grupos[$claveSimilitud] = [];
+            }
+            $grupos[$claveSimilitud][] = $cita;
+        }
+        
+        return $grupos;
+    }
+    
+    /**
+     * Seleccionar la cita más reciente de un grupo
+     */
+    protected function seleccionarCitaMasReciente(array $grupo): array
+    {
+        $citaMasReciente = $grupo[0];
+        
+        foreach ($grupo as $cita) {
+            $fechaCambioActual = $cita['last_change_date'] ?? $cita['creation_date'] ?? '';
+            $fechaCambioMasReciente = $citaMasReciente['last_change_date'] ?? $citaMasReciente['creation_date'] ?? '';
+            
+            // Si las fechas están vacías, usar el estado como criterio secundario
+            if (empty($fechaCambioActual) && empty($fechaCambioMasReciente)) {
+                $estadoActual = $cita['appointment_status'] ?? '1';
+                $estadoMasReciente = $citaMasReciente['appointment_status'] ?? '1';
+                
+                // Preferir estados más avanzados (2 > 1)
+                if ($estadoActual > $estadoMasReciente) {
+                    $citaMasReciente = $cita;
+                }
+            } elseif ($fechaCambioActual > $fechaCambioMasReciente) {
+                $citaMasReciente = $cita;
+            }
+        }
+        
+        return $citaMasReciente;
     }
 
     /**
