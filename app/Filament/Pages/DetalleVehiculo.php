@@ -305,6 +305,9 @@ class DetalleVehiculo extends Page
                     return $placaCita && trim($placaCita) === trim($placaVehiculo);
                 });
 
+                // NUEVO: Aplicar filtros de visibilidad y remover duplicados
+                $citasVehiculo = $this->aplicarFiltrosVisibilidadYDuplicados($citasVehiculo);
+
                 Log::info("[DetalleVehiculo] Citas filtradas para vehículo {$placaVehiculo}: " . count($citasVehiculo));
 
                 if (!empty($citasVehiculo)) {
@@ -388,6 +391,159 @@ class DetalleVehiculo extends Page
             $this->citasAgendadas = [];
             Log::info("[DetalleVehiculo] Fallback a citas locales deshabilitado tras error en WSCitas.");
         }
+    }
+
+    /**
+     * Aplicar filtros de visibilidad y remover duplicados de citas
+     * 
+     * Reglas de visibilidad según especificación del proyecto:
+     * 1. Estados 1 (Generada) y 2 (Confirmada): siempre visibles
+     * 2. Estados 3 (En taller), 4 (Diferida), 6 (Cancelada): filtrados (no visibles)
+     * 3. Estado 5 (Completada): visible solo 24 horas después de completarse
+     * 4. Para duplicados por edición: mostrar solo la más reciente
+     */
+    protected function aplicarFiltrosVisibilidadYDuplicados(array $citas): array
+    {
+        Log::info("[DetalleVehiculo] Aplicando filtros de visibilidad, citas recibidas: " . count($citas));
+        
+        $citasFiltradas = [];
+        $ahora = now();
+        
+        foreach ($citas as $cita) {
+            $estadoCita = $cita['appointment_status'] ?? '1';
+            $fechaCambio = $cita['last_change_date'] ?? null;
+            $uuid = $cita['uuid'] ?? $cita['id'] ?? null;
+            
+            Log::debug("[DetalleVehiculo] Evaluando cita", [
+                'uuid' => $uuid,
+                'estado' => $estadoCita,
+                'fecha_cambio' => $fechaCambio
+            ]);
+            
+            // Regla 1: Estados 1 (Generada) y 2 (Confirmada) siempre visibles
+            if (in_array($estadoCita, ['1', '2'])) {
+                Log::debug("[DetalleVehiculo] Cita incluida - Estado {$estadoCita} (Generada/Confirmada)");
+                $citasFiltradas[] = $cita;
+                continue;
+            }
+            
+            // Regla 2: Estados 3 (En taller), 4 (Diferida), 6 (Cancelada) no visibles
+            if (in_array($estadoCita, ['3', '4', '6'])) {
+                Log::debug("[DetalleVehiculo] Cita filtrada - Estado {$estadoCita} (En taller/Diferida/Cancelada)");
+                continue;
+            }
+            
+            // Regla 3: Estado 5 (Completada) visible solo 24 horas después
+            if ($estadoCita === '5') {
+                if ($fechaCambio) {
+                    try {
+                        $fechaCambioCarbon = \Carbon\Carbon::parse($fechaCambio);
+                        $limite24Horas = $fechaCambioCarbon->copy()->addHours(24);
+                        
+                        if ($ahora->lessThanOrEqualTo($limite24Horas)) {
+                            Log::debug("[DetalleVehiculo] Cita incluida - Estado 5 dentro de 24 horas", [
+                                'fecha_cambio' => $fechaCambio,
+                                'limite_24h' => $limite24Horas->toDateTimeString()
+                            ]);
+                            $citasFiltradas[] = $cita;
+                        } else {
+                            Log::debug("[DetalleVehiculo] Cita filtrada - Estado 5 fuera de 24 horas", [
+                                'fecha_cambio' => $fechaCambio,
+                                'limite_24h' => $limite24Horas->toDateTimeString()
+                            ]);
+                        }
+                    } catch (\Exception $e) {
+                        Log::warning("[DetalleVehiculo] Error parseando fecha de cambio: {$fechaCambio}", [
+                            'error' => $e->getMessage()
+                        ]);
+                        // Si no se puede parsear la fecha, incluir la cita por seguridad
+                        $citasFiltradas[] = $cita;
+                    }
+                } else {
+                    // Si no hay fecha de cambio, incluir la cita por seguridad
+                    Log::debug("[DetalleVehiculo] Cita incluida - Estado 5 sin fecha de cambio");
+                    $citasFiltradas[] = $cita;
+                }
+                continue;
+            }
+            
+            // Para cualquier otro estado no definido, incluir por seguridad
+            Log::debug("[DetalleVehiculo] Cita incluida - Estado no definido: {$estadoCita}");
+            $citasFiltradas[] = $cita;
+        }
+        
+        // Regla 4: Remover duplicados - quedarse con la más reciente por fecha de cambio
+        $citasDeduplicadas = $this->removerDuplicadosPorFechaCambio($citasFiltradas);
+        
+        Log::info("[DetalleVehiculo] Filtros aplicados", [
+            'citas_originales' => count($citas),
+            'citas_filtradas' => count($citasFiltradas),
+            'citas_finales' => count($citasDeduplicadas)
+        ]);
+        
+        return $citasDeduplicadas;
+    }
+    
+    /**
+     * Remover duplicados mantenieng la cita más reciente por fecha de cambio
+     * Esto maneja el caso donde una edición crea una nueva cita pero mantiene la anterior
+     */
+    protected function removerDuplicadosPorFechaCambio(array $citas): array
+    {
+        if (count($citas) <= 1) {
+            return $citas;
+        }
+        
+        // Agrupar por criterios que indican que son la "misma" cita
+        // Usando fecha agendada + hora como criterio principal
+        $gruposCitas = [];
+        
+        foreach ($citas as $cita) {
+            $fechaAgendada = $cita['scheduled_start_date'] ?? '';
+            $horaInicio = $cita['start_time'] ?? '';
+            $centroId = $cita['center_id'] ?? '';
+            
+            // Crear clave única para agrupar citas "similares"
+            $claveAgrupacion = $fechaAgendada . '_' . $horaInicio . '_' . $centroId;
+            
+            if (!isset($gruposCitas[$claveAgrupacion])) {
+                $gruposCitas[$claveAgrupacion] = [];
+            }
+            $gruposCitas[$claveAgrupacion][] = $cita;
+        }
+        
+        $citasFinales = [];
+        
+        foreach ($gruposCitas as $grupo) {
+            if (count($grupo) === 1) {
+                // Solo una cita en este grupo, mantenerla
+                $citasFinales[] = $grupo[0];
+            } else {
+                // Múltiples citas en el grupo, quedarse con la más reciente
+                Log::info("[DetalleVehiculo] Detectadas citas duplicadas, seleccionando la más reciente", [
+                    'cantidad_duplicadas' => count($grupo)
+                ]);
+                
+                $citaMasReciente = $grupo[0];
+                foreach ($grupo as $cita) {
+                    $fechaCambioActual = $cita['last_change_date'] ?? $cita['creation_date'] ?? '';
+                    $fechaCambioMasReciente = $citaMasReciente['last_change_date'] ?? $citaMasReciente['creation_date'] ?? '';
+                    
+                    if ($fechaCambioActual > $fechaCambioMasReciente) {
+                        $citaMasReciente = $cita;
+                    }
+                }
+                
+                Log::info("[DetalleVehiculo] Cita más reciente seleccionada", [
+                    'uuid_seleccionado' => $citaMasReciente['uuid'] ?? $citaMasReciente['id'] ?? 'N/A',
+                    'fecha_cambio' => $citaMasReciente['last_change_date'] ?? 'N/A'
+                ]);
+                
+                $citasFinales[] = $citaMasReciente;
+            }
+        }
+        
+        return $citasFinales;
     }
 
     /**
