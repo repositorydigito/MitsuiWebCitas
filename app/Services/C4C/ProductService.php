@@ -10,7 +10,7 @@ class ProductService
 {
     protected string $baseUrl;
     protected string $username;
-    protected string $password;
+    protected ?string $password;
     protected int $timeout;
 
     public function __construct()
