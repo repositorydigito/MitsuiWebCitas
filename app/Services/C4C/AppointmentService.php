@@ -796,13 +796,11 @@ class AppointmentService
 
     /**
      * Query pending appointments for a client (como Python).
-     * Now includes "Trabajo concluido" (status 5) appointments that are within 24 hours.
      */
     public function queryPendingAppointments(string $clientId): array
     {
         Log::info("Consultando citas pendientes para cliente: {$clientId}");
 
-        // First, get all appointments with extended status range (1-5)
         $params = [
             'ActivitySimpleSelectionBy' => [
                 'SelectionByTypeCode' => [
@@ -820,7 +818,7 @@ class AppointmentService
                     'InclusionExclusionCode' => 'I',
                     'IntervalBoundaryTypeCode' => '3',
                     'LowerBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5' => '1',
-                    'UpperBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5' => '5', // Include status 5 (Trabajo concluido)
+                    'UpperBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5' => '2',
                 ],
             ],
             'ProcessingConditions' => [
@@ -867,9 +865,6 @@ class AppointmentService
             $formattedResult = $this->formatAppointmentQueryResponse($appointmentData);
 
             if ($formattedResult['success']) {
-                // Apply 24-hour filtering for status 5 (Trabajo concluido) appointments
-                $formattedResult = $this->filterCompletedAppointments24Hours($formattedResult);
-
                 Log::info("✅ Consulta de citas exitosa para cliente: {$clientId}", [
                     'appointments_found' => $formattedResult['count'] ?? 0,
                 ]);
@@ -1255,115 +1250,6 @@ class AppointmentService
             ]);
 
             return null;
-        }
-    }
-
-    /**
-     * Filter completed appointments (status 5) to only show those within 24 hours of completion.
-     * This allows "Trabajo concluido" appointments to remain visible for 24 hours before hiding.
-     */
-    private function filterCompletedAppointments24Hours(array $formattedResult): array
-    {
-        if (!isset($formattedResult['data']) || !is_array($formattedResult['data'])) {
-            return $formattedResult;
-        }
-
-        $filteredAppointments = [];
-        $removedCount = 0;
-
-        foreach ($formattedResult['data'] as $appointment) {
-            $appointmentStatus = $appointment['appointment_status'] ?? null;
-            
-            // For status 5 (Trabajo concluido/Completada), check 24-hour window
-            if ($appointmentStatus === '5') {
-                $shouldKeep = $this->isWithin24HoursOfCompletion($appointment);
-                
-                if ($shouldKeep) {
-                    $filteredAppointments[] = $appointment;
-                    Log::info('📋 Status 5 appointment kept (within 24h)', [
-                        'uuid' => $appointment['uuid'] ?? 'N/A',
-                        'license_plate' => $appointment['license_plate'] ?? 'N/A',
-                        'last_change_date' => $appointment['last_change_date'] ?? 'N/A'
-                    ]);
-                } else {
-                    $removedCount++;
-                    Log::info('🕐 Status 5 appointment filtered out (>24h)', [
-                        'uuid' => $appointment['uuid'] ?? 'N/A',
-                        'license_plate' => $appointment['license_plate'] ?? 'N/A',
-                        'last_change_date' => $appointment['last_change_date'] ?? 'N/A'
-                    ]);
-                }
-            } else {
-                // Keep all other status appointments (1, 2, 3, 4, 6)
-                $filteredAppointments[] = $appointment;
-            }
-        }
-
-        // Update the result with filtered data
-        $formattedResult['data'] = $filteredAppointments;
-        $formattedResult['count'] = count($filteredAppointments);
-        
-        if ($removedCount > 0) {
-            Log::info('⏰ Filtered appointments beyond 24-hour window', [
-                'removed_count' => $removedCount,
-                'remaining_count' => count($filteredAppointments)
-            ]);
-        }
-
-        return $formattedResult;
-    }
-
-    /**
-     * Check if a completed appointment (status 5) is within 24 hours of completion.
-     * Uses last_change_date as the completion timestamp.
-     */
-    private function isWithin24HoursOfCompletion(array $appointment): bool
-    {
-        $lastChangeDate = $appointment['last_change_date'] ?? null;
-        
-        if (!$lastChangeDate) {
-            // If no last_change_date, fall back to end_date_time or scheduled_end_date
-            $lastChangeDate = $appointment['end_date_time'] ?? $appointment['scheduled_end_date'] ?? null;
-        }
-        
-        if (!$lastChangeDate) {
-            // If still no date available, assume it's recent (within 24h) for safety
-            Log::warning('⚠️ No completion date found for status 5 appointment, assuming recent', [
-                'uuid' => $appointment['uuid'] ?? 'N/A',
-                'license_plate' => $appointment['license_plate'] ?? 'N/A'
-            ]);
-            return true;
-        }
-        
-        try {
-            // Parse the completion date
-            $completionTime = \Carbon\Carbon::parse($lastChangeDate);
-            $now = \Carbon\Carbon::now();
-            
-            // Check if completion was within the last 24 hours
-            $isWithin24Hours = $completionTime->diffInHours($now) <= 24;
-            
-            Log::debug('🕐 24-hour check for completed appointment', [
-                'uuid' => $appointment['uuid'] ?? 'N/A',
-                'license_plate' => $appointment['license_plate'] ?? 'N/A',
-                'completion_time' => $completionTime->toDateTimeString(),
-                'current_time' => $now->toDateTimeString(),
-                'hours_ago' => $completionTime->diffInHours($now),
-                'within_24h' => $isWithin24Hours
-            ]);
-            
-            return $isWithin24Hours;
-            
-        } catch (\Exception $e) {
-            Log::error('❌ Error parsing completion date for status 5 appointment', [
-                'uuid' => $appointment['uuid'] ?? 'N/A',
-                'license_plate' => $appointment['license_plate'] ?? 'N/A',
-                'last_change_date' => $lastChangeDate,
-                'error' => $e->getMessage()
-            ]);
-            
-            // On error, assume it's recent for safety
-            return true;
         }
     }
 }
