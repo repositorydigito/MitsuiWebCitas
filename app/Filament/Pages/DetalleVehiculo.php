@@ -261,16 +261,23 @@ class DetalleVehiculo extends Page
             $placaVehiculo = $vehiculo->license_plate;
             Log::info("[DetalleVehiculo] Placa del vehículo: {$placaVehiculo}");
 
-            // Obtener el c4c_internal_id del usuario logueado
+            // Obtener el usuario logueado y verificar si tiene datos reales de C4C
             $user = Auth::user();
-            if (!$user || !$user->c4c_internal_id) {
-                Log::warning("[DetalleVehiculo] Usuario no tiene c4c_internal_id configurado");
-                $this->citasAgendadas = [];
+            if (!$user || !$user->hasRealC4cData()) {
+                Log::warning("[DetalleVehiculo] Usuario no tiene datos C4C válidos (es comodín o sin c4c_internal_id)", [
+                    'user_id' => $user ? $user->id : 'N/A',
+                    'c4c_internal_id' => $user ? $user->c4c_internal_id : 'N/A',
+                    'is_comodin' => $user ? $user->is_comodin : 'N/A',
+                    'has_real_c4c_data' => $user ? $user->hasRealC4cData() : 'N/A'
+                ]);
+                
+                // Para clientes comodín, usar citas locales directamente
+                $this->cargarCitasLocalesPendientes($vehiculoId);
                 return;
             }
 
             $c4cInternalId = $user->c4c_internal_id;
-            Log::info("[DetalleVehiculo] c4c_internal_id del usuario: {$c4cInternalId}");
+            Log::info("[DetalleVehiculo] Usuario con datos C4C válidos - c4c_internal_id: {$c4cInternalId}");
 
             // Consultar WSCitas usando AppointmentService (datos reales)
             $appointmentService = new AppointmentService();
@@ -464,6 +471,9 @@ class DetalleVehiculo extends Page
 
         } catch (\Exception $e) {
             Log::error('[DetalleVehiculo] Error al cargar citas locales: ' . $e->getMessage());
+            Log::error('[DetalleVehiculo] Stack trace: ' . $e->getTraceAsString());
+            
+            // En caso de error, asegurar que el array esté inicializado
             $this->citasAgendadas = [];
         }
     }
