@@ -1046,6 +1046,15 @@ class C4CClient
                 $positionType = $item['y6s:zOVPosIDTipoPosicion']['_'] ?? 'P009';
                 $packageId = $item['y6s:zID_PAQUETE'] ?? '';
                 $workTime = $item['y6s:zOVPosTiempoTeorico'] ?? '0';
+                $zOVPosCantTrab = $item['y6s:zOVPosCantTrab'] ?? '0';  // ✅ USAR VALOR DINÁMICO
+
+                // 🔍 LOG PARA VERIFICACIÓN
+                Log::info('🔍 zOVPosCantTrab extraído dinámicamente', [
+                    'product_id' => $productID,
+                    'position_type' => $positionType,
+                    'zOVPosCantTrab' => $zOVPosCantTrab,
+                    'source' => 'dynamic_from_OfferService'
+                ]);
 
                 $itemsXml .= '
                 <Item actionCode="01" itemBTDReferenceListCompleteTransmissionIndicator="" textListCompleteTransimissionIndicator="">
@@ -1059,7 +1068,7 @@ class C4CClient
                     </ItemRequestedScheduleLine>
                     <yax:zOVPosIDTipoPosicion listID="?" listVersionID="?" listAgencyID="?">' . htmlspecialchars($positionType) . '</yax:zOVPosIDTipoPosicion>
                     <yax:zOVPosTipServ listID="?" listVersionID="" listAgencyID="">P</yax:zOVPosTipServ>
-                    <yax:zOVPosCantTrab>0</yax:zOVPosCantTrab>';
+                    <yax:zOVPosCantTrab>' . htmlspecialchars($zOVPosCantTrab) . '</yax:zOVPosCantTrab>';
 
                 // ✅ SOLO INCLUIR CAMPOS DE PAQUETE SI TIENE PACKAGE_ID (OMITIR PARA WILDCARD)
                 if (!empty($packageId)) {

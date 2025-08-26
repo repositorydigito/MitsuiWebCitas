@@ -216,7 +216,7 @@ class Product extends Model
             'material_number' => $c4cProduct->zMatnr ?? null,
             'base_quantity' => (float) ($c4cProduct->zMENGE ?? 0),
             'quantity' => (float) ($c4cProduct->zZMENG ?? 0), // ✅ CORREGIDO: Usar zZMENG real del endpoint
-            'alt_quantity' => (float) ($c4cProduct->zZMENG ?? 0),
+            'alt_quantity' => (float) ($c4cProduct->zCantidad ?? 0), // ✅ CORREGIDO: Usar zCantidad
             'work_time_value' => (float) ($c4cProduct->zTiempoValorTrabajo ?? 0),
             'unit_code' => $finalUnitCode, // ✅ CORREGIDO: Usa valor determinado arriba
             'unit_code_1' => $c4cProduct->unitCode1 ?? null,
