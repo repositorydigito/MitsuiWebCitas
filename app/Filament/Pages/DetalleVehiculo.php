@@ -760,9 +760,61 @@ class DetalleVehiculo extends Page
             Log::info("[DetalleVehiculo] Citas locales encontradas: " . $citasLocales->count());
 
             if ($citasLocales->isNotEmpty()) {
+                Log::info("[DetalleVehiculo] ===== PROCESANDO CITAS LOCALES ANTES DE DEDUPLICACIÓN =====", [
+                    'total_citas_locales' => $citasLocales->count()
+                ]);
+                
+                // Crear array temporal para aplicar deduplicación
+                $citasParaDeduplicar = [];
+                
+                foreach ($citasLocales as $index => $cita) {
+                    Log::info("[DetalleVehiculo] Cita local #{$index} antes de deduplicación", [
+                        'id' => $cita->id,
+                        'appointment_number' => $cita->appointment_number,
+                        'appointment_date' => $cita->appointment_date ? $cita->appointment_date->format('Y-m-d') : 'N/A',
+                        'appointment_time' => $cita->appointment_time ? $cita->appointment_time->format('H:i') : 'N/A',
+                        'maintenance_type' => $cita->maintenance_type,
+                        'status' => $cita->status,
+                        'created_at' => $cita->created_at ? $cita->created_at->format('Y-m-d H:i:s') : 'N/A',
+                        'updated_at' => $cita->updated_at ? $cita->updated_at->format('Y-m-d H:i:s') : 'N/A'
+                    ]);
+                    
+                    // Convertir a formato similar al de C4C para usar la misma lógica de deduplicación
+                    $citasParaDeduplicar[] = [
+                        'uuid' => $cita->c4c_uuid ?? 'local-' . $cita->id,
+                        'id' => $cita->id,
+                        'scheduled_start_date' => $cita->appointment_date ? $cita->appointment_date->format('Y-m-d') : '',
+                        'start_time' => $cita->appointment_time ? $cita->appointment_time->format('H:i:s') : '',
+                        'appointment_status' => $this->mapearEstadoLocalAC4C($cita->status),
+                        'last_change_date' => $cita->updated_at ? $cita->updated_at->format('Y-m-d H:i:s') : '',
+                        'creation_date' => $cita->created_at ? $cita->created_at->format('Y-m-d H:i:s') : '',
+                        'center_id' => $cita->premise_id ?? '',
+                        // Guardar el objeto original para usar después
+                        '_original_cita' => $cita
+                    ];
+                }
+                
+                // APLICAR DEDUPLICACIÓN A CITAS LOCALES
+                Log::info("[DetalleVehiculo] ===== APLICANDO DEDUPLICACIÓN A CITAS LOCALES =====");
+                $citasDeduplicadas = $this->seleccionarSoloCitaMasReciente($citasParaDeduplicar);
+                
+                Log::info("[DetalleVehiculo] ===== RESULTADO DEDUPLICACIÓN CITAS LOCALES =====", [
+                    'citas_originales' => count($citasParaDeduplicar),
+                    'citas_finales' => count($citasDeduplicadas)
+                ]);
+                
                 $this->citasAgendadas = [];
 
-                foreach ($citasLocales as $cita) {
+                foreach ($citasDeduplicadas as $citaDedup) {
+                    // Recuperar el objeto original de la cita
+                    $cita = $citaDedup['_original_cita'];
+                    
+                    Log::info("[DetalleVehiculo] Procesando cita local deduplicada", [
+                        'id' => $cita->id,
+                        'appointment_number' => $cita->appointment_number,
+                        'fecha' => $cita->appointment_date ? $cita->appointment_date->format('d/m/Y') : '-',
+                        'hora' => $cita->appointment_time ? $cita->appointment_time->format('H:i') : '-'
+                    ]);
                     $estadoInfo = $this->obtenerInformacionEstadoCompletaLocal($cita->status, $cita);
 
                     // Crear datos base de la cita local
@@ -811,6 +863,21 @@ class DetalleVehiculo extends Page
                         'fuente' => 'local',
                         'sincronizada' => $cita->is_synced ? 'Sí' : 'Pendiente',
                     ];
+                }
+
+                Log::info("[DetalleVehiculo] ===== CITAS LOCALES FINALES TRANSFORMADAS =====", [
+                    'total_citas_finales' => count($this->citasAgendadas)
+                ]);
+                
+                foreach ($this->citasAgendadas as $index => $citaFinal) {
+                    Log::info("[DetalleVehiculo] Cita local final #{$index}", [
+                        'id' => $citaFinal['id'] ?? 'N/A',
+                        'numero_cita' => $citaFinal['numero_cita'] ?? 'N/A',
+                        'fecha_cita' => $citaFinal['fecha_cita'] ?? 'N/A',
+                        'hora_cita' => $citaFinal['hora_cita'] ?? 'N/A',
+                        'servicio' => $citaFinal['servicio'] ?? 'N/A',
+                        'sede' => $citaFinal['sede'] ?? 'N/A'
+                    ]);
                 }
 
                 Log::info('[DetalleVehiculo] Citas locales cargadas exitosamente: ' . count($this->citasAgendadas));
