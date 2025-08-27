@@ -439,7 +439,7 @@ class DetalleVehiculo extends Page
      * Reglas de visibilidad según especificación del proyecto:
      * 1. Estados 1 (Generada) y 2 (Confirmada): siempre visibles
      * 2. Estados 3 (En taller), 4 (Diferida), 6 (Cancelada): filtrados (no visibles)
-     * 3. Estado 5 (Completada): siempre visible
+     * 3. Estado 5 (Completada): visible hasta el día siguiente a las 11:59pm, luego desaparece
      * 4. Para duplicados por edición: mostrar solo la más reciente
      * 5. NUEVA REGLA: Solo una cita activa por vehículo (la más reciente)
      */
@@ -475,9 +475,19 @@ class DetalleVehiculo extends Page
                 continue;
             }
             
-            // Regla 3: Estado 5 (Completada) siempre visible
+            // Regla 3: Estado 5 (Completada) con lógica de expiración temporal
             if ($estadoCita === '5') {
-                Log::debug("[DetalleVehiculo] Cita incluida - Estado 5 (Completada)");
+                $debeExpirar = $this->evaluarExpiracionTrabajoCompletado($cita, $ahora);
+                
+                if ($debeExpirar) {
+                    Log::info("[DetalleVehiculo] Cita estado 5 EXPIRADA - removida de la vista", [
+                        'uuid' => $uuid,
+                        'fecha_cambio' => $fechaCambio
+                    ]);
+                    continue; // No incluir la cita (ha expirado)
+                }
+                
+                Log::debug("[DetalleVehiculo] Cita incluida - Estado 5 (Completada) aún válida");
                 $citasFiltradas[] = $cita;
                 continue;
             }
@@ -508,6 +518,64 @@ class DetalleVehiculo extends Page
         }
         
         return $citaUnica;
+    }
+    
+    /**
+     * Evaluar si una cita con estado 5 (Trabajo concluido) debe expirar
+     * 
+     * Lógica: La cita debe ser visible hasta el día siguiente a las 11:59pm
+     * después de que se marcó como "Trabajo concluido"
+     * 
+     * @param array $cita Datos de la cita
+     * @param \Carbon\Carbon $ahora Fecha/hora actual
+     * @return bool true si debe expirar (ocultar), false si sigue siendo visible
+     */
+    protected function evaluarExpiracionTrabajoCompletado(array $cita, \Carbon\Carbon $ahora): bool
+    {
+        try {
+            // Obtener la fecha de cambio (cuando se marcó como completada)
+            $fechaCambio = $cita['last_change_date'] ?? null;
+            
+            // Si no hay fecha de cambio, asumir que es válida (no expirar)
+            if (empty($fechaCambio)) {
+                Log::debug("[DetalleVehiculo] Cita estado 5 sin fecha_cambio - mantener visible", [
+                    'uuid' => $cita['uuid'] ?? $cita['id'] ?? 'N/A'
+                ]);
+                return false;
+            }
+            
+            // Parsear la fecha de cambio
+            $fechaCambioCarbon = \Carbon\Carbon::parse($fechaCambio);
+            
+            // Calcular el límite de expiración: día siguiente a las 11:59:59 PM
+            $limiteExpiracion = $fechaCambioCarbon->copy()
+                ->addDay() // Día siguiente
+                ->endOfDay(); // 23:59:59
+            
+            // Verificar si ya expiró
+            $haExpirado = $ahora->isAfter($limiteExpiracion);
+            
+            Log::info("[DetalleVehiculo] Evaluación expiración cita estado 5", [
+                'uuid' => $cita['uuid'] ?? $cita['id'] ?? 'N/A',
+                'fecha_cambio' => $fechaCambio,
+                'fecha_cambio_parsed' => $fechaCambioCarbon->toDateTimeString(),
+                'limite_expiracion' => $limiteExpiracion->toDateTimeString(),
+                'ahora' => $ahora->toDateTimeString(),
+                'ha_expirado' => $haExpirado ? 'SÍ' : 'NO',
+                'tiempo_restante' => $haExpirado ? '0' : $ahora->diffForHumans($limiteExpiracion, true)
+            ]);
+            
+            return $haExpirado;
+            
+        } catch (\Exception $e) {
+            // En caso de error al parsear fechas, mantener la cita visible (no expirar)
+            Log::error("[DetalleVehiculo] Error al evaluar expiración de cita estado 5", [
+                'uuid' => $cita['uuid'] ?? $cita['id'] ?? 'N/A',
+                'error' => $e->getMessage(),
+                'fecha_cambio_raw' => $fechaCambio ?? 'NULL'
+            ]);
+            return false;
+        }
     }
     
     /**
@@ -1104,7 +1172,9 @@ class DetalleVehiculo extends Page
         }
     }
 
-    // Método para ir a agendar cita
+    /**
+     * Método para ir a agendar cita
+     */
     public function agendarCita(): void
     {
         // Verificar si tenemos un vehículo cargado
