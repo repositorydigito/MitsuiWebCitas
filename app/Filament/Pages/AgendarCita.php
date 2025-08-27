@@ -2551,8 +2551,12 @@ class AgendarCita extends Page
                 }
             }
 
-            // **ENVIAR EMAIL DE CONFIRMACIÓN DESPUÉS DE GUARDAR SERVICIOS ADICIONALES** 📧
-            $this->enviarEmailConfirmacion($appointment);
+            // **EMAIL SE ENVIARÁ DESPUÉS DEL ÉXITO EN C4C** 📧
+            // El email de confirmación se enviará desde EnviarCitaC4CJob cuando la sincronización sea exitosa
+            Log::info('📧 [AgendarCita] Email de confirmación se enviará después del éxito en C4C', [
+                'appointment_id' => $appointment->id,
+                'customer_email' => $this->emailCliente
+            ]);
 
         } catch (\Exception $e) {
             // Registrar el error
@@ -4250,8 +4254,12 @@ class AgendarCita extends Page
                 // NO re-throw para no romper el flujo de la UI
             }
 
-            // Enviar email de confirmación (mantener lógica existente)
-            $this->enviarEmailConfirmacion($appointment);
+            // **EMAIL SE ENVIARÁ DESPUÉS DEL ÉXITO EN C4C** 📧
+            // El email de confirmación se enviará desde EnviarCitaC4CJob cuando la sincronización sea exitosa
+            Log::info('📧 [AgendarCita] Email de confirmación se enviará después del éxito en C4C (flujo completo)', [
+                'appointment_id' => $appointment->id,
+                'customer_email' => $this->emailCliente
+            ]);
 
             // Limpiar formulario
             $this->limpiarFormulario();

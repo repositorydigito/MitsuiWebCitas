@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\Appointment;
 use App\Services\C4C\AppointmentService;
 use App\Jobs\DownloadProductsJob;
+use App\Mail\CitaCreada;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -12,6 +13,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class EnviarCitaC4CJob implements ShouldQueue
 {
@@ -248,6 +250,9 @@ class EnviarCitaC4CJob implements ShouldQueue
                 'updated_at' => now(),
             ], 600);
 
+            // **ENVIAR EMAIL DE CONFIRMACIÓN DESPUÉS DEL ÉXITO EN C4C** 📧
+            $this->enviarEmailConfirmacion($appointment);
+
             Log::info('[EnviarCitaC4CJob] ✅ Job completado exitosamente', [
                 'job_id' => $this->jobId,
                 'appointment_id' => $this->appointmentId,
@@ -462,6 +467,58 @@ class EnviarCitaC4CJob implements ShouldQueue
             ]);
 
             // No re-lanzar la excepción para no fallar el job principal
+        }
+    }
+
+    /**
+     * 📧 NUEVO: Enviar email de confirmación después del éxito en C4C
+     */
+    protected function enviarEmailConfirmacion(Appointment $appointment): void
+    {
+        try {
+            Log::info('📧 [EnviarCitaC4CJob] Enviando email de confirmación después del éxito en C4C', [
+                'appointment_id' => $appointment->id,
+                'appointment_number' => $appointment->appointment_number,
+                'customer_email' => $appointment->customer_email
+            ]);
+
+            // Preparar datos del cliente
+            $datosCliente = [
+                'nombres' => $appointment->customer_name,
+                'apellidos' => $appointment->customer_last_name,
+                'email' => $appointment->customer_email,
+                'celular' => $appointment->customer_phone,
+            ];
+
+            // Cargar relaciones necesarias antes de enviar el email
+            $appointment->load(['additionalServices.additionalService', 'vehicle']);
+            
+            // Preparar datos del vehículo (usar relación vehicle si está disponible)
+            $datosVehiculo = [
+                'marca' => $appointment->vehicle?->brand_name ?? $appointment->vehicle_brand ?? 'No especificado',
+                'modelo' => $appointment->vehicle?->model ?? $appointment->vehicle_model ?? 'No especificado',
+                'placa' => $appointment->vehicle?->license_plate ?? $appointment->vehicle_license_plate ?? 'No especificado',
+            ];
+            
+            // Enviar el correo de confirmación
+            Mail::to($appointment->customer_email)
+                ->send(new CitaCreada($appointment, $datosCliente, $datosVehiculo));
+
+            Log::info('📧 [EnviarCitaC4CJob] Email de confirmación enviado exitosamente', [
+                'appointment_id' => $appointment->id,
+                'customer_email' => $appointment->customer_email,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('📧 [EnviarCitaC4CJob] Error enviando email de confirmación', [
+                'appointment_id' => $appointment->id,
+                'customer_email' => $appointment->customer_email ?? 'N/A',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            // No lanzar excepción para no interrumpir el proceso de sincronización
+            // Solo registrar el error
         }
     }
 }
