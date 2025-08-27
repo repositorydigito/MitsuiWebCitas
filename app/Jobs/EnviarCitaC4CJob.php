@@ -476,11 +476,27 @@ class EnviarCitaC4CJob implements ShouldQueue
     protected function enviarEmailConfirmacion(Appointment $appointment): void
     {
         try {
-            Log::info('📧 [EnviarCitaC4CJob] Enviando email de confirmación después del éxito en C4C', [
+            // 🔍 LOG DETALLADO PARA DIAGNÓSTICO
+            Log::info('📧 [EnviarCitaC4CJob] ========== INICIANDO ENVÍO EMAIL ==========', [
                 'appointment_id' => $appointment->id,
                 'appointment_number' => $appointment->appointment_number,
-                'customer_email' => $appointment->customer_email
+                'customer_email' => $appointment->customer_email,
+                'maintenance_type' => $appointment->maintenance_type,
+                'service_mode' => $appointment->service_mode,
+                'package_id' => $appointment->package_id,
+                'status' => $appointment->status,
+                'is_synced' => $appointment->is_synced,
+                'c4c_uuid' => $appointment->c4c_uuid,
+                'scenario' => $appointment->maintenance_type ? 'WITH_MAINTENANCE' : 'OTHER_SERVICES_OR_CAMPAIGNS'
             ]);
+
+            // Validar que tenga email del cliente
+            if (empty($appointment->customer_email)) {
+                Log::error('📧 [EnviarCitaC4CJob] ERROR: Customer email vacío', [
+                    'appointment_id' => $appointment->id
+                ]);
+                return;
+            }
 
             // Preparar datos del cliente
             $datosCliente = [
@@ -490,8 +506,15 @@ class EnviarCitaC4CJob implements ShouldQueue
                 'celular' => $appointment->customer_phone,
             ];
 
+            Log::info('📧 [EnviarCitaC4CJob] Datos del cliente preparados', $datosCliente);
+
             // Cargar relaciones necesarias antes de enviar el email
             $appointment->load(['additionalServices.additionalService', 'vehicle']);
+            
+            Log::info('📧 [EnviarCitaC4CJob] Relaciones cargadas', [
+                'additional_services_count' => $appointment->additionalServices->count(),
+                'vehicle_loaded' => $appointment->vehicle ? 'YES' : 'NO'
+            ]);
             
             // Preparar datos del vehículo (usar relación vehicle si está disponible)
             $datosVehiculo = [
@@ -499,21 +522,33 @@ class EnviarCitaC4CJob implements ShouldQueue
                 'modelo' => $appointment->vehicle?->model ?? $appointment->vehicle_model ?? 'No especificado',
                 'placa' => $appointment->vehicle?->license_plate ?? $appointment->vehicle_license_plate ?? 'No especificado',
             ];
+
+            Log::info('📧 [EnviarCitaC4CJob] Datos del vehículo preparados', $datosVehiculo);
             
+            // 🔍 LOG ANTES DEL ENVÍO
+            Log::info('📧 [EnviarCitaC4CJob] ENVIANDO EMAIL de confirmación...', [
+                'to_email' => $appointment->customer_email,
+                'appointment_number' => $appointment->appointment_number,
+                'cc_email' => 'citasmantenimiento@mitsuiautomotriz.com'
+            ]);
+
             // Enviar el correo de confirmación
             Mail::to($appointment->customer_email)
                 ->send(new CitaCreada($appointment, $datosCliente, $datosVehiculo));
 
-            Log::info('📧 [EnviarCitaC4CJob] Email de confirmación enviado exitosamente', [
+            Log::info('📧 [EnviarCitaC4CJob] ✅ EMAIL DE CONFIRMACIÓN ENVIADO EXITOSAMENTE', [
                 'appointment_id' => $appointment->id,
                 'customer_email' => $appointment->customer_email,
+                'appointment_number' => $appointment->appointment_number
             ]);
 
         } catch (\Exception $e) {
-            Log::error('📧 [EnviarCitaC4CJob] Error enviando email de confirmación', [
+            Log::error('📧 [EnviarCitaC4CJob] ❌ ERROR ENVIANDO EMAIL DE CONFIRMACIÓN', [
                 'appointment_id' => $appointment->id,
                 'customer_email' => $appointment->customer_email ?? 'N/A',
-                'error' => $e->getMessage(),
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
             

@@ -138,7 +138,15 @@
             <div class="info-value">{{ $datosVehiculo['marca'] ?? '' }} {{ $datosVehiculo['modelo'] ?? '' }} - Placa: {{ $datosVehiculo['placa'] ?? '' }}</div>
             
             <div class="info-label">🔧 Servicio:</div>
-            <div class="info-value">{{ $appointment->service_type ?? 'Servicio general' }}</div>
+            <div class="info-value">
+                @if($appointment->maintenance_type)
+                    {{ $appointment->maintenance_type }}
+                @elseif($appointment->service_mode)
+                    {{ str_replace('Campañas / otros', 'Otros Servicios', $appointment->service_mode) }}
+                @else
+                    Servicio general
+                @endif
+            </div>
             
             @if($appointment->maintenance_type)
             <div class="info-label">⚙️ Tipo de Mantenimiento:</div>

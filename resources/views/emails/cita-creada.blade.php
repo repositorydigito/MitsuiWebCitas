@@ -142,7 +142,15 @@
             <div class="info-value">{{ $appointment->premise->name ?? 'No especificado' }}</div>
 
             <div class="info-label">🔧 Servicio:</div>
-            <div class="info-value">{{ $appointment->service_type ?? 'Mantenimiento periódico' }}</div>
+            <div class="info-value">
+                @if($appointment->maintenance_type)
+                    {{ $appointment->maintenance_type }}
+                @elseif($appointment->service_mode)
+                    {{ str_replace('Campañas / otros', 'Otros Servicios', $appointment->service_mode) }}
+                @else
+                    Mantenimiento periódico
+                @endif
+            </div>
             
             @if($appointment->maintenance_type)
             <div class="info-label">⚙️ Mantenimiento:</div>
