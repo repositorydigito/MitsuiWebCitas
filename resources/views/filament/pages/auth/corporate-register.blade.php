@@ -112,6 +112,10 @@
                 display: none;
             }
 
+            .form-container {
+                margin-bottom: 5rem;
+            }
+
             .brand-logo {
                 width: 100px;
                 height: auto;
