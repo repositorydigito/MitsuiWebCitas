@@ -283,9 +283,9 @@
                                                 <span class="text-xs text-gray-600 mt-1">{{ $cita['hora_cita'] ?? '' }}</span>
                                             </div>
 
-                                            <div class="flex justify-between items-center">
+                                            <div class="flex flex-col md:flex-row md:justify-between md:items-center">
                                                 <span class="text-xs font-medium text-blue-800">Servicio:</span>
-                                                <span class="text-xs text-gray-600 mt-1">
+                                                <span class="text-xs text-gray-600 mt-1 md:mt-0">
                                                     @if(!empty($cita['maintenance_type']))
                                                         Mantenimiento {{ $cita['maintenance_type'] }}
                                                     @elseif(!empty($cita['wildcard_selections']))
