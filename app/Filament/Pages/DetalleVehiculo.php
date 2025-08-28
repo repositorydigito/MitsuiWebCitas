@@ -351,8 +351,9 @@ class DetalleVehiculo extends Page
                         // Enriquecer con datos SAP si están disponibles
                         $citaEnriquecida = $this->enriquecerCitaConDatosSAP($cita);
 
-                        // Obtener maintenance_type desde la base de datos local
-                        $maintenanceTypeLocal = $this->obtenerMaintenanceTypeLocal($cita['uuid'] ?? $cita['id'] ?? '');
+                        // Obtener maintenance_type y datos de appointment desde la base de datos local
+                        $localAppointmentData = $this->obtenerDatosAppointmentLocal($cita['uuid'] ?? $cita['id'] ?? '');
+                        $maintenanceTypeLocal = $localAppointmentData['maintenance_type'] ?? null;
 
                         $this->citasAgendadas[] = [
                             'id' => $cita['uuid'] ?? $cita['id'] ?? 'N/A',
@@ -361,7 +362,8 @@ class DetalleVehiculo extends Page
                             'maintenance_type' => $maintenanceTypeLocal,
                             'estado' => $estadoInfo['nombre'],
                             'fecha_cita' => $this->formatearFechaC4C($cita['scheduled_start_date'] ?? ''),
-                            'hora_cita' => $this->formatearHoraC4C($cita['dates']['start_time'] ?? $cita['start_time'] ?? ''),
+                            // CORREGIDO: Priorizar hora desde BD local, fallback a C4C
+                            'hora_cita' => $localAppointmentData['appointment_time'] ?? $this->formatearHoraC4C($cita['dates']['start_time'] ?? $cita['start_time'] ?? ''),
                             'probable_entrega' => $citaEnriquecida['probable_entrega'],
                             'sede' => (\App\Models\Local::where('code', $cita['center']['id'] ?? $cita['center_id'] ?? '')->value('name') ?: ($cita['center']['id'] ?? $cita['center_id'] ?? 'No especificado')),
                             'asesor' => $citaEnriquecida['asesor'],
@@ -1022,32 +1024,62 @@ class DetalleVehiculo extends Page
     }
 
     /**
-     * Obtener maintenance_type desde la base de datos local usando el UUID de C4C
+     * Obtener datos de appointment desde la base de datos local usando el UUID de C4C
+     * CORREGIDO: Ahora obtiene tanto maintenance_type como appointment_time para evitar inconsistencias de zona horaria
      */
-    protected function obtenerMaintenanceTypeLocal(string $uuid): ?string
+    protected function obtenerDatosAppointmentLocal(string $uuid): array
     {
         try {
             if (empty($uuid)) {
-                return null;
+                return [];
             }
 
-            Log::info("[DetalleVehiculo] Buscando maintenance_type para UUID: {$uuid}");
+            Log::info("[DetalleVehiculo] Buscando datos de appointment para UUID: {$uuid}");
 
             // Buscar la cita en la base de datos local usando el c4c_uuid
             $appointment = Appointment::where('c4c_uuid', $uuid)->first();
 
-            if ($appointment && !empty($appointment->maintenance_type)) {
-                Log::info("[DetalleVehiculo] Maintenance_type encontrado: {$appointment->maintenance_type}");
-                return $appointment->maintenance_type;
+            if ($appointment) {
+                $appointmentTime = null;
+                if ($appointment->appointment_time) {
+                    // Formatear la hora directamente desde la BD (ya está en hora local de Perú)
+                    $appointmentTime = $appointment->appointment_time instanceof \Carbon\Carbon 
+                        ? $appointment->appointment_time->format('H:i')
+                        : (is_string($appointment->appointment_time) ? substr($appointment->appointment_time, 0, 5) : null);
+                }
+                
+                $result = [
+                    'maintenance_type' => $appointment->maintenance_type,
+                    'appointment_time' => $appointmentTime
+                ];
+                
+                Log::info("[DetalleVehiculo] Datos de appointment encontrados", [
+                    'uuid' => $uuid,
+                    'maintenance_type' => $result['maintenance_type'] ?? 'NULL',
+                    'appointment_time' => $result['appointment_time'] ?? 'NULL',
+                    'appointment_time_raw' => $appointment->appointment_time
+                ]);
+                
+                return $result;
             }
 
-            Log::info("[DetalleVehiculo] No se encontró maintenance_type para UUID: {$uuid}");
-            return null;
+            Log::info("[DetalleVehiculo] No se encontraron datos de appointment para UUID: {$uuid}");
+            return [];
 
         } catch (\Exception $e) {
-            Log::error("[DetalleVehiculo] Error al obtener maintenance_type: " . $e->getMessage());
-            return null;
+            Log::error("[DetalleVehiculo] Error al obtener datos de appointment: " . $e->getMessage());
+            return [];
         }
+    }
+
+    /**
+     * Obtener maintenance_type desde la base de datos local usando el UUID de C4C
+     * DEPRECATED: Usar obtenerDatosAppointmentLocal() en su lugar
+     */
+    protected function obtenerMaintenanceTypeLocal(string $uuid): ?string
+    {
+        $data = $this->obtenerDatosAppointmentLocal($uuid);
+        return $data['maintenance_type'] ?? null;
     }
 
     protected function inicializarHistorialServicios(): void
