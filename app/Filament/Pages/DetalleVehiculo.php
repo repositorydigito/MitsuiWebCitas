@@ -1673,6 +1673,7 @@ class DetalleVehiculo extends Page
 
     /**
      * Formatear hora de C4C
+     * CORREGIDO: Los datos de C4C ya vienen en hora local de Perú, no necesitan conversión de zona horaria
      */
     protected function formatearHoraC4C(string $hora): string
     {
@@ -1681,33 +1682,38 @@ class DetalleVehiculo extends Page
         }
 
         try {
-            // Crear un objeto Carbon con la zona horaria UTC
-            $horaUTC = \Carbon\Carbon::createFromFormat('H:i:s', $hora, 'UTC');
+            // CORREGIDO: Parsear la hora directamente sin conversión de zona horaria
+            // Los datos de C4C ya están en hora local de Perú
+            if (preg_match('/^\d{1,2}:\d{2}(:\d{2})?$/', $hora)) {
+                // Si viene en formato HH:MM o HH:MM:SS, extraer solo HH:MM
+                $partes = explode(':', $hora);
+                $horas = str_pad($partes[0], 2, '0', STR_PAD_LEFT);
+                $minutos = str_pad($partes[1] ?? '00', 2, '0', STR_PAD_LEFT);
+                return $horas . ':' . $minutos;
+            }
             
-            // Convertir a la zona horaria de Perú (UTC-5)
-            $horaPeru = $horaUTC->copy()->setTimezone('America/Lima');
-            
-            // Devolver solo la hora y minutos en formato HH:MM
-            return $horaPeru->format('H:i');
+            // Si viene como "00", mostrar como hora válida
+            if ($hora === '00') {
+                return '00:00';
+            }
+
+            // Si viene como "00:00:00", mostrar solo HH:MM
+            if ($hora === '00:00:00') {
+                return '00:00';
+            }
+
+            // Si viene solo como número (ej: "14"), convertir a formato hora
+            if (is_numeric($hora) && strlen($hora) <= 2) {
+                return str_pad($hora, 2, '0', STR_PAD_LEFT) . ':00';
+            }
+
+            // Fallback: intentar parsear con Carbon sin conversión de zona horaria
+            $horaCarbon = \Carbon\Carbon::createFromFormat('H:i:s', $hora);
+            return $horaCarbon->format('H:i');
             
         } catch (\Exception $e) {
             // Si hay algún error, intentar con el formato antiguo como fallback
             try {
-                // Si viene como "00", mostrar como hora válida
-                if ($hora === '00') {
-                    return '00:00';
-                }
-
-                // Si viene como "00:00:00", mostrar solo HH:MM
-                if ($hora === '00:00:00') {
-                    return '00:00';
-                }
-
-                // Si viene solo como número (ej: "14"), convertir a formato hora
-                if (is_numeric($hora) && strlen($hora) <= 2) {
-                    return str_pad($hora, 2, '0', STR_PAD_LEFT) . ':00';
-                }
-
                 // Si viene en formato HH:MM:SS, extraer solo HH:MM
                 if (str_contains($hora, ':')) {
                     $partes = explode(':', $hora);
