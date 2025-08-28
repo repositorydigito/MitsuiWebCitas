@@ -285,7 +285,24 @@
 
                                             <div class="flex justify-between items-center">
                                                 <span class="text-xs font-medium text-blue-800">Servicio:</span>
-                                                <span class="text-xs text-gray-600 mt-1">Mantenimiento {{ $cita['servicio'] ?? 'Servicio programado' }}</span>
+                                                <span class="text-xs text-gray-600 mt-1">
+                                                    @if(!empty($cita['maintenance_type']))
+                                                        Mantenimiento {{ $cita['maintenance_type'] }}
+                                                    @elseif(!empty($cita['wildcard_selections']))
+                                                        @php
+                                                            $serviciosTexto = [];
+                                                            if (!empty($cita['wildcard_selections']['servicios_adicionales'])) {
+                                                                $serviciosTexto[] = 'Servicios: ' . implode(', ', $cita['wildcard_selections']['servicios_adicionales']);
+                                                            }
+                                                            if (!empty($cita['wildcard_selections']['campanas'])) {
+                                                                $serviciosTexto[] = 'Campañas: ' . implode(', ', $cita['wildcard_selections']['campanas']);
+                                                            }
+                                                        @endphp
+                                                        {{ !empty($serviciosTexto) ? implode(' | ', $serviciosTexto) : 'Servicios seleccionados' }}
+                                                    @else
+                                                        Mantenimiento {{ $cita['servicio'] ?? 'Servicio programado' }}
+                                                    @endif
+                                                </span>
                                             </div>
 
                                             <div class="flex justify-between items-center">

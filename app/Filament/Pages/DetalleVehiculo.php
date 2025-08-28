@@ -360,6 +360,7 @@ class DetalleVehiculo extends Page
                             'numero_cita' => $cita['id'] ?? 'N/A',
                             'servicio' => $maintenanceTypeLocal ?: $this->determinarTipoServicioC4C($cita),
                             'maintenance_type' => $maintenanceTypeLocal,
+                            'wildcard_selections' => $localAppointmentData['wildcard_selections'] ?? null,
                             'estado' => $estadoInfo['nombre'],
                             'fecha_cita' => $this->formatearFechaC4C($cita['scheduled_start_date'] ?? ''),
                             // CORREGIDO: Priorizar hora desde BD local, fallback a C4C
@@ -1025,7 +1026,7 @@ class DetalleVehiculo extends Page
 
     /**
      * Obtener datos de appointment desde la base de datos local usando el UUID de C4C
-     * CORREGIDO: Ahora obtiene tanto maintenance_type como appointment_time para evitar inconsistencias de zona horaria
+     * CORREGIDO: Ahora obtiene maintenance_type, appointment_time y wildcard_selections para evitar inconsistencias
      */
     protected function obtenerDatosAppointmentLocal(string $uuid): array
     {
@@ -1048,15 +1049,23 @@ class DetalleVehiculo extends Page
                         : (is_string($appointment->appointment_time) ? substr($appointment->appointment_time, 0, 5) : null);
                 }
                 
+                // ✅ INCLUIR wildcard_selections
+                $wildcardSelections = null;
+                if ($appointment->wildcard_selections) {
+                    $wildcardSelections = json_decode($appointment->wildcard_selections, true);
+                }
+                
                 $result = [
                     'maintenance_type' => $appointment->maintenance_type,
-                    'appointment_time' => $appointmentTime
+                    'appointment_time' => $appointmentTime,
+                    'wildcard_selections' => $wildcardSelections
                 ];
                 
                 Log::info("[DetalleVehiculo] Datos de appointment encontrados", [
                     'uuid' => $uuid,
                     'maintenance_type' => $result['maintenance_type'] ?? 'NULL',
                     'appointment_time' => $result['appointment_time'] ?? 'NULL',
+                    'has_wildcard_selections' => !empty($wildcardSelections),
                     'appointment_time_raw' => $appointment->appointment_time
                 ]);
                 
