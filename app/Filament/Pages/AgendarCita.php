@@ -2385,8 +2385,21 @@ class AgendarCita extends Page
             $appointment->maintenance_type = $this->tipoMantenimiento;
             $appointment->comments = $this->comentarios;
             
-            // ✅ SOLO PARA CLIENTE WILDCARD: Guardar selecciones en campo JSON
+            // ✅ GUARDAR SELECCIONES EN CAMPO JSON:
+            // - Para clientes WILDCARD: Siempre guardar si tienen selecciones
+            // - Para clientes NORMALES: Solo guardar si NO hay maintenance_type Y tienen selecciones
+            $shouldSaveWildcardSelections = false;
+            
             if ($isWildcardClient) {
+                // Clientes wildcard: siempre guardar si tienen selecciones
+                $shouldSaveWildcardSelections = !empty($this->serviciosAdicionales) || !empty($this->campanaSeleccionada);
+            } else {
+                // Clientes normales: solo guardar si NO hay mantenimiento Y tienen selecciones
+                $shouldSaveWildcardSelections = empty($this->tipoMantenimiento) && 
+                                               (!empty($this->serviciosAdicionales) || !empty($this->campanaSeleccionada));
+            }
+            
+            if ($shouldSaveWildcardSelections) {
                 $wildcardSelections = [];
                 
                 // Servicios adicionales seleccionados
@@ -2411,6 +2424,15 @@ class AgendarCita extends Page
                 }
                 
                 $appointment->wildcard_selections = !empty($wildcardSelections) ? json_encode($wildcardSelections) : null;
+                
+                // 🔍 DEBUG: Log para verificar guardado
+                Log::info('🔍 [AgendarCita] Guardando wildcard_selections', [
+                    'appointment_id' => $appointment->id ?? 'NEW',
+                    'is_wildcard_client' => $isWildcardClient,
+                    'maintenance_type' => $this->tipoMantenimiento ?? 'EMPTY',
+                    'should_save' => $shouldSaveWildcardSelections,
+                    'wildcard_selections' => $wildcardSelections
+                ]);
             }
             
             $appointment->status = 'pending'; // Pendiente hasta que C4C confirme
