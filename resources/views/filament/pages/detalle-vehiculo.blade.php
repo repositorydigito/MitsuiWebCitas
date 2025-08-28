@@ -283,12 +283,17 @@
                                                 <span class="text-xs text-gray-600 mt-1">{{ $cita['hora_cita'] ?? '' }}</span>
                                             </div>
 
-                                            <div class="flex flex-col md:flex-row md:justify-between md:items-start md:flex-wrap">
-                                                <span class="text-xs font-medium text-blue-800 md:w-auto md:flex-shrink-0">Servicio:</span>
-                                                <span class="text-xs text-gray-600 mt-1 md:mt-0 md:text-right md:max-w-xs md:flex-1">
-                                                    @if(!empty($cita['maintenance_type']))
-                                                        Mantenimiento {{ $cita['maintenance_type'] }}
-                                                    @elseif(!empty($cita['wildcard_selections']))
+                                            @if(!empty($cita['maintenance_type']))
+                                                {{-- Cuando HAY mantenimiento: usar diseño original en la misma fila --}}
+                                                <div class="flex justify-between items-center">
+                                                    <span class="text-xs font-medium text-blue-800">Servicio:</span>
+                                                    <span class="text-xs text-gray-600 mt-1">Mantenimiento {{ $cita['maintenance_type'] }}</span>
+                                                </div>
+                                            @elseif(!empty($cita['wildcard_selections']))
+                                                {{-- Cuando NO hay mantenimiento pero SÍ hay servicios: mostrar en fila separada --}}
+                                                <div class="space-y-1">
+                                                    <div class="text-xs font-medium text-blue-800">Servicio:</div>
+                                                    <div class="text-xs text-gray-600">
                                                         @php
                                                             $serviciosTexto = [];
                                                             if (!empty($cita['wildcard_selections']['servicios_adicionales'])) {
@@ -299,11 +304,15 @@
                                                             }
                                                         @endphp
                                                         {{ !empty($serviciosTexto) ? implode(' | ', $serviciosTexto) : 'Servicios seleccionados' }}
-                                                    @else
-                                                        Mantenimiento {{ $cita['servicio'] ?? 'Servicio programado' }}
-                                                    @endif
-                                                </span>
-                                            </div>
+                                                    </div>
+                                                </div>
+                                            @else
+                                                {{-- Fallback: usar diseño original --}}
+                                                <div class="flex justify-between items-center">
+                                                    <span class="text-xs font-medium text-blue-800">Servicio:</span>
+                                                    <span class="text-xs text-gray-600 mt-1">Mantenimiento {{ $cita['servicio'] ?? 'Servicio programado' }}</span>
+                                                </div>
+                                            @endif
 
                                             <div class="flex justify-between items-center">
                                                 <span class="text-xs font-medium text-blue-800">Sede:</span>
