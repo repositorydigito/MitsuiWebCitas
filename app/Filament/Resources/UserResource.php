@@ -66,7 +66,6 @@ class UserResource extends Resource
                                     ->label('Correo Electrónico')
                                     ->email()
                                     ->required()
-                                    ->unique(ignoreRecord: true)
                                     ->maxLength(255)
                                     ->placeholder('usuario@ejemplo.com'),
 
