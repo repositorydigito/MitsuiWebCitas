@@ -465,16 +465,16 @@ class DetalleVehiculo extends Page
                 'fecha_cambio' => $fechaCambio
             ]);
             
-            // Regla 1: Estados 1 (Generada) y 2 (Confirmada) siempre visibles
-            if (in_array($estadoCita, ['1', '2'])) {
-                Log::debug("[DetalleVehiculo] Cita incluida - Estado {$estadoCita} (Generada/Confirmada)");
+            // Regla 1: Estados 1 (Generada), 2 (Confirmada) y 3 (En proceso) siempre visibles
+            if (in_array($estadoCita, ['1', '2', '3'])) {
+                Log::debug("[DetalleVehiculo] Cita incluida - Estado {$estadoCita} (Generada/Confirmada/En proceso)");
                 $citasFiltradas[] = $cita;
                 continue;
             }
             
-            // Regla 2: Estados 3 (En taller), 4 (Diferida), 6 (Cancelada) no visibles
-            if (in_array($estadoCita, ['3', '4', '6'])) {
-                Log::debug("[DetalleVehiculo] Cita filtrada - Estado {$estadoCita} (En taller/Diferida/Cancelada)");
+            // Regla 2: Estados 4 (Diferida), 6 (Cancelada) no visibles
+            if (in_array($estadoCita, ['4', '6'])) {
+                Log::debug("[DetalleVehiculo] Cita filtrada - Estado {$estadoCita} (Diferida/Cancelada)");
                 continue;
             }
             
