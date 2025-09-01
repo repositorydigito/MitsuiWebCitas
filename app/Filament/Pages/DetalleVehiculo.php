@@ -441,8 +441,8 @@ class DetalleVehiculo extends Page
      * 
      * Reglas de visibilidad según especificación del proyecto:
      * 1. Estados 1 (Generada) y 2 (Confirmada): siempre visibles
-     * 2. Estados 3 (En taller), 4 (Diferida), 6 (Cancelada): filtrados (no visibles)
-     * 3. Estado 5 (Completada): visible hasta el día siguiente a las 11:59pm, luego desaparece
+     * 2. Estados 3 (En taller): siempre visibles
+     * 3. Estados 4 (Diferida), 5 (Completada) y 6 (Cancelada): filtrados (no visibles)
      * 4. Para duplicados por edición: mostrar solo la más reciente
      * 5. NUEVA REGLA: Solo una cita activa por vehículo (la más reciente)
      */
@@ -452,7 +452,6 @@ class DetalleVehiculo extends Page
         Log::info("[DetalleVehiculo] Aplicando filtros de visibilidad, citas recibidas: " . count($citas));
         
         $citasFiltradas = [];
-        $ahora = now();
         
         foreach ($citas as $cita) {
             $estadoCita = $cita['appointment_status'] ?? '1';
@@ -472,26 +471,9 @@ class DetalleVehiculo extends Page
                 continue;
             }
             
-            // Regla 2: Estados 4 (Diferida), 6 (Cancelada) no visibles
-            if (in_array($estadoCita, ['4', '6'])) {
-                Log::debug("[DetalleVehiculo] Cita filtrada - Estado {$estadoCita} (Diferida/Cancelada)");
-                continue;
-            }
-            
-            // Regla 3: Estado 5 (Completada) con lógica de expiración temporal
-            if ($estadoCita === '5') {
-                $debeExpirar = $this->evaluarExpiracionTrabajoCompletado($cita, $ahora);
-                
-                if ($debeExpirar) {
-                    Log::info("[DetalleVehiculo] Cita estado 5 EXPIRADA - removida de la vista", [
-                        'uuid' => $uuid,
-                        'fecha_cambio' => $fechaCambio
-                    ]);
-                    continue; // No incluir la cita (ha expirado)
-                }
-                
-                Log::debug("[DetalleVehiculo] Cita incluida - Estado 5 (Completada) aún válida");
-                $citasFiltradas[] = $cita;
+            // Regla 2: Estados 4 (Diferida), 5 (Completada) y 6 (Cancelada) no visibles
+            if (in_array($estadoCita, ['4', '5', '6'])) {
+                Log::debug("[DetalleVehiculo] Cita filtrada - Estado {$estadoCita} (Diferida/Completada/Cancelada)");
                 continue;
             }
             
@@ -524,10 +506,14 @@ class DetalleVehiculo extends Page
     }
     
     /**
-     * Evaluar si una cita con estado 5 (Trabajo concluido) debe expirar
+     * Evaluar si una cita con estado "Trabajo concluido" en el frontend debe expirar
      * 
      * Lógica: La cita debe ser visible hasta el día siguiente a las 11:59pm
-     * después de que se marcó como "Trabajo concluido"
+     * después de que se marcó como "Trabajo concluido" en el frontend
+     * 
+     * NOTA: Esta lógica se aplica solo al estado frontend "Trabajo concluido"
+     * y no está relacionada con el estado C4C 5 (Completada) ya que este
+     * último ahora se filtra (no se muestra) junto con el estado 6.
      * 
      * @param array $cita Datos de la cita
      * @param \Carbon\Carbon $ahora Fecha/hora actual
@@ -536,12 +522,23 @@ class DetalleVehiculo extends Page
     protected function evaluarExpiracionTrabajoCompletado(array $cita, \Carbon\Carbon $ahora): bool
     {
         try {
+            // Verificar si el estado en el frontend es "Trabajo concluido"
+            // Esto se determina por los datos de SAP, no por el estado de C4C
+            $estadoInfo = $this->obtenerInformacionEstadoCompleta($cita['appointment_status'] ?? '1', $cita);
+            $esTrabajoConcluido = ($estadoInfo['etapas']['trabajo_concluido']['completado'] ?? false) && 
+                                 ($estadoInfo['etapas']['trabajo_concluido']['activo'] ?? false);
+            
+            // Si no está en estado "Trabajo concluido", no aplicar expiración
+            if (!$esTrabajoConcluido) {
+                return false;
+            }
+            
             // Obtener la fecha de cambio (cuando se marcó como completada)
             $fechaCambio = $cita['last_change_date'] ?? null;
             
             // Si no hay fecha de cambio, asumir que es válida (no expirar)
             if (empty($fechaCambio)) {
-                Log::debug("[DetalleVehiculo] Cita estado 5 sin fecha_cambio - mantener visible", [
+                Log::debug("[DetalleVehiculo] Cita en estado Trabajo Concluido sin fecha_cambio - mantener visible", [
                     'uuid' => $cita['uuid'] ?? $cita['id'] ?? 'N/A'
                 ]);
                 return false;
@@ -558,7 +555,7 @@ class DetalleVehiculo extends Page
             // Verificar si ya expiró
             $haExpirado = $ahora->isAfter($limiteExpiracion);
             
-            Log::info("[DetalleVehiculo] Evaluación expiración cita estado 5", [
+            Log::info("[DetalleVehiculo] Evaluación expiración cita estado Trabajo Concluido", [
                 'uuid' => $cita['uuid'] ?? $cita['id'] ?? 'N/A',
                 'fecha_cambio' => $fechaCambio,
                 'fecha_cambio_parsed' => $fechaCambioCarbon->toDateTimeString(),
@@ -572,7 +569,7 @@ class DetalleVehiculo extends Page
             
         } catch (\Exception $e) {
             // En caso de error al parsear fechas, mantener la cita visible (no expirar)
-            Log::error("[DetalleVehiculo] Error al evaluar expiración de cita estado 5", [
+            Log::error("[DetalleVehiculo] Error al evaluar expiración de cita estado Trabajo Concluido", [
                 'uuid' => $cita['uuid'] ?? $cita['id'] ?? 'N/A',
                 'error' => $e->getMessage(),
                 'fecha_cambio_raw' => $fechaCambio ?? 'NULL'
@@ -1992,7 +1989,24 @@ class DetalleVehiculo extends Page
             return $estadoBase;
         }
         
-        // CASO 2: Si tiene fecha de servicio reciente -> EN TRABAJO
+        // CASO 2: Si tiene fecha de factura y coincide con la fecha de la cita -> TRABAJO CONCLUIDO
+        if ($this->datosAsesorSAP['tiene_fecha_factura'] ?? false) {
+            $fechaFactura = $this->datosAsesorSAP['fecha_factura'] ?? '';
+            if ($fechaFactura && $fechaCitaActual && $this->fechasCoinciden($fechaFactura, $fechaCitaActual)) {
+                $estadoBase['etapas']['cita_confirmada']['activo'] = false;
+                $estadoBase['etapas']['cita_confirmada']['completado'] = true;
+                
+                $estadoBase['etapas']['en_trabajo']['activo'] = false;
+                $estadoBase['etapas']['en_trabajo']['completado'] = true;
+                
+                $estadoBase['etapas']['trabajo_concluido']['activo'] = true;
+                $estadoBase['etapas']['trabajo_concluido']['completado'] = true;
+                
+                return $estadoBase;
+            }
+        }
+        
+        // CASO 3: Si tiene fecha de servicio reciente -> EN TRABAJO
         if ($tieneFechaUltServ && $fechaUltServ) {
             // Verificar si la fecha de servicio es igual a la fecha de la cita (comparación directa de strings)
             if ($fechaCitaActual && $fechaUltServ == $fechaCitaActual) {
