@@ -1975,21 +1975,7 @@ class DetalleVehiculo extends Page
             $fechaCitaActual = substr($fechaCitaActual, 0, 10);
         }
         
-        // CASO 1: Si tiene fecha de FACTURA -> TRABAJO CONCLUIDO (tiene prioridad sobre los demás estados)
-        if ($tieneFechaFactura) {
-            $estadoBase['etapas']['cita_confirmada']['activo'] = false;
-            $estadoBase['etapas']['cita_confirmada']['completado'] = true;
-            
-            $estadoBase['etapas']['en_trabajo']['activo'] = false;
-            $estadoBase['etapas']['en_trabajo']['completado'] = true;
-            
-            $estadoBase['etapas']['trabajo_concluido']['activo'] = true;
-            $estadoBase['etapas']['trabajo_concluido']['completado'] = true;
-            
-            return $estadoBase;
-        }
-        
-        // CASO 2: Si tiene fecha de factura y coincide con la fecha de la cita -> TRABAJO CONCLUIDO
+        // ÚNICO CASO PARA TRABAJO CONCLUIDO: Si tiene fecha de factura y coincide con la fecha de la cita
         if ($this->datosAsesorSAP['tiene_fecha_factura'] ?? false) {
             $fechaFactura = $this->datosAsesorSAP['fecha_factura'] ?? '';
             if ($fechaFactura && $fechaCitaActual && $this->fechasCoinciden($fechaFactura, $fechaCitaActual)) {
@@ -2006,7 +1992,7 @@ class DetalleVehiculo extends Page
             }
         }
         
-        // CASO 3: Si tiene fecha de servicio reciente -> EN TRABAJO
+        // CASO 2: Si tiene fecha de servicio reciente -> EN TRABAJO
         if ($tieneFechaUltServ && $fechaUltServ) {
             // Verificar si la fecha de servicio es igual a la fecha de la cita (comparación directa de strings)
             if ($fechaCitaActual && $fechaUltServ == $fechaCitaActual) {
