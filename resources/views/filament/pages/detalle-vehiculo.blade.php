@@ -180,10 +180,10 @@
                                                         @php
                                                             $serviciosTexto = [];
                                                             if (!empty($cita['wildcard_selections']['servicios_adicionales'])) {
-                                                                $serviciosTexto[] = 'Servicios: ' . implode(', ', $cita['wildcard_selections']['servicios_adicionales']);
+                                                                $serviciosTexto[] = implode(', ', $cita['wildcard_selections']['servicios_adicionales']);
                                                             }
                                                             if (!empty($cita['wildcard_selections']['campanas'])) {
-                                                                $serviciosTexto[] = 'Campañas: ' . implode(', ', $cita['wildcard_selections']['campanas']);
+                                                                $serviciosTexto[] = implode(', ', $cita['wildcard_selections']['campanas']);
                                                             }
                                                         @endphp
                                                         {{ !empty($serviciosTexto) ? implode(' | ', $serviciosTexto) : 'Servicios seleccionados' }}
@@ -197,10 +197,18 @@
                                                 </div>
                                             @endif
 
-                                            <div class="flex justify-between items-center">
-                                                <span class="text-xs font-medium text-blue-800">Sede:</span>
-                                                <span class="text-xs text-gray-600">{{ $cita['sede'] ?? '-' }}</span>
-                                            </div>
+                                            {{-- Mostrar sede en la misma fila cuando hay mantenimiento, en fila separada cuando no hay mantenimiento --}}
+                                            @if(!empty($cita['maintenance_type']))
+                                                <div class="flex justify-between items-center">
+                                                    <span class="text-xs font-medium text-blue-800">Sede:</span>
+                                                    <span class="text-xs text-gray-600">{{ $cita['sede'] ?? '-' }}</span>
+                                                </div>
+                                            @else
+                                                <div class="space-y-1">
+                                                    <div class="text-xs font-medium text-blue-800">Sede:</div>
+                                                    <div class="text-xs text-gray-600">{{ $cita['sede'] ?? '-' }}</div>
+                                                </div>
+                                            @endif
 
                                             @if(($trabajoActivo || $trabajoCompletado) || ($concluidoActivo || $concluidoCompletado))
                                             <br>
