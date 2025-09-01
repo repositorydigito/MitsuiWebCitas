@@ -284,7 +284,6 @@
                                         // Modificación: Solo habilitar botones cuando la cita está CONFIRMADA
                                         // y NO está en ningún otro estado posterior (En trabajo, Trabajo concluido)
                                         $puedeEditar = ($etapas['cita_confirmada']['completado'] ?? false) && 
-                                                      ($etapas['cita_confirmada']['activo'] ?? false) && 
                                                       !($etapas['en_trabajo']['completado'] ?? false) && 
                                                       !($etapas['en_trabajo']['activo'] ?? false) && 
                                                       !($etapas['trabajo_concluido']['completado'] ?? false) && 
@@ -313,7 +312,6 @@
                                         // Modificación: Solo habilitar botones cuando la cita está CONFIRMADA
                                         // y NO está en ningún otro estado posterior (En trabajo, Trabajo concluido)
                                         $puedeAnular = ($etapas['cita_confirmada']['completado'] ?? false) && 
-                                                      ($etapas['cita_confirmada']['activo'] ?? false) && 
                                                       !($etapas['en_trabajo']['completado'] ?? false) && 
                                                       !($etapas['en_trabajo']['activo'] ?? false) && 
                                                       !($etapas['trabajo_concluido']['completado'] ?? false) && 
