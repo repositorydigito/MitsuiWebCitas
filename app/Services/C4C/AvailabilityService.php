@@ -944,13 +944,30 @@ class AvailabilityService
                     }
                 }
 
-                // Contar citas por hora
+                // Contar citas por hora - CON FIX DE TIMEZONE DEFINITIVO
                 foreach ($citas as $cita) {
                     if (is_array($cita)) {
-                        // YAGNI: Buscar campo real sin sufijo
-                        $horaInicio = $cita['zHoraInicio'] ?? '';
-                        if (in_array($horaInicio, $horas)) {
-                            $citasPorHora[$horaInicio]++;
+                        // SAP guarda zHoraInicio en UTC (hora local + 5h)
+                        $horaSAP = $cita['zHoraInicio'] ?? '';
+                        
+                        // 🔧 FIX TIMEZONE: Convertir hora SAP (UTC) a hora local (Perú)
+                        // Ejemplo: SAP tiene 16:45 (UTC) → Perú busca 11:45 (local)
+                        $horaLocal = date('H:i:s', strtotime($horaSAP . ' -5 hours'));
+                        
+                        Log::info('🕐 [BATCH DEBUG] Conversión timezone', [
+                            'hora_sap_utc' => $horaSAP,
+                            'hora_local_peru' => $horaLocal,
+                            'esta_en_lista_buscada' => in_array($horaLocal, $horas),
+                            'placa' => $cita['zPlaca'] ?? 'N/A'
+                        ]);
+                        
+                        if (in_array($horaLocal, $horas)) {
+                            $citasPorHora[$horaLocal]++;
+                            Log::info('✅ [BATCH DEBUG] Cita contada correctamente', [
+                                'hora_local' => $horaLocal,
+                                'contador_actual' => $citasPorHora[$horaLocal],
+                                'placa' => $cita['zPlaca'] ?? 'N/A'
+                            ]);
                         }
                     }
                 }
