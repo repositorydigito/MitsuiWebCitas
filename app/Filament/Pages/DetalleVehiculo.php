@@ -1992,10 +1992,15 @@ class DetalleVehiculo extends Page
             $fechaCitaActual = substr($fechaCitaActual, 0, 10);
         }
         
-        // ÚNICO CASO PARA TRABAJO CONCLUIDO: Si tiene fecha de factura y coincide con la fecha de la cita
-        if ($this->datosAsesorSAP['tiene_fecha_factura'] ?? false) {
+        // CASO 1: TRABAJO CONCLUIDO - Si tiene fecha de factura y es MAYOR O IGUAL a la fecha de cita
+        if ($tieneFechaFactura) {
             $fechaFactura = $this->datosAsesorSAP['fecha_factura'] ?? '';
-            if ($fechaFactura && $fechaCitaActual && $this->fechasCoinciden($fechaFactura, $fechaCitaActual)) {
+            
+            // Verificar ambas condiciones: fecha de factura mayor o igual a fecha de cita
+            if ($fechaFactura && $fechaCitaActual && 
+                ($this->fechasCoinciden($fechaFactura, $fechaCitaActual) || 
+                 $this->fechaSAPMayorOIgualACita($fechaFactura, $fechaCitaActual))) {
+                
                 $estadoBase['etapas']['cita_confirmada']['activo'] = false;
                 $estadoBase['etapas']['cita_confirmada']['completado'] = true;
                 
@@ -2005,11 +2010,19 @@ class DetalleVehiculo extends Page
                 $estadoBase['etapas']['trabajo_concluido']['activo'] = true;
                 $estadoBase['etapas']['trabajo_concluido']['completado'] = true;
                 
+                // Log para depuración de trabajo concluido
+                Log::info("[DetalleVehiculo] Estado 'Trabajo concluido' activado", [
+                    'fecha_factura' => $fechaFactura, 
+                    'fecha_cita' => $fechaCitaActual,
+                    'coinciden' => $this->fechasCoinciden($fechaFactura, $fechaCitaActual) ? 'SÍ' : 'NO',
+                    'factura_mayor_o_igual' => $this->fechaSAPMayorOIgualACita($fechaFactura, $fechaCitaActual) ? 'SÍ' : 'NO'
+                ]);
+                
                 return $estadoBase;
             }
         }
         
-        // CASO 2: Si tiene fecha de servicio reciente -> EN TRABAJO
+        // CASO 2: EN TRABAJO - Si tiene fecha de servicio reciente que coincide con la fecha de cita
         if ($tieneFechaUltServ && $fechaUltServ) {
             // Verificar si la fecha de servicio es igual a la fecha de la cita (comparación directa de strings)
             if ($fechaCitaActual && $fechaUltServ == $fechaCitaActual) {
@@ -2021,6 +2034,12 @@ class DetalleVehiculo extends Page
                 
                 $estadoBase['etapas']['trabajo_concluido']['activo'] = false;
                 $estadoBase['etapas']['trabajo_concluido']['completado'] = false;
+                
+                // Log para depuración de en trabajo
+                Log::info("[DetalleVehiculo] Estado 'En trabajo' activado", [
+                    'fecha_ult_serv' => $fechaUltServ, 
+                    'fecha_cita' => $fechaCitaActual
+                ]);
             }
         }
         
@@ -2102,6 +2121,92 @@ class DetalleVehiculo extends Page
         }
     }
 
+    /**
+     * Compara si una fecha SAP es mayor o igual a la fecha de cita
+     * @param string|null $fechaSAP Fecha de SAP (formato YYYY-MM-DD)
+     * @param string|null $fechaCita Fecha de la cita (puede estar en formato d/m/Y o YYYY-MM-DD)
+     * @return bool
+     */
+    protected function fechaSAPMayorOIgualACita(?string $fechaSAP, ?string $fechaCita): bool
+    {
+        if (empty($fechaSAP) || empty($fechaCita)) {
+            return false;
+        }
+
+        try {
+            // Intentar parsear las fechas con Carbon
+            $carbonSAP = null;
+            $carbonCita = null;
+            $formatos = ['Y-m-d', 'd/m/Y', 'Y-m-d H:i:s', 'd/m/Y H:i:s', 'Ymd'];
+            
+            // Intentar parsear fecha SAP
+            foreach ($formatos as $formato) {
+                try {
+                    $carbonSAP = \Carbon\Carbon::createFromFormat($formato, $fechaSAP);
+                    if ($carbonSAP) break;
+                } catch (\Exception $e) {
+                    // Continuar con el siguiente formato
+                    continue;
+                }
+            }
+            
+            // Intentar parsear fecha Cita
+            foreach ($formatos as $formato) {
+                try {
+                    $carbonCita = \Carbon\Carbon::createFromFormat($formato, $fechaCita);
+                    if ($carbonCita) break;
+                } catch (\Exception $e) {
+                    // Continuar con el siguiente formato
+                    continue;
+                }
+            }
+            
+            // Si no se pudo parsear alguna fecha, intentar con parse genérico
+            if (!$carbonSAP) {
+                try {
+                    $carbonSAP = \Carbon\Carbon::parse($fechaSAP);
+                } catch (\Exception $e) {
+                    // No se pudo parsear
+                }
+            }
+            
+            if (!$carbonCita) {
+                try {
+                    $carbonCita = \Carbon\Carbon::parse($fechaCita);
+                } catch (\Exception $e) {
+                    // No se pudo parsear
+                }
+            }
+            
+            if (!$carbonSAP || !$carbonCita) {
+                return false;
+            }
+            
+            // Normalizar a fecha sin hora para comparación
+            $fechaSAPNormalizada = $carbonSAP->format('Y-m-d');
+            $fechaCitaNormalizada = $carbonCita->format('Y-m-d');
+            
+            // Comparar si la fecha SAP es mayor o igual a la fecha de cita
+            $esMayorOIgual = $carbonSAP->gte($carbonCita);
+            
+            Log::info('[DetalleVehiculo] Comparación de fechas para Trabajo concluido', [
+                'fecha_sap' => $fechaSAPNormalizada,
+                'fecha_cita' => $fechaCitaNormalizada,
+                'sap_mayor_igual_cita' => $esMayorOIgual ? 'SÍ' : 'NO'
+            ]);
+            
+            return $esMayorOIgual;
+            
+        } catch (\Exception $e) {
+            Log::error('[DetalleVehiculo] Error comparando fechas', [
+                'error' => $e->getMessage(),
+                'fecha_sap' => $fechaSAP,
+                'fecha_cita' => $fechaCita
+            ]);
+            return false;
+        }
+    }
+    
     /**
      * Enriquecer cita con datos SAP
      */
