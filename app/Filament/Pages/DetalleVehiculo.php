@@ -1827,8 +1827,8 @@ class DetalleVehiculo extends Page
                 'nombre' => 'Generada',
                 'etapas' => [
                     'cita_confirmada' => ['activo' => false, 'completado' => true],
-                    'en_trabajo' => ['activo' => false, 'completado' => false],
-                    'trabajo_concluido' => ['activo' => false, 'completado' => false],
+                    'en_trabajo' => ['activo' => false, 'completado' => false], // Estados iniciales VACÍOS
+                    'trabajo_concluido' => ['activo' => false, 'completado' => false], // Estados iniciales VACÍOS
                     'entregado' => ['activo' => false, 'completado' => false],
                 ]
             ],
@@ -1837,8 +1837,8 @@ class DetalleVehiculo extends Page
                 'nombre' => 'Confirmada',
                 'etapas' => [
                     'cita_confirmada' => ['activo' => false, 'completado' => true],
-                    'en_trabajo' => ['activo' => false, 'completado' => false], // ✅ CORREGIDO: Inicialmente solo confirmada
-                    'trabajo_concluido' => ['activo' => false, 'completado' => false],
+                    'en_trabajo' => ['activo' => false, 'completado' => false], // Estados iniciales VACÍOS
+                    'trabajo_concluido' => ['activo' => false, 'completado' => false], // Estados iniciales VACÍOS
                     'entregado' => ['activo' => false, 'completado' => false],
                 ]
             ],
@@ -1847,8 +1847,8 @@ class DetalleVehiculo extends Page
                 'nombre' => 'En proceso',
                 'etapas' => [
                     'cita_confirmada' => ['activo' => false, 'completado' => true],
-                    'en_trabajo' => ['activo' => false, 'completado' => true],
-                    'trabajo_concluido' => ['activo' => true, 'completado' => true],
+                    'en_trabajo' => ['activo' => false, 'completado' => false], // Estados iniciales VACÍOS
+                    'trabajo_concluido' => ['activo' => false, 'completado' => false], // Estados iniciales VACÍOS
                     'entregado' => ['activo' => false, 'completado' => false],
                 ]
             ],
@@ -1904,6 +1904,21 @@ class DetalleVehiculo extends Page
         $tieneFechaUltServ = $this->datosAsesorSAP['tiene_fecha_ult_serv'] ?? false;
         $tieneFechaFactura = $this->datosAsesorSAP['tiene_fecha_factura'] ?? false;
         $fechaUltServ = $this->datosAsesorSAP['fecha_ult_serv'] ?? null;
+        
+        // Resetear TODOS los estados de frontend independientemente del estado C4C
+        // Los estados "en_trabajo" y "trabajo_concluido" deben depender EXCLUSIVAMENTE de los datos SAP
+        // El estado C4C solo determina la visibilidad de la cita, no los estados de frontend
+        $estadoBase['etapas']['en_trabajo']['activo'] = false;
+        $estadoBase['etapas']['en_trabajo']['completado'] = false;
+        $estadoBase['etapas']['trabajo_concluido']['activo'] = false;
+        $estadoBase['etapas']['trabajo_concluido']['completado'] = false;
+        
+        Log::info("[DetalleVehiculo] Estados de frontend reseteados - independientes de estado C4C", [
+            'estado_c4c' => $estadoBase['codigo'],
+            'nombre_c4c' => $estadoBase['nombre'],
+            'en_trabajo_activo' => $estadoBase['etapas']['en_trabajo']['activo'] ? 'SÍ' : 'NO',
+            'trabajo_concluido_activo' => $estadoBase['etapas']['trabajo_concluido']['activo'] ? 'SÍ' : 'NO',
+        ]);
         
         // Usar los datos de la cita actual si están disponibles
         $fechaCitaActual = null;
@@ -2044,7 +2059,7 @@ class DetalleVehiculo extends Page
                 $estadoBase['etapas']['trabajo_concluido']['completado'] = false;
                 
                 // Log para depuración de en trabajo
-                Log::info("[DetalleVehiculo] Estado 'En trabajo' activado", [
+                Log::info("[DetalleVehiculo] Estado 'En trabajo' activado y 'Trabajo concluido' desactivado", [
                     'fecha_ult_serv' => $fechaUltServ, 
                     'fecha_cita' => $fechaCitaActual
                 ]);
@@ -2052,6 +2067,14 @@ class DetalleVehiculo extends Page
                 return $estadoBase;
             }
         }
+        
+        // Si no se ha aplicado ningún estado especial, mantener el estado reseteado
+        Log::info("[DetalleVehiculo] No se ha aplicado ningún estado especial SAP, manteniendo estado reseteado", [
+            'tiene_fecha_ult_serv' => $tieneFechaUltServ ? 'SÍ' : 'NO',
+            'fecha_ult_serv' => $fechaUltServ ?? 'No disponible',
+            'tiene_fecha_factura' => $tieneFechaFactura ? 'SÍ' : 'NO', 
+            'fecha_cita_actual' => $fechaCitaActual ?? 'No disponible'
+        ]);
         
         return $estadoBase;
     }
