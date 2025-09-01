@@ -35,7 +35,7 @@ class AvailabilityService
     }
 
     /**
-     * Obtener horarios disponibles para un centro y día específico
+     * Obtener horarios disponibles para un centro y día específico corregido
      */
     public function getAvailableSlots(string $centerId, string $date): array
     {
