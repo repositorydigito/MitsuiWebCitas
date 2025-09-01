@@ -451,34 +451,50 @@ class DetalleVehiculo extends Page
         Log::info("[DetalleVehiculo] ===== INICIANDO FILTROS DE VISIBILIDAD Y DEDUPLICACIÓN =====");
         Log::info("[DetalleVehiculo] Aplicando filtros de visibilidad, citas recibidas: " . count($citas));
         
+        // Depuración: Mostrar detalle de todas las citas para revisar el estado 3
+        foreach ($citas as $index => $cita) {
+            $estadoCita = $cita['appointment_status'] ?? $cita['status']['appointment_code'] ?? '1';
+            Log::info("[DetalleVehiculo] DEPURACIÓN: Detalle de cita #{$index}", [
+                'uuid' => $cita['uuid'] ?? $cita['id'] ?? 'N/A',
+                'estado_simple' => $estadoCita,
+                'estado_completo' => $cita['status'] ?? 'No disponible',
+                'appointment_status' => $cita['appointment_status'] ?? 'No disponible',
+                'status_appointment_code' => $cita['status']['appointment_code'] ?? 'No disponible',
+                'estructura_cita' => array_keys($cita)
+            ]);
+        }
+        
         $citasFiltradas = [];
         
         foreach ($citas as $cita) {
-            $estadoCita = $cita['appointment_status'] ?? '1';
+            // Mejorar obtención del estado buscando en múltiples ubicaciones posibles
+            $estadoCita = $cita['appointment_status'] ?? $cita['status']['appointment_code'] ?? '1';
             $fechaCambio = $cita['last_change_date'] ?? null;
             $uuid = $cita['uuid'] ?? $cita['id'] ?? null;
             
-            Log::debug("[DetalleVehiculo] Evaluando cita", [
+            Log::info("[DetalleVehiculo] Evaluando cita", [
                 'uuid' => $uuid,
                 'estado' => $estadoCita,
+                'estado_raw' => is_string($estadoCita) ? $estadoCita : json_encode($estadoCita),
                 'fecha_cambio' => $fechaCambio
             ]);
             
             // Regla 1: Estados 1 (Generada), 2 (Confirmada) y 3 (En proceso) siempre visibles
-            if (in_array($estadoCita, ['1', '2', '3'])) {
-                Log::debug("[DetalleVehiculo] Cita incluida - Estado {$estadoCita} (Generada/Confirmada/En proceso)");
+            // Asegurar que las comparaciones sean con strings para evitar problemas de tipo
+            if (in_array((string)$estadoCita, ['1', '2', '3'])) {
+                Log::info("[DetalleVehiculo] Cita incluida - Estado {$estadoCita} (Generada/Confirmada/En proceso)");
                 $citasFiltradas[] = $cita;
                 continue;
             }
             
             // Regla 2: Estados 4 (Diferida), 5 (Completada) y 6 (Cancelada) no visibles
-            if (in_array($estadoCita, ['4', '5', '6'])) {
-                Log::debug("[DetalleVehiculo] Cita filtrada - Estado {$estadoCita} (Diferida/Completada/Cancelada)");
+            if (in_array((string)$estadoCita, ['4', '5', '6'])) {
+                Log::info("[DetalleVehiculo] Cita filtrada - Estado {$estadoCita} (Diferida/Completada/Cancelada)");
                 continue;
             }
             
             // Para cualquier otro estado no definido, incluir por seguridad
-            Log::debug("[DetalleVehiculo] Cita incluida - Estado no definido: {$estadoCita}");
+            Log::info("[DetalleVehiculo] Cita incluida - Estado no definido: {$estadoCita}");
             $citasFiltradas[] = $cita;
         }
         
@@ -498,13 +514,14 @@ class DetalleVehiculo extends Page
                 'uuid' => $citaFinal['uuid'] ?? $citaFinal['id'] ?? 'N/A',
                 'scheduled_start_date' => $citaFinal['scheduled_start_date'] ?? 'N/A',
                 'appointment_status' => $citaFinal['appointment_status'] ?? 'N/A',
+                'status_appointment_code' => $citaFinal['status']['appointment_code'] ?? 'N/A',
                 'last_change_date' => $citaFinal['last_change_date'] ?? 'N/A'
             ]);
         }
         
         return $citaUnica;
     }
-    
+
     /**
      * Evaluar si una cita con estado "Trabajo concluido" en el frontend debe expirar
      * 
