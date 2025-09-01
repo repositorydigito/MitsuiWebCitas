@@ -1821,6 +1821,14 @@ class DetalleVehiculo extends Page
             'current_appointment_provided' => !empty($currentAppointmentData),
             'current_appointment_keys' => $currentAppointmentData ? array_keys($currentAppointmentData) : 'null'
         ]);
+        
+        // Log adicional para ver el contenido completo de currentAppointmentData
+        if ($currentAppointmentData) {
+            Log::info('📊 [ESTADO-FLOW] Contenido de currentAppointmentData', [
+                'data' => $currentAppointmentData
+            ]);
+        }
+        
         $estados = [
             '1' => [
                 'codigo' => '1',
@@ -1885,10 +1893,24 @@ class DetalleVehiculo extends Page
         ];
 
         $estadoBase = $estados[$appointmentStatus] ?? $estados['1'];
+        
+        Log::info('📊 [ESTADO-FLOW] Estado base inicial', [
+            'codigo' => $estadoBase['codigo'],
+            'nombre' => $estadoBase['nombre'],
+            'etapas' => $estadoBase['etapas']
+        ]);
 
         // Aplicar lógica SAP para modificar estados dinámicamente
         if ($this->datosAsesorSAP) {
+            Log::info('📊 [ESTADO-FLOW] Aplicando lógica SAP a estado');
             $estadoBase = $this->aplicarLogicaSAPAEstado($estadoBase, $currentAppointmentData);
+            Log::info('📊 [ESTADO-FLOW] Estado base después de lógica SAP', [
+                'codigo' => $estadoBase['codigo'],
+                'nombre' => $estadoBase['nombre'],
+                'etapas' => $estadoBase['etapas']
+            ]);
+        } else {
+            Log::info('📊 [ESTADO-FLOW] NO se aplica lógica SAP - datosAsesorSAP está vacío');
         }
 
         return $estadoBase;
@@ -1900,6 +1922,9 @@ class DetalleVehiculo extends Page
      */
     protected function aplicarLogicaSAPAEstado(array $estadoBase, ?array $currentAppointmentData = null): array
     {
+        // Log inicial para saber que el método se está ejecutando
+        Log::info("[DetalleVehiculo] === INICIO aplicarLogicaSAPAEstado ===");
+        
         // Obtener datos de SAP
         $tieneFechaUltServ = $this->datosAsesorSAP['tiene_fecha_ult_serv'] ?? false;
         $tieneFechaFactura = $this->datosAsesorSAP['tiene_fecha_factura'] ?? false;
@@ -1957,37 +1982,33 @@ class DetalleVehiculo extends Page
             // Obtener la fecha de la cita del array de citas transformado
             $citaActual = $this->citasAgendadas[0] ?? null;
             
-            // Intentar obtener la fecha de la cita de la base de datos local primero
-            $fechaCitaActual = null;
-            if ($citaActual) {
-                // Intentar obtener el ID de diferentes maneras
-                $citaId = null;
-                $candidatosId = [];
-                
-                // 1. Verificar si el ID está en el formato numérico directo
-                if (isset($citaActual['id']) && is_numeric($citaActual['id'])) {
-                    $candidatosId[] = (int)$citaActual['id'];
-                } 
-                // 2. Verificar si el ID está en el formato 'local-123'
-                elseif (isset($citaActual['id']) && strpos($citaActual['id'], 'local-') === 0) {
-                    $candidatosId[] = (int)substr($citaActual['id'], 6);
+            // Intentar obtener el ID de diferentes maneras
+            $citaId = null;
+            $candidatosId = [];
+            
+            // 1. Verificar si el ID está en el formato numérico directo
+            if (isset($citaActual['id']) && is_numeric($citaActual['id'])) {
+                $candidatosId[] = (int)$citaActual['id'];
+            } 
+            // 2. Verificar si el ID está en el formato 'local-123'
+            elseif (isset($citaActual['id']) && strpos($citaActual['id'], 'local-') === 0) {
+                $candidatosId[] = (int)substr($citaActual['id'], 6);
+            }
+            // 3. Verificar si hay un número de cita disponible
+            if (isset($citaActual['numero_cita'])) {
+                if (is_numeric($citaActual['numero_cita'])) {
+                    $candidatosId[] = (int)$citaActual['numero_cita'];
+                } elseif (is_string($citaActual['numero_cita']) && strpos($citaActual['numero_cita'], 'CITA-') === 0) {
+                    $candidatosId[] = (int)substr($citaActual['numero_cita'], 5);
                 }
-                // 3. Verificar si hay un número de cita disponible
-                if (isset($citaActual['numero_cita'])) {
-                    if (is_numeric($citaActual['numero_cita'])) {
-                        $candidatosId[] = (int)$citaActual['numero_cita'];
-                    } elseif (is_string($citaActual['numero_cita']) && strpos($citaActual['numero_cita'], 'CITA-') === 0) {
-                        $candidatosId[] = (int)substr($citaActual['numero_cita'], 5);
-                    }
-                }
-                
-                // Buscar cita en la base de datos
-                foreach ($candidatosId as $index => $id) {
-                    $citaLocal = \App\Models\Appointment::find($id);
-                    if ($citaLocal) {
-                        $fechaCitaActual = $citaLocal->appointment_date ? $citaLocal->appointment_date->format('Y-m-d') : null;
-                        break; // Usar el primer ID que encuentre
-                    }
+            }
+            
+            // Buscar cita en la base de datos
+            foreach ($candidatosId as $index => $id) {
+                $citaLocal = \App\Models\Appointment::find($id);
+                if ($citaLocal) {
+                    $fechaCitaActual = $citaLocal->appointment_date ? $citaLocal->appointment_date->format('Y-m-d') : null;
+                    break; // Usar el primer ID que encuentre
                 }
             }
             
@@ -2016,9 +2037,24 @@ class DetalleVehiculo extends Page
             $fechaCitaActual = substr($fechaCitaActual, 0, 10);
         }
         
+        // Log para verificar las fechas que se están usando
+        Log::info("[DetalleVehiculo] Fechas para evaluación", [
+            'fecha_ult_serv' => $fechaUltServ ?? 'No disponible',
+            'fecha_cita_actual' => $fechaCitaActual ?? 'No disponible'
+        ]);
+        
         // CASO 1: TRABAJO CONCLUIDO - Si tiene fecha de factura y es MAYOR O IGUAL a la fecha de cita
+        Log::info("[DetalleVehiculo] Evaluando estado TRABAJO CONCLUIDO", [
+            'tiene_fecha_factura' => $tieneFechaFactura ? 'SÍ' : 'NO'
+        ]);
+        
         if ($tieneFechaFactura) {
             $fechaFactura = $this->datosAsesorSAP['fecha_factura'] ?? '';
+            
+            Log::info("[DetalleVehiculo] Evaluando trabajo concluido con fechas", [
+                'fecha_factura' => $fechaFactura,
+                'fecha_cita_actual' => $fechaCitaActual
+            ]);
             
             // Verificar que la fecha de factura sea mayor o igual a la fecha de cita
             if ($fechaFactura && $fechaCitaActual && 
@@ -2050,11 +2086,17 @@ class DetalleVehiculo extends Page
                     'fecha_factura' => $fechaFactura, 
                     'fecha_cita' => $fechaCitaActual
                 ]);
-                return $estadoBase;
             }
+        } else {
+            Log::info("[DetalleVehiculo] No se evalúa trabajo concluido porque no tiene fecha de factura");
         }
         
         // CASO 2: EN TRABAJO - Si tiene fecha de servicio reciente que coincide con la fecha de cita
+        Log::info("[DetalleVehiculo] Evaluando estado EN TRABAJO", [
+            'tiene_fecha_ult_serv' => $tieneFechaUltServ ? 'SÍ' : 'NO',
+            'fecha_ult_serv' => $fechaUltServ ?? 'No disponible'
+        ]);
+        
         if ($tieneFechaUltServ && $fechaUltServ) {
             // Verificar si la fecha de servicio es igual a la fecha de la cita
             Log::info("[DetalleVehiculo] Evaluando si fecha de servicio coincide con fecha de cita", [
@@ -2087,7 +2129,21 @@ class DetalleVehiculo extends Page
                 ]);
                 
                 return $estadoBase;
+            } else {
+                // Log para depuración cuando no coinciden las fechas
+                Log::info("[DetalleVehiculo] Estado 'En trabajo' NO activado: fechas no coinciden", [
+                    'fecha_ult_serv' => $fechaUltServ,
+                    'fecha_ult_serv_normalizada' => $fechaUltServNormalizada,
+                    'fecha_cita' => $fechaCitaActual,
+                    'fecha_cita_normalizada' => $fechaCitaNormalizada,
+                    'coinciden' => ($fechaCitaActual && $fechaUltServNormalizada && $fechaCitaNormalizada && $fechaUltServNormalizada === $fechaCitaNormalizada) ? 'SÍ' : 'NO'
+                ]);
             }
+        } else {
+            Log::info("[DetalleVehiculo] No se evalúa estado 'En trabajo'", [
+                'tiene_fecha_ult_serv' => $tieneFechaUltServ ? 'SÍ' : 'NO',
+                'fecha_ult_serv' => $fechaUltServ ?? 'No disponible'
+            ]);
         }
         
         // Si no se ha aplicado ningún estado especial, mantener el estado reseteado
@@ -2098,6 +2154,8 @@ class DetalleVehiculo extends Page
             'fecha_cita_actual' => $fechaCitaActual ?? 'No disponible',
             'comparacion_fecha_ult_serv_igual_cita' => ($fechaCitaActual && $fechaUltServ == $fechaCitaActual) ? 'SÍ' : 'NO'
         ]);
+        
+        Log::info("[DetalleVehiculo] === FIN aplicarLogicaSAPAEstado ===");
         
         return $estadoBase;
     }
@@ -2185,7 +2243,16 @@ class DetalleVehiculo extends Page
      */
     protected function fechaSAPMayorOIgualACita(?string $fechaSAP, ?string $fechaCita): bool
     {
+        Log::info('[DetalleVehiculo] Comparando fechas para Trabajo concluido', [
+            'fecha_sap_original' => $fechaSAP,
+            'fecha_cita_original' => $fechaCita
+        ]);
+        
         if (empty($fechaSAP) || empty($fechaCita)) {
+            Log::warning('[DetalleVehiculo] Una de las fechas está vacía', [
+                'fecha_sap' => $fechaSAP,
+                'fecha_cita' => $fechaCita
+            ]);
             return false;
         }
 
@@ -2193,6 +2260,11 @@ class DetalleVehiculo extends Page
             // Normalizar fechas al formato Y-m-d
             $fechaSAPNormalizada = $this->normalizarFecha($fechaSAP);
             $fechaCitaNormalizada = $this->normalizarFecha($fechaCita);
+            
+            Log::info('[DetalleVehiculo] Fechas normalizadas para comparación', [
+                'fecha_sap_normalizada' => $fechaSAPNormalizada,
+                'fecha_cita_normalizada' => $fechaCitaNormalizada
+            ]);
             
             if (!$fechaSAPNormalizada || !$fechaCitaNormalizada) {
                 Log::warning('[DetalleVehiculo] No se pudo normalizar alguna de las fechas', [
@@ -2241,8 +2313,16 @@ class DetalleVehiculo extends Page
             return null;
         }
         
+        Log::info('[DetalleVehiculo] Normalizando fecha', [
+            'fecha_original' => $fecha,
+            'tipo' => gettype($fecha)
+        ]);
+        
         // Si ya tiene formato Y-m-d, retornarlo directamente
         if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
+            Log::info('[DetalleVehiculo] Fecha ya en formato Y-m-d, retornando directamente', [
+                'fecha' => $fecha
+            ]);
             return $fecha;
         }
         
@@ -2251,10 +2331,19 @@ class DetalleVehiculo extends Page
             try {
                 $partes = explode('/', $fecha);
                 if (count($partes) === 3) {
-                    return $partes[2] . '-' . $partes[1] . '-' . $partes[0];
+                    $fechaNormalizada = $partes[2] . '-' . $partes[1] . '-' . $partes[0];
+                    Log::info('[DetalleVehiculo] Fecha normalizada de d/m/Y a Y-m-d', [
+                        'original' => $fecha,
+                        'normalizada' => $fechaNormalizada
+                    ]);
+                    return $fechaNormalizada;
                 }
             } catch (\Exception $e) {
                 // Si falla, continuar con los otros métodos
+                Log::warning('[DetalleVehiculo] Error al normalizar fecha d/m/Y', [
+                    'fecha' => $fecha,
+                    'error' => $e->getMessage()
+                ]);
             }
         }
         
@@ -2264,7 +2353,13 @@ class DetalleVehiculo extends Page
             try {
                 $fechaObj = \Carbon\Carbon::createFromFormat($formato, $fecha);
                 if ($fechaObj) {
-                    return $fechaObj->format('Y-m-d');
+                    $fechaNormalizada = $fechaObj->format('Y-m-d');
+                    Log::info('[DetalleVehiculo] Fecha normalizada con Carbon', [
+                        'original' => $fecha,
+                        'formato' => $formato,
+                        'normalizada' => $fechaNormalizada
+                    ]);
+                    return $fechaNormalizada;
                 }
             } catch (\Exception $e) {
                 continue;
@@ -2274,7 +2369,12 @@ class DetalleVehiculo extends Page
         // Último intento con parse genérico
         try {
             $fechaObj = \Carbon\Carbon::parse($fecha);
-            return $fechaObj->format('Y-m-d');
+            $fechaNormalizada = $fechaObj->format('Y-m-d');
+            Log::info('[DetalleVehiculo] Fecha normalizada con Carbon::parse', [
+                'original' => $fecha,
+                'normalizada' => $fechaNormalizada
+            ]);
+            return $fechaNormalizada;
         } catch (\Exception $e) {
             Log::warning('[DetalleVehiculo] No se pudo normalizar la fecha', [
                 'fecha_original' => $fecha,
