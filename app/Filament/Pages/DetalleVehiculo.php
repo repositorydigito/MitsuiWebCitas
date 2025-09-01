@@ -2022,6 +2022,10 @@ class DetalleVehiculo extends Page
             else {
                 // Resetear a estado por defecto basado en el appointmentStatus original
                 // Mantener el estado original del appointment
+                Log::info("[DetalleVehiculo] Estado 'Trabajo concluido' NO activado: fecha factura NO es mayor o igual a fecha cita", [
+                    'fecha_factura' => $fechaFactura, 
+                    'fecha_cita' => $fechaCitaActual
+                ]);
                 return $estadoBase;
             }
         }
@@ -2140,70 +2144,32 @@ class DetalleVehiculo extends Page
         }
 
         try {
-            // Intentar parsear las fechas con Carbon
-            $carbonSAP = null;
-            $carbonCita = null;
-            $formatos = ['Y-m-d', 'd/m/Y', 'Y-m-d H:i:s', 'd/m/Y H:i:s', 'Ymd'];
+            // Normalizar fechas al formato Y-m-d
+            $fechaSAPNormalizada = $this->normalizarFecha($fechaSAP);
+            $fechaCitaNormalizada = $this->normalizarFecha($fechaCita);
             
-            // Intentar parsear fecha SAP
-            foreach ($formatos as $formato) {
-                try {
-                    $carbonSAP = \Carbon\Carbon::createFromFormat($formato, $fechaSAP);
-                    if ($carbonSAP) break;
-                } catch (\Exception $e) {
-                    // Continuar con el siguiente formato
-                    continue;
-                }
-            }
-            
-            // Intentar parsear fecha Cita
-            foreach ($formatos as $formato) {
-                try {
-                    $carbonCita = \Carbon\Carbon::createFromFormat($formato, $fechaCita);
-                    if ($carbonCita) break;
-                } catch (\Exception $e) {
-                    // Continuar con el siguiente formato
-                    continue;
-                }
-            }
-            
-            // Si no se pudo parsear alguna fecha, intentar con parse genérico
-            if (!$carbonSAP) {
-                try {
-                    $carbonSAP = \Carbon\Carbon::parse($fechaSAP);
-                } catch (\Exception $e) {
-                    // No se pudo parsear
-                }
-            }
-            
-            if (!$carbonCita) {
-                try {
-                    $carbonCita = \Carbon\Carbon::parse($fechaCita);
-                } catch (\Exception $e) {
-                    // No se pudo parsear
-                }
-            }
-            
-            if (!$carbonSAP || !$carbonCita) {
+            if (!$fechaSAPNormalizada || !$fechaCitaNormalizada) {
+                Log::warning('[DetalleVehiculo] No se pudo normalizar alguna de las fechas', [
+                    'fecha_sap_original' => $fechaSAP,
+                    'fecha_cita_original' => $fechaCita
+                ]);
                 return false;
             }
+
+            // Comparación explícita usando strcmp para fechas en formato Y-m-d (YYYY-MM-DD)
+            // De esta manera evitamos cualquier problema con Carbon o zonas horarias
+            $resultado = strcmp($fechaSAPNormalizada, $fechaCitaNormalizada);
             
-            // Normalizar a fecha sin hora para comparación
-            $fechaSAPNormalizada = $carbonSAP->format('Y-m-d');
-            $fechaCitaNormalizada = $carbonCita->format('Y-m-d');
+            // resultado >= 0 significa que fechaSAP es igual o mayor que fechaCita
+            $esMayorOIgual = $resultado >= 0;
             
-            // Comparación simple de fechas normalizadas en formato Y-m-d
-            // Para evitar problemas de zonas horarias o comparaciones incorrectas con Carbon
-            if ($fechaSAPNormalizada === $fechaCitaNormalizada) {
-                $esMayorOIgual = true; // Si son iguales, se considera mayor o igual
-            } else {
-                $esMayorOIgual = $carbonSAP->greaterThanOrEqualTo($carbonCita);
-            }
-            
+            // Mejoramos el log para depuración con valores exactos
             Log::info('[DetalleVehiculo] Comparación de fechas para Trabajo concluido', [
                 'fecha_sap' => $fechaSAPNormalizada,
                 'fecha_cita' => $fechaCitaNormalizada,
-                'sap_mayor_igual_cita' => $esMayorOIgual ? 'SÍ' : 'NO'
+                'sap_mayor_igual_cita' => $esMayorOIgual ? 'SÍ' : 'NO',
+                'resultado_strcmp' => $resultado,
+                'razon' => $resultado == 0 ? 'Fechas iguales' : ($resultado > 0 ? 'Fecha SAP mayor que fecha cita' : 'Fecha SAP menor que fecha cita')
             ]);
             
             return $esMayorOIgual;
@@ -2218,6 +2184,59 @@ class DetalleVehiculo extends Page
         }
     }
     
+    /**
+     * Normaliza una fecha a formato Y-m-d para comparaciones consistentes
+     * @param string|null $fecha La fecha en cualquier formato
+     * @return string|null Fecha en formato Y-m-d o null si no se pudo normalizar
+     */
+    protected function normalizarFecha(?string $fecha): ?string
+    {
+        if (empty($fecha)) {
+            return null;
+        }
+        
+        // Si ya tiene formato Y-m-d, retornarlo directamente
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
+            return $fecha;
+        }
+        
+        // Si tiene formato d/m/Y, convertirlo
+        if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $fecha)) {
+            try {
+                $partes = explode('/', $fecha);
+                if (count($partes) === 3) {
+                    return $partes[2] . '-' . $partes[1] . '-' . $partes[0];
+                }
+            } catch (\Exception $e) {
+                // Si falla, continuar con los otros métodos
+            }
+        }
+        
+        // Intentar con Carbon en diferentes formatos
+        $formatos = ['Y-m-d', 'd/m/Y', 'Ymd', 'Y-m-d H:i:s', 'd/m/Y H:i:s'];
+        foreach ($formatos as $formato) {
+            try {
+                $fechaObj = \Carbon\Carbon::createFromFormat($formato, $fecha);
+                if ($fechaObj) {
+                    return $fechaObj->format('Y-m-d');
+                }
+            } catch (\Exception $e) {
+                continue;
+            }
+        }
+        
+        // Último intento con parse genérico
+        try {
+            $fechaObj = \Carbon\Carbon::parse($fecha);
+            return $fechaObj->format('Y-m-d');
+        } catch (\Exception $e) {
+            Log::warning('[DetalleVehiculo] No se pudo normalizar la fecha', [
+                'fecha_original' => $fecha,
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
     /**
      * Enriquecer cita con datos SAP
      */
