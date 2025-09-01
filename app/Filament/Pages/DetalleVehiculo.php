@@ -2020,6 +2020,12 @@ class DetalleVehiculo extends Page
                 
                 return $estadoBase;
             }
+            // Si tiene fecha de factura pero NO cumple la condición, resetear estado
+            else {
+                // Resetear a estado por defecto basado en el appointmentStatus original
+                // Mantener el estado original del appointment
+                return $estadoBase;
+            }
         }
         
         // CASO 2: EN TRABAJO - Si tiene fecha de servicio reciente que coincide con la fecha de cita
@@ -2040,6 +2046,8 @@ class DetalleVehiculo extends Page
                     'fecha_ult_serv' => $fechaUltServ, 
                     'fecha_cita' => $fechaCitaActual
                 ]);
+                
+                return $estadoBase;
             }
         }
         
