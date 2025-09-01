@@ -1996,10 +1996,9 @@ class DetalleVehiculo extends Page
         if ($tieneFechaFactura) {
             $fechaFactura = $this->datosAsesorSAP['fecha_factura'] ?? '';
             
-            // Verificar ambas condiciones: fecha de factura mayor o igual a fecha de cita
+            // Verificar que la fecha de factura sea mayor o igual a la fecha de cita
             if ($fechaFactura && $fechaCitaActual && 
-                ($this->fechasCoinciden($fechaFactura, $fechaCitaActual) || 
-                 $this->fechaSAPMayorOIgualACita($fechaFactura, $fechaCitaActual))) {
+                $this->fechaSAPMayorOIgualACita($fechaFactura, $fechaCitaActual)) {
                 
                 $estadoBase['etapas']['cita_confirmada']['activo'] = false;
                 $estadoBase['etapas']['cita_confirmada']['completado'] = true;
@@ -2011,11 +2010,10 @@ class DetalleVehiculo extends Page
                 $estadoBase['etapas']['trabajo_concluido']['completado'] = true;
                 
                 // Log para depuración de trabajo concluido
-                Log::info("[DetalleVehiculo] Estado 'Trabajo concluido' activado", [
+                Log::info("[DetalleVehiculo] Estado 'Trabajo concluido' activado por fecha de factura mayor o igual a fecha de cita", [
                     'fecha_factura' => $fechaFactura, 
                     'fecha_cita' => $fechaCitaActual,
-                    'coinciden' => $this->fechasCoinciden($fechaFactura, $fechaCitaActual) ? 'SÍ' : 'NO',
-                    'factura_mayor_o_igual' => $this->fechaSAPMayorOIgualACita($fechaFactura, $fechaCitaActual) ? 'SÍ' : 'NO'
+                    'evaluacion' => 'Fecha de factura SAP mayor o igual a la fecha de cita'
                 ]);
                 
                 return $estadoBase;
@@ -2194,8 +2192,13 @@ class DetalleVehiculo extends Page
             $fechaSAPNormalizada = $carbonSAP->format('Y-m-d');
             $fechaCitaNormalizada = $carbonCita->format('Y-m-d');
             
-            // Comparar si la fecha SAP es mayor o igual a la fecha de cita
-            $esMayorOIgual = $carbonSAP->gte($carbonCita);
+            // Comparación simple de fechas normalizadas en formato Y-m-d
+            // Para evitar problemas de zonas horarias o comparaciones incorrectas con Carbon
+            if ($fechaSAPNormalizada === $fechaCitaNormalizada) {
+                $esMayorOIgual = true; // Si son iguales, se considera mayor o igual
+            } else {
+                $esMayorOIgual = $carbonSAP->greaterThanOrEqualTo($carbonCita);
+            }
             
             Log::info('[DetalleVehiculo] Comparación de fechas para Trabajo concluido', [
                 'fecha_sap' => $fechaSAPNormalizada,
