@@ -818,7 +818,7 @@ class AppointmentService
                     'InclusionExclusionCode' => 'I',
                     'IntervalBoundaryTypeCode' => '3',
                     'LowerBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5' => '1',
-                    'UpperBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5' => '2',
+                    'UpperBoundaryzEstadoCita_5PEND6QL5482763O1SFB05YP5' => '3', // Modificado: incluir estado 3 (En taller)
                 ],
             ],
             'ProcessingConditions' => [

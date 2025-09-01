@@ -30,7 +30,7 @@
                      x-transition:leave="transition ease-in duration-200"
                      x-transition:leave-start="opacity-100 transform translate-y-0"
                      x-transition:leave-end="opacity-0 transform -translate-y-2"
-                     class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                     class="grid grid-cols-1 gap-2">
                     <!-- Columna 1: Información básica -->
                     <div class="bg-white rounded-lg shadow-sm p-4 space-y-4">
                         <div class="flex justify-between">
@@ -50,124 +50,7 @@
                     </div>
 
                     <!-- Columna 2: Mantenimientos programados -->
-                    <div class="bg-white rounded-lg shadow-sm p-4">
-                        <div class="flex flex-row justify-between items-start">
-                            <div class="flex justify-between items-start mb-4">
-                                <h3 class="font-bold text-blue-900 uppercase">MANTENIMIENTOS PREPAGADOS</h3>                        
-                            </div>
-
-                            <!-- Icono con modal (desktop y mobile) -->
-                            <div x-data="{ showModal: false }" class="relative">
-                                <button
-                                    type="button"
-                                    @click="showModal = true"
-                                    class="text-blue-700 hover:text-blue-900 focus:outline-none transition-colors duration-200 p-1 rounded-full hover:bg-blue-100"
-                                    title="Información importante"
-                                >
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
-                                    </svg>
-                                </button>
-
-                                <!-- Modal -->
-                                <div
-                                    x-show="showModal"
-                                    x-transition:enter="transition ease-out duration-300"
-                                    x-transition:enter-start="opacity-0"
-                                    x-transition:enter-end="opacity-100"
-                                    x-transition:leave="transition ease-in duration-200"
-                                    x-transition:leave-start="opacity-100"
-                                    x-transition:leave-end="opacity-0"
-                                    class="fixed inset-0 z-50 overflow-y-auto"
-                                    @click.away="showModal = false"
-                                    style="display: none;"
-                                >
-                                    <!-- Fondo oscuro -->
-                                    <div x-show="showModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 transition-opacity">
-                                        <div class="absolute inset-0 bg-black/50"></div>
-                                    </div>
-                                    <!-- Modal Content -->
-                                    <div class="flex items-center justify-center min-h-screen px-4 py-6">
-                                        <div 
-                                            class="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-auto"
-                                            @click.stop
-                                            x-transition:enter="transition ease-out duration-300"
-                                            x-transition:enter-start="opacity-0 transform scale-95"
-                                            x-transition:enter-end="opacity-100 transform scale-100"
-                                            x-transition:leave="transition ease-in duration-200"
-                                            x-transition:leave-start="opacity-100 transform scale-100"
-                                            x-transition:leave-end="opacity-0 transform scale-95"
-                                        >
-                                            <!-- Header -->
-                                            <div class="flex items-center justify-between p-4 border-b border-gray-200">
-                                                <h3 class="text-lg font-semibold text-blue-900 flex items-center">
-                                                    <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
-                                                    </svg>
-                                                    Información importante
-                                                </h3>
-                                                <button
-                                                    type="button"
-                                                    @click="showModal = false"
-                                                    class="text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600 transition-colors duration-200"
-                                                >
-                                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                            
-                                            <!-- Body -->
-                                            <div class="p-6">
-                                                <div class="flex items-start">
-                                                    <div class="flex-shrink-0">
-                                                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                                            </svg>
-                                                        </div>
-                                                    </div>
-                                                    <div class="ml-4">
-                                                        <p class="text-sm text-gray-700 leading-relaxed">
-                                                            Recuerda realizar el mantenimiento antes de la fecha de vencimiento indicada.
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            
-                                            <!-- Footer -->
-                                            <div class="px-6 py-4 bg-gray-50 rounded-b-lg">
-                                                <button
-                                                    type="button"
-                                                    @click="showModal = false"
-                                                    class="w-full px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200"
-                                                >
-                                                    Entendido
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div> 
-                        </div>
-                        
-
-                        <div class="space-y-4">
-                            <div class="flex justify-between">
-                                <div class="w-32 font-bold text-blue-900">Vencimiento</div>
-                                <div class="text-gray-800">{{ $mantenimiento['vencimiento'] }}</div>
-                            </div>
-
-                            <div class="flex justify-between items-start">
-                                <div class="w-32 font-bold text-blue-900">Disponibles</div>
-                                <div class="text-gray-800">
-                                    @foreach ($mantenimiento['disponibles'] as $disponible)
-                                        <div>{{ $disponible }}</div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    
                 </div>
             </div>
 
@@ -283,10 +166,36 @@
                                                 <span class="text-xs text-gray-600 mt-1">{{ $cita['hora_cita'] ?? '' }}</span>
                                             </div>
 
-                                            <div class="flex justify-between items-center">
-                                                <span class="text-xs font-medium text-blue-800">Servicio:</span>
-                                                <span class="text-xs text-gray-600 mt-1">Mantenimiento {{ $cita['servicio'] ?? 'Servicio programado' }}</span>
-                                            </div>
+                                            @if(!empty($cita['maintenance_type']))
+                                                {{-- Cuando HAY mantenimiento: usar diseño original en la misma fila --}}
+                                                <div class="flex justify-between items-center">
+                                                    <span class="text-xs font-medium text-blue-800">Servicio:</span>
+                                                    <span class="text-xs text-gray-600 mt-1">Mantenimiento {{ $cita['maintenance_type'] }}</span>
+                                                </div>
+                                            @elseif(!empty($cita['wildcard_selections']))
+                                                {{-- Cuando NO hay mantenimiento pero SÍ hay servicios: mostrar en fila separada --}}
+                                                <div class="space-y-1">
+                                                    <div class="text-xs font-medium text-blue-800">Servicio:</div>
+                                                    <div class="text-xs text-gray-600">
+                                                        @php
+                                                            $serviciosTexto = [];
+                                                            if (!empty($cita['wildcard_selections']['servicios_adicionales'])) {
+                                                                $serviciosTexto[] = 'Servicios: ' . implode(', ', $cita['wildcard_selections']['servicios_adicionales']);
+                                                            }
+                                                            if (!empty($cita['wildcard_selections']['campanas'])) {
+                                                                $serviciosTexto[] = 'Campañas: ' . implode(', ', $cita['wildcard_selections']['campanas']);
+                                                            }
+                                                        @endphp
+                                                        {{ !empty($serviciosTexto) ? implode(' | ', $serviciosTexto) : 'Servicios seleccionados' }}
+                                                    </div>
+                                                </div>
+                                            @else
+                                                {{-- Fallback: usar diseño original --}}
+                                                <div class="flex justify-between items-center">
+                                                    <span class="text-xs font-medium text-blue-800">Servicio:</span>
+                                                    <span class="text-xs text-gray-600 mt-1">Mantenimiento {{ $cita['servicio'] ?? 'Servicio programado' }}</span>
+                                                </div>
+                                            @endif
 
                                             <div class="flex justify-between items-center">
                                                 <span class="text-xs font-medium text-blue-800">Sede:</span>
