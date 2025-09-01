@@ -1905,6 +1905,15 @@ class DetalleVehiculo extends Page
         $tieneFechaFactura = $this->datosAsesorSAP['tiene_fecha_factura'] ?? false;
         $fechaUltServ = $this->datosAsesorSAP['fecha_ult_serv'] ?? null;
         
+        // Log detallado de datos SAP para depuración
+        Log::info("[DetalleVehiculo] Datos SAP obtenidos para evaluación de estados", [
+            'tiene_fecha_ult_serv' => $tieneFechaUltServ ? 'SÍ' : 'NO',
+            'fecha_ult_serv' => $fechaUltServ ?? 'No disponible',
+            'tiene_fecha_factura' => $tieneFechaFactura ? 'SÍ' : 'NO',
+            'fecha_factura' => $this->datosAsesorSAP['fecha_factura'] ?? 'No disponible',
+            'datosAsesorSAP_completo' => $this->datosAsesorSAP
+        ]);
+        
         // Resetear TODOS los estados de frontend independientemente del estado C4C
         // Los estados "en_trabajo" y "trabajo_concluido" deben depender EXCLUSIVAMENTE de los datos SAP
         // El estado C4C solo determina la visibilidad de la cita, no los estados de frontend
@@ -2047,8 +2056,21 @@ class DetalleVehiculo extends Page
         
         // CASO 2: EN TRABAJO - Si tiene fecha de servicio reciente que coincide con la fecha de cita
         if ($tieneFechaUltServ && $fechaUltServ) {
-            // Verificar si la fecha de servicio es igual a la fecha de la cita (comparación directa de strings)
-            if ($fechaCitaActual && $fechaUltServ == $fechaCitaActual) {
+            // Verificar si la fecha de servicio es igual a la fecha de la cita
+            Log::info("[DetalleVehiculo] Evaluando si fecha de servicio coincide con fecha de cita", [
+                'fecha_ult_serv' => $fechaUltServ,
+                'fecha_cita' => $fechaCitaActual,
+                'son_iguales' => ($fechaCitaActual && $fechaUltServ == $fechaCitaActual) ? 'SÍ' : 'NO',
+                'fecha_ult_serv_normalizada' => $this->normalizarFecha($fechaUltServ),
+                'fecha_cita_normalizada' => $this->normalizarFecha($fechaCitaActual)
+            ]);
+            
+            // Usando normalización de fechas para comparación más confiable
+            $fechaUltServNormalizada = $this->normalizarFecha($fechaUltServ);
+            $fechaCitaNormalizada = $this->normalizarFecha($fechaCitaActual);
+            
+            if ($fechaCitaActual && $fechaUltServNormalizada && $fechaCitaNormalizada && 
+                $fechaUltServNormalizada === $fechaCitaNormalizada) {
                 $estadoBase['etapas']['cita_confirmada']['activo'] = false;
                 $estadoBase['etapas']['cita_confirmada']['completado'] = true;
                 
@@ -2073,7 +2095,8 @@ class DetalleVehiculo extends Page
             'tiene_fecha_ult_serv' => $tieneFechaUltServ ? 'SÍ' : 'NO',
             'fecha_ult_serv' => $fechaUltServ ?? 'No disponible',
             'tiene_fecha_factura' => $tieneFechaFactura ? 'SÍ' : 'NO', 
-            'fecha_cita_actual' => $fechaCitaActual ?? 'No disponible'
+            'fecha_cita_actual' => $fechaCitaActual ?? 'No disponible',
+            'comparacion_fecha_ult_serv_igual_cita' => ($fechaCitaActual && $fechaUltServ == $fechaCitaActual) ? 'SÍ' : 'NO'
         ]);
         
         return $estadoBase;
