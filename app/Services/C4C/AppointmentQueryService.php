@@ -84,16 +84,16 @@ class AppointmentQueryService
         }
 
         // Configurar estados de cita a consultar
-        $statusCodes = $options['status_codes'] ?? [1, 2]; // Por defecto: Generada y Confirmada
+        $statusCodes = $options['status_codes'] ?? [1, 2, 3]; // Modificado: Incluir estado 3 (En taller)
 
         // Asegurar que statusCodes sea un array
         if (! is_array($statusCodes)) {
             $statusCodes = [$statusCodes];
         }
 
-        // Default to status codes 1 (Generated) and 2 (Confirmed) if not specified
+        // Default to status codes 1 (Generated), 2 (Confirmed) and 3 (In workshop) if not specified
         if (empty($statusCodes)) {
-            $statusCodes = [1, 2];
+            $statusCodes = [1, 2, 3]; // Modificado: Incluir estado 3 por defecto
         }
 
         // Configurar límite de resultados

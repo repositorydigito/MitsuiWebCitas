@@ -1898,7 +1898,7 @@ class DetalleVehiculo extends Page
      * Aplicar lógica SAP para modificar estados dinámicamente
      * Lógica progresiva según el proceso actual
      */
-    protected function aplicarLogicaSAPAEstado(array $estadoBase, array $currentAppointmentData = null): array
+    protected function aplicarLogicaSAPAEstado(array $estadoBase, ?array $currentAppointmentData = null): array
     {
         // Obtener datos de SAP
         $tieneFechaUltServ = $this->datosAsesorSAP['tiene_fecha_ult_serv'] ?? false;
