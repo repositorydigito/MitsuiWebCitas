@@ -24,7 +24,7 @@ class Vehiculos extends Page
 
     protected static ?string $navigationGroup = '🚗 Vehículos';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 0;
 
     protected static ?string $title = '';
 

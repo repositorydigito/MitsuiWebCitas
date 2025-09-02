@@ -7,13 +7,13 @@
         <!-- Botón para volver al home -->
         <div class="mb-2 flex items-center justify-between w-full">
             <div>
-                <a href="{{ route('filament.admin.pages.home') }}"
+                <!-- <a href="{{ route('filament.admin.pages.home') }}"
                     class="inline-flex items-center gap-2 px-2 py-2 text-sm font-medium text-primary-600 bg-white border border-primary-300 rounded-lg shadow-sm hover:bg-primary-50 hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 ease-in-out">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
                     Home
-                </a>
+                </a> -->
             </div>
             <div>
                 <span class="font-bold text-primary-600">Club Mitsui</span><br>

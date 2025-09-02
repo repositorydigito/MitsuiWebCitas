@@ -15,7 +15,7 @@ class Home extends Page
 
     protected static ?string $navigationGroup = '🏠 Principal';
 
-    protected static ?int $navigationSort = 0; // Para que aparezca primero
+    protected static ?int $navigationSort = 1; // Para que aparezca primero
 
     protected static string $view = 'filament.pages.home';
 
