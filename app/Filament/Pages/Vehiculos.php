@@ -807,6 +807,9 @@ class Vehiculos extends Page
 
                 // Recargar los vehículos
                 $this->cargarVehiculos();
+                
+                // Reset pagination to first page to avoid issues when page count changes
+                $this->resetPage("page_{$this->activeTab}");
             } else {
                 \Filament\Notifications\Notification::make()
                     ->title('Error')
