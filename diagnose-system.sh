@@ -9,7 +9,7 @@ echo ""
 
 case "$1" in
     "performance"|"perf"|"p")
-        echo "🚀 Ejecutando diagnóstico de RENDIMIENTO..."
+        echo "🚀 Ejecutando diagnóstico de RENDIMIENTO"
         php artisan system:diagnose --performance
         ;;
     "validation"|"valid"|"v")
