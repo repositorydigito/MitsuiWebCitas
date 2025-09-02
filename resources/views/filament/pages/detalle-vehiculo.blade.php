@@ -248,9 +248,7 @@
                                             @endif
 
                                             @if(($concluidoActivo || $concluidoCompletado) && !empty($cita['fecha_factura']))
-                                            <br>
-                                            <div class="text-xs font-medium text-green-800 mb-1">Facturación completada</div>
-                                                
+                                            <br>                                                
                                             <div class="flex justify-between items-center">
                                                 <span class="text-xs font-medium text-green-800">Fecha de factura:</span>
                                                 <span class="text-xs text-gray-600">{{ $cita['fecha_factura'] ?? '-' }}</span>
