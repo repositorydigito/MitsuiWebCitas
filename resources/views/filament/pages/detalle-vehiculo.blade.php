@@ -115,13 +115,11 @@
                                             @endphp
                                             <div style="display: flex; flex-direction: column; align-items: center; opacity: {{ $trabajoCompletado ? '1' : '1' }};">
                                                 <div style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: {{ $trabajoActivo ? '#059669' : ($trabajoCompletado ? '#059669' : '#d1d5db') }};">
-                                                    @if($trabajoCompletado)
+                                                
                                                         <svg style="width: 20px; height: 20px; color: white;" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                                             <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                                                         </svg>
-                                                    @else
-                                                        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #9ca3af;"></div>
-                                                    @endif
+                                                   
                                                 </div>
                                                 <span style="font-size: 12px; font-weight: 500; margin-top: 4px; text-align: center; color: {{ $trabajoActivo ? '#059669' : ($trabajoCompletado ? '#059669' : '#6b7280') }};">
                                                     En trabajo
@@ -134,16 +132,14 @@
                                                 $concluidoActivo = $etapas['trabajo_concluido']['activo'] ?? false;
                                             @endphp
                                             <div style="display: flex; flex-direction: column; align-items: center; opacity: {{ $concluidoCompletado ? '1' : '0.5' }};">
-                                                <div style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: {{ $concluidoActivo ? '#2563eb' : ($concluidoCompletado ? '#059669' : '#d1d5db') }};">
-                                                    @if($concluidoCompletado)
+                                                <div style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: {{ $concluidoActivo ? '#059669' : ($concluidoCompletado ? '#059669' : '#d1d5db') }};">
+                                                  
                                                         <svg style="width: 20px; height: 20px; color: white;" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                                             <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                                                         </svg>
-                                                    @else
-                                                        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #9ca3af;"></div>
-                                                    @endif
+                                                
                                                 </div>
-                                                <span style="font-size: 12px; font-weight: 500; margin-top: 4px; text-align: center; color: {{ $concluidoActivo ? '#2563eb' : ($concluidoCompletado ? '#059669' : '#6b7280') }};">
+                                                <span style="font-size: 12px; font-weight: 500; margin-top: 4px; text-align: center; color: {{ $concluidoActivo ? '#059669' : ($concluidoCompletado ? '#059669' : '#6b7280') }};">
                                                     Trabajo concluido
                                                 </span>
                                             </div>
@@ -252,9 +248,7 @@
                                             @endif
 
                                             @if(($concluidoActivo || $concluidoCompletado) && !empty($cita['fecha_factura']))
-                                            <br>
-                                            <div class="text-xs font-medium text-green-800 mb-1">Facturación completada</div>
-                                                
+                                            <br>                                                
                                             <div class="flex justify-between items-center">
                                                 <span class="text-xs font-medium text-green-800">Fecha de factura:</span>
                                                 <span class="text-xs text-gray-600">{{ $cita['fecha_factura'] ?? '-' }}</span>
