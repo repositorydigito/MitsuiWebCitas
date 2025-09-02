@@ -310,31 +310,31 @@
                                                 <input
                                                     type="checkbox"
                                                     id="brand_toyota"
-                                                    wire:click="toggleMarca('Toyota')"
-                                                    @if($this->isMarcaSeleccionada('Toyota')) checked @endif
+                                                    wire:model="servicioEnEdicion.brand"
+                                                    value="Toyota"
                                                     class="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                                                 >
-                                                <label for="brand_toyota" class="px-2 text-sm text-gray-700 cursor-pointer" wire:click="toggleMarca('Toyota')">Toyota</label>
+                                                <label for="brand_toyota" class="px-2 text-sm text-gray-700">Toyota</label>
                                             </div>
                                             <div class="flex items-center">
                                                 <input
                                                     type="checkbox"
                                                     id="brand_lexus"
-                                                    wire:click="toggleMarca('Lexus')"
-                                                    @if($this->isMarcaSeleccionada('Lexus')) checked @endif
+                                                    wire:model="servicioEnEdicion.brand"
+                                                    value="Lexus"
                                                     class="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                                                 >
-                                                <label for="brand_lexus" class="px-2 text-sm text-gray-700 cursor-pointer" wire:click="toggleMarca('Lexus')">Lexus</label>
+                                                <label for="brand_lexus" class="px-2 text-sm text-gray-700">Lexus</label>
                                             </div>
                                             <div class="flex items-center">
                                                 <input
                                                     type="checkbox"
                                                     id="brand_hino"
-                                                    wire:click="toggleMarca('Hino')"
-                                                    @if($this->isMarcaSeleccionada('Hino')) checked @endif
+                                                    wire:model="servicioEnEdicion.brand"
+                                                    value="Hino"
                                                     class="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                                                 >
-                                                <label for="brand_hino" class="px-2 text-sm text-gray-700 cursor-pointer" wire:click="toggleMarca('Hino')">Hino</label>
+                                                <label for="brand_hino" class="px-2 text-sm text-gray-700">Hino</label>
                                             </div>
                                         </div>
                                         @error('servicioEnEdicion.brand') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror

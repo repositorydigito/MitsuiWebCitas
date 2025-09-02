@@ -183,19 +183,20 @@ class GestionServiciosAdicionales extends Page
     public function editarServicio(int $id): void
     {
         try {
-            $servicio = $this->serviciosAdicionales->firstWhere('id', $id);
-            if ($servicio) {
-                $this->accionFormulario = 'editar';
-                $this->servicioEnEdicion = $servicio;
-                
-                // Asegurar que brand sea un array para los checkboxes
-                if (!is_array($this->servicioEnEdicion['brand'])) {
-                    // Si es string, convertir a array
-                    $this->servicioEnEdicion['brand'] = $this->servicioEnEdicion['brand'] ? [$this->servicioEnEdicion['brand']] : [];
-                }
-                
-                $this->isFormModalOpen = true;
-            }
+            // Always fetch fresh data from database to avoid inconsistencies
+            $servicioModel = AdditionalService::findOrFail($id);
+            
+            $this->accionFormulario = 'editar';
+            $this->servicioEnEdicion = [
+                'id' => $servicioModel->id,
+                'name' => $servicioModel->name,
+                'code' => $servicioModel->code,
+                'brand' => is_array($servicioModel->brand) ? $servicioModel->brand : ($servicioModel->brand ? [$servicioModel->brand] : ['Toyota']),
+                'description' => $servicioModel->description,
+                'is_active' => $servicioModel->is_active,
+            ];
+            
+            $this->isFormModalOpen = true;
         } catch (\Exception $e) {
             \Filament\Notifications\Notification::make()
                 ->title('Error al editar servicio')
