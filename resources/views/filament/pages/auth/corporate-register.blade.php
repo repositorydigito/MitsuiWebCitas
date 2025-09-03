@@ -55,15 +55,15 @@
         }
         
         .form-title {
-            font-size: 1.25rem;
+            font-size: 1.3rem;
             font-weight: 700;
             color: #111827;
             margin-bottom: 0.5rem;
         }
         
         .form-subtitle {
-            color: #6b7280;
-            margin-bottom: 0.5rem;
+            margin-bottom: 2rem;
+            font-size: 1rem;
         }
         
         .brand-logo {
@@ -242,6 +242,7 @@
             <div class="form-container">
                 <img src="{{ asset('images/logomitsui2.svg') }}" alt="Mitsui Logo" class="brand-logo">
                 <h1 class="form-title text-center">Crear Cuenta</h1>
+                <h3 class="form-subtitle text-primary-500 font-bold text-center">Regístrate con el documento de identidad asociado a tu vehículo en Mitsui</h3>
                 <!-- Formulario -->
                 <x-filament-panels::form wire:submit="register">
                     {{ $this->form }}
