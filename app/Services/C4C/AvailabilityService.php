@@ -944,28 +944,27 @@ class AvailabilityService
                     }
                 }
 
-                // Contar citas por hora - CON FIX DE TIMEZONE DEFINITIVO
+                // Contar citas por hora - MANTENIENDO UTC
                 foreach ($citas as $cita) {
                     if (is_array($cita)) {
-                        // SAP guarda zHoraInicio en UTC (hora local + 5h)
+                        // SAP guarda zHoraInicio en UTC - mantener en UTC
                         $horaSAP = $cita['zHoraInicio'] ?? '';
                         
-                        // 🔧 FIX TIMEZONE: Convertir hora SAP (UTC) a hora local (Perú)
-                        // Ejemplo: SAP tiene 16:45 (UTC) → Perú busca 11:45 (local)
-                        $horaLocal = date('H:i:s', strtotime($horaSAP . ' -5 hours'));
+                        // Mantener hora en UTC sin conversión
+                        $horaUTC = date('H:i:s', strtotime($horaSAP));
                         
-                        Log::info('🕐 [BATCH DEBUG] Conversión timezone', [
+                        Log::info('🕐 [BATCH DEBUG] Hora en UTC', [
                             'hora_sap_utc' => $horaSAP,
-                            'hora_local_peru' => $horaLocal,
-                            'esta_en_lista_buscada' => in_array($horaLocal, $horas),
+                            'hora_utc' => $horaUTC,
+                            'esta_en_lista_buscada' => in_array($horaUTC, $horas),
                             'placa' => $cita['zPlaca'] ?? 'N/A'
                         ]);
                         
-                        if (in_array($horaLocal, $horas)) {
-                            $citasPorHora[$horaLocal]++;
+                        if (in_array($horaUTC, $horas)) {
+                            $citasPorHora[$horaUTC]++;
                             Log::info('✅ [BATCH DEBUG] Cita contada correctamente', [
-                                'hora_local' => $horaLocal,
-                                'contador_actual' => $citasPorHora[$horaLocal],
+                                'hora_utc' => $horaUTC,
+                                'contador_actual' => $citasPorHora[$horaUTC],
                                 'placa' => $cita['zPlaca'] ?? 'N/A'
                             ]);
                         }

@@ -40,3 +40,4 @@ test_soap.php
 .qoder/rules/reglas.md
 .qoder/rules/laravel.md
 .qoder/rules/usar.md
+.env.example
