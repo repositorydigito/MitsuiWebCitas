@@ -59,12 +59,45 @@ class AppointmentService
     }
 
     /**
+     * Resolver EmployeeID por zIDCentro SOLO para creación y clientes normales.
+     */
+    private function resolveEmployeeIdForCreate(array $data): ?string
+    {
+        try {
+            $customerId = $data['customer_id'] ?? null;
+            $centerId = $data['center_id'] ?? null;
+
+            if (!$customerId || !$centerId) {
+                return null;
+            }
+
+            // Cliente comodín no aplica la regla
+            if ($customerId === '1200166011') {
+                return null;
+            }
+
+            $mapping = config('c4c.employee_by_center', []);
+            if (isset($mapping[$centerId])) {
+                return $mapping[$centerId];
+            }
+
+            // Fallback al default si no está mapeado
+            return config('c4c.defaults.employee_id');
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
      * Create a new appointment.
      *
      * @return array
      */
     public function create(array $data)
     {
+        // Resolver EmployeeID para creación (solo clientes normales)
+        $employeeIdResolved = $this->resolveEmployeeIdForCreate($data);
+
         // Validate required fields
         $requiredFields = ['customer_id', 'start_date', 'end_date', 'vehicle_plate', 'center_id'];
         foreach ($requiredFields as $field) {
@@ -101,7 +134,7 @@ class AppointmentService
                     'BusinessPartnerInternalID' => $data['customer_id'],
                 ],
                 'AttendeeParty' => [
-                    'EmployeeID' => $data['employee_id'] ?? '7000002', // Default employee ID
+                    'EmployeeID' => $employeeIdResolved ?? ($data['employee_id'] ?? '7000002'),
                 ],
                 'StartDateTime' => [
                     '_' => $startDate->format('Y-m-d\TH:i:s\Z'),
@@ -183,6 +216,9 @@ class AppointmentService
      */
     public function createSimple(array $data): array
     {
+        // Resolver EmployeeID para creación (solo clientes normales)
+        $employeeIdResolved = $this->resolveEmployeeIdForCreate($data);
+
         Log::info('🆕 Creando nueva cita (método simplificado)', [
             'customer_id' => $data['customer_id'] ?? 'N/A',
             'start_date' => $data['start_date'] ?? 'N/A',
@@ -216,7 +252,7 @@ class AppointmentService
                     'BusinessPartnerInternalID' => $data['customer_id'] ?? '1270002726',
                 ],
                 'AttendeeParty' => [
-                    'EmployeeID' => $data['employee_id'] ?? '1740',
+                    'EmployeeID' => $employeeIdResolved ?? ($data['employee_id'] ?? '1740'),
                 ],
                 'StartDateTime' => [
                     '_' => $startDateTime,

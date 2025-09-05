@@ -49,6 +49,17 @@ return [
         ],
     ],
 
+    // Mapeo de centro (zIDCentro) → EmployeeID para creación de citas (clientes normales)
+    'employee_by_center' => [
+        'M313' => '7000004',
+        'M073' => '7000008',
+        'M023' => '7000003',
+        'M033' => '7000006',
+        'M013' => '7000002',
+        'L013' => '7000007',
+        'M303' => '7000005',
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | C4C Status Codes
@@ -133,4 +144,3 @@ return [
         'retry_delay' => env('C4C_SYNC_RETRY_DELAY', 60), // segundos
     ],
 ];
-
