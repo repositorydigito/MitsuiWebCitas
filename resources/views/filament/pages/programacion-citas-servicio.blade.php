@@ -7,6 +7,7 @@
         <!-- Selector de local -->
         <div class="w-1/3">
             <select wire:model.live="data.selectedLocal" class="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                <option value="">Seleccione un local</option>
                 @foreach(\App\Models\Local::where('is_active', true)->orderBy('name')->get() as $local)
                     <option value="{{ $local->code }}">{{ $local->name }}</option>
                 @endforeach
@@ -34,9 +35,14 @@
     <!-- Título de programación -->
     <div class="bg-primary-500 text-white font-semibold p-3 rounded-lg">
         Programación -
-        {{ \App\Models\Local::where('code', $data['selectedLocal'] ?? $selectedLocal)->value('name') ?? 'Seleccione un local' }}
+        @if(isset($data['selectedLocal']) || isset($selectedLocal))
+            {{ \App\Models\Local::where('code', $data['selectedLocal'] ?? $selectedLocal)->value('name') ?? 'Seleccione un local' }}
+        @else
+            Seleccione un local
+        @endif
     </div>
 
+    @if(isset($data['selectedLocal']) || isset($selectedLocal))
     <div class="flex justify-between gap-4">
         <div class="mb-4">
             <!-- Grilla de horarios -->
@@ -117,6 +123,11 @@
                 </table>
             </div>
         </div>
+    @else
+        <div class="bg-white p-6 rounded-lg shadow-md text-center my-4">
+            <p class="text-gray-600">Por favor, seleccione un local para ver la programación de citas.</p>
+        </div>
+    @endif
 
         <!-- Panel lateral de información y configuraciones -->
         <div>

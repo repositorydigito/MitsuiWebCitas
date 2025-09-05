@@ -553,7 +553,30 @@ class AgendarCita extends Page
         try {
             Log::info('[AgendarCita] Cargando configuración de intervalos de reserva');
 
-            // Obtener la configuración de intervalos desde la base de datos
+            // Si hay un local seleccionado, cargar su configuración específica
+            if (!empty($this->localSeleccionado) && isset($this->locales[$this->localSeleccionado]['id'])) {
+                $localId = $this->locales[$this->localSeleccionado]['id'];
+                $interval = \App\Models\Interval::where('local_id', $localId)->first();
+                
+                if ($interval) {
+                    $this->minReservationTime = $interval->min_reservation_time;
+                    $this->minTimeUnit = $interval->min_time_unit;
+                    $this->maxReservationTime = $interval->max_reservation_time;
+                    $this->maxTimeUnit = $interval->max_time_unit;
+
+                    Log::info('[AgendarCita] Configuración de intervalos cargada para local específico:', [
+                        'local_id' => $localId,
+                        'local_codigo' => $this->localSeleccionado,
+                        'min_time' => $this->minReservationTime,
+                        'min_unit' => $this->minTimeUnit,
+                        'max_time' => $this->maxReservationTime,
+                        'max_unit' => $this->maxTimeUnit,
+                    ]);
+                    return;
+                }
+            }
+
+            // Fallback: Obtener la configuración general (primer intervalo disponible)
             $interval = \App\Models\Interval::query()->first();
             
             if ($interval) {
@@ -562,7 +585,7 @@ class AgendarCita extends Page
                 $this->maxReservationTime = $interval->max_reservation_time;
                 $this->maxTimeUnit = $interval->max_time_unit;
 
-                Log::info('[AgendarCita] Configuración de intervalos cargada:', [
+                Log::info('[AgendarCita] Configuración de intervalos cargada (fallback general):', [
                     'min_time' => $this->minReservationTime,
                     'min_unit' => $this->minTimeUnit,
                     'max_time' => $this->maxReservationTime,
@@ -3892,6 +3915,10 @@ class AgendarCita extends Page
 
         // Limpiar los horarios disponibles para forzar su recarga
         $this->horariosDisponibles = [];
+
+        // ✅ NUEVO: Recargar configuración de intervalos específica del local
+        $this->cargarConfiguracionIntervalos();
+        Log::info("[AgendarCita] Configuración de intervalos recargada para local: {$value}");
 
         // Regenerar el calendario para actualizar la disponibilidad según el local seleccionado
         $this->generarCalendario();

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Local extends Model
 {
@@ -27,6 +28,14 @@ class Local extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    /**
+     * Obtiene la configuración de intervalo asociada a este local.
+     */
+    public function interval(): HasOne
+    {
+        return $this->hasOne(Interval::class);
+    }
 
     /**
      * Obtener todos los locales activos para selectores

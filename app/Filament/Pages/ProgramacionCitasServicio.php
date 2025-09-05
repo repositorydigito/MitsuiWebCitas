@@ -60,21 +60,26 @@ class ProgramacionCitasServicio extends Page implements HasForms
     {
         $this->selectedWeek = now()->startOfWeek();
 
-        // Cargar el intervalo global si existe
-        $interval = \App\Models\Interval::query()->first();
-        if ($interval) {
-            $this->minReservationTime = $interval->min_reservation_time;
-            $this->maxReservationTime = $interval->max_reservation_time;
-            $this->minTimeUnit = $interval->min_time_unit;
-            $this->maxTimeUnit = $interval->max_time_unit;
+        // Inicializar la propiedad data si no existe
+        if (empty($this->data) || !is_array($this->data)) {
+            $this->data = [];
         }
 
-        // Seleccionar el primer local activo por defecto
-        if (empty($this->selectedLocal)) {
-            $primerLocal = \App\Models\Local::where('is_active', true)->orderBy('name')->first();
-            if ($primerLocal) {
-                $this->selectedLocal = $primerLocal->codigo;
-            }
+        // Si hay un local en la URL, usarlo
+        if (request()->has('local')) {
+            $this->data['selectedLocal'] = request()->query('local');
+            $this->selectedLocal = $this->data['selectedLocal'];
+        }
+
+        // Cargar la configuración del local si ya hay uno seleccionado
+        if (!empty($this->selectedLocal)) {
+            $this->loadIntervalForSelectedLocal();
+        } else {
+            // Valores por defecto cuando no hay local seleccionado
+            $this->minReservationTime = 1;
+            $this->maxReservationTime = 30;
+            $this->minTimeUnit = 'days';
+            $this->maxTimeUnit = 'days';
         }
 
         $this->form->fill([
@@ -85,22 +90,56 @@ class ProgramacionCitasServicio extends Page implements HasForms
             'maxTimeUnit' => $this->maxTimeUnit,
         ]);
 
-        $this->generateTimeSlots();
-
-        // Si hay parámetro refresh, forzar recarga de datos
-        if (request()->has('refresh')) {
-            $this->resetSelection();
+        // Solo generar los slots de tiempo si hay un local seleccionado
+        if (!empty($this->selectedLocal)) {
             $this->generateTimeSlots();
         }
     }
 
     public function updatedData($value, $name)
     {
-        // Si se actualiza el local seleccionado, regenerar los slots de tiempo
+        // Si se actualiza el local seleccionado, cargar la configuración del local y regenerar los slots de tiempo
         if ($name === 'selectedLocal') {
             $this->selectedLocal = $value;
+            $this->data['selectedLocal'] = $value; // Asegurarse de que data.selectedLocal se actualice
+            $this->loadIntervalForSelectedLocal();
+            $this->form->fill([
+                'selectedLocal' => $this->selectedLocal,
+                'minReservationTime' => $this->minReservationTime,
+                'maxReservationTime' => $this->maxReservationTime,
+                'minTimeUnit' => $this->minTimeUnit,
+                'maxTimeUnit' => $this->maxTimeUnit,
+            ]);
             $this->resetSelection();
-            $this->generateTimeSlots();
+            if (!empty($this->selectedLocal)) {
+                $this->generateTimeSlots();
+            }
+        }
+    }
+    
+    /**
+     * Carga la configuración de intervalo para el local seleccionado
+     */
+    private function loadIntervalForSelectedLocal(): void
+    {
+        if (empty($this->selectedLocal)) {
+            return;
+        }
+        
+        $local = \App\Models\Local::where('code', $this->selectedLocal)->first();
+        
+        if ($local && $local->interval) {
+            // Si existe la configuración para este local, cargarla
+            $this->minReservationTime = $local->interval->min_reservation_time;
+            $this->maxReservationTime = $local->interval->max_reservation_time;
+            $this->minTimeUnit = $local->interval->min_time_unit;
+            $this->maxTimeUnit = $local->interval->max_time_unit;
+        } else {
+            // Valores por defecto si no hay configuración para este local
+            $this->minReservationTime = 1;
+            $this->maxReservationTime = 30;
+            $this->minTimeUnit = 'days';
+            $this->maxTimeUnit = 'days';
         }
     }
 
@@ -296,36 +335,52 @@ class ProgramacionCitasServicio extends Page implements HasForms
     {
         $data = $this->form->getState();
 
-        // Save the settings
+        // Validar que se haya seleccionado un local
+        if (empty($this->selectedLocal)) {
+            Notification::make()
+                ->danger()
+                ->title('Error')
+                ->body('Debe seleccionar un local antes de guardar la configuración.')
+                ->send();
+            return;
+        }
+
+        // Obtener el local seleccionado
+        $local = \App\Models\Local::where('code', $this->selectedLocal)->first();
+        
+        if (!$local) {
+            Notification::make()
+                ->danger()
+                ->title('Error')
+                ->body('No se encontró el local seleccionado.')
+                ->send();
+            return;
+        }
+
+        // Actualizar o crear la configuración para este local
+        $interval = $local->interval ?? new \App\Models\Interval();
+        
+        $interval->fill([
+            'local_id' => $local->id,
+            'min_reservation_time' => $data['minReservationTime'],
+            'min_time_unit' => $data['minTimeUnit'],
+            'max_reservation_time' => $data['maxReservationTime'],
+            'max_time_unit' => $data['maxTimeUnit'],
+        ]);
+        
+        $interval->save();
+        
+        // Actualizar las propiedades locales
         $this->minReservationTime = $data['minReservationTime'];
         $this->maxReservationTime = $data['maxReservationTime'];
         $this->minTimeUnit = $data['minTimeUnit'];
         $this->maxTimeUnit = $data['maxTimeUnit'];
 
-        // Guardar el intervalo global (solo un registro)
-        $interval = \App\Models\Interval::query()->first();
-        if ($interval) {
-            $interval->update([
-                'min_reservation_time' => $this->minReservationTime,
-                'min_time_unit' => $this->minTimeUnit,
-                'max_reservation_time' => $this->maxReservationTime,
-                'max_time_unit' => $this->maxTimeUnit,
-            ]);
-        } else {
-            \App\Models\Interval::create([
-                'min_reservation_time' => $this->minReservationTime,
-                'min_time_unit' => $this->minTimeUnit,
-                'max_reservation_time' => $this->maxReservationTime,
-                'max_time_unit' => $this->maxTimeUnit,
-            ]);
-        }
-
-        session()->flash('interval_saved', '¡Configuración de intervalo guardada correctamente!');
-
-        // Add notification
+        // Notificación de éxito
         Notification::make()
             ->success()
             ->title('Configuración guardada')
+            ->body('La configuración se ha guardado correctamente para el local ' . $local->name)
             ->send();
     }
 
