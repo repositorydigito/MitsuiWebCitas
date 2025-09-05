@@ -41,3 +41,4 @@ test_soap.php
 .qoder/rules/laravel.md
 .qoder/rules/usar.md
 .env.example
+AGENTS.md

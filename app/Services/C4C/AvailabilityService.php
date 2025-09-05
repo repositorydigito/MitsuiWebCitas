@@ -157,10 +157,21 @@ class AvailabilityService
             
             if ($capacityValidationEnabled) {
                 Log::info('🔄 [AvailabilityService] Validación de capacidad HABILITADA');
-                $slotsWithCapacityValidation = $this->validarCapacidadSlots($slots, $centerId, $date);
+                $validationResult = $this->validarCapacidadSlots($slots, $centerId, $date);
+                if (isset($validationResult['slots'])) {
+                    $slotsWithCapacityValidation = $validationResult['slots'];
+                    $hcpStats = $validationResult['hcp_stats'] ?? null;
+                    $totalAppointments = $validationResult['total_appointments'] ?? null;
+                } else {
+                    $slotsWithCapacityValidation = $validationResult;
+                    $hcpStats = null;
+                    $totalAppointments = null;
+                }
             } else {
                 Log::info('⏭️ [AvailabilityService] Validación de capacidad DESHABILITADA - usando slots originales');
                 $slotsWithCapacityValidation = $slots;
+                $hcpStats = null;
+                $totalAppointments = null;
             }
 
             Log::info('✅ Disponibilidad obtenida exitosamente con validación de capacidad', [
@@ -176,6 +187,8 @@ class AvailabilityService
                 'date' => $date,
                 'day_of_week' => $dayOfWeek,
                 'slots' => $slotsWithCapacityValidation,
+                'hcp_stats' => $hcpStats ?? null,
+                'total_appointments' => $totalAppointments ?? null,
                 'total_slots' => count($slotsWithCapacityValidation),
                 'available_slots' => count(array_filter($slotsWithCapacityValidation, fn($slot) => $slot['is_available']))
             ];
@@ -410,6 +423,8 @@ class AvailabilityService
         ]);
 
         $validatedSlots = [];
+        $hcpStats = null;
+        $totalAppointments = null;
 
         // ✅ OPTIMIZACIÓN: BATCH REQUEST (70% más rápido que paralelo)
         $batchEnabled = env('C4C_BATCH_VALIDATION_ENABLED', true);
@@ -427,7 +442,14 @@ class AvailabilityService
             ]);
 
             $batchStartTime = microtime(true);
-            $validatedSlots = $this->validarCapacidadSlotsBatch($slotsToProcess, $centerId, $fecha);
+            $batchResult = $this->validarCapacidadSlotsBatch($slotsToProcess, $centerId, $fecha);
+            if (isset($batchResult['slots'])) {
+                $validatedSlots = $batchResult['slots'];
+                $hcpStats = $batchResult['hcp_stats'] ?? null;
+                $totalAppointments = $batchResult['total_appointments'] ?? null;
+            } else {
+                $validatedSlots = $batchResult;
+            }
             $batchEndTime = microtime(true);
             $batchTimeMs = round(($batchEndTime - $batchStartTime) * 1000, 2);
 
@@ -444,7 +466,14 @@ class AvailabilityService
             ]);
 
             $parallelStartTime = microtime(true);
-            $validatedSlots = $this->validarCapacidadSlotsParallel($slotsToProcess, $centerId, $fecha);
+            $parallelResult = $this->validarCapacidadSlotsParallel($slotsToProcess, $centerId, $fecha);
+            if (isset($parallelResult['slots'])) {
+                $validatedSlots = $parallelResult['slots'];
+                $hcpStats = $parallelResult['hcp_stats'] ?? null;
+                $totalAppointments = $parallelResult['total_appointments'] ?? null;
+            } else {
+                $validatedSlots = $parallelResult;
+            }
             $parallelEndTime = microtime(true);
             $parallelTimeMs = round(($parallelEndTime - $parallelStartTime) * 1000, 2);
 
@@ -479,7 +508,11 @@ class AvailabilityService
             'slots_disponibles' => count(array_filter($validatedSlots, fn($slot) => $slot['is_available']))
         ]);
 
-        return $validatedSlots;
+        return [
+            'slots' => $validatedSlots,
+            'hcp_stats' => $hcpStats,
+            'total_appointments' => $totalAppointments,
+        ];
     }
 
     /**
@@ -829,6 +862,19 @@ class AvailabilityService
 
         // UNA sola consulta BATCH para todas las horas
         $batchResult = $this->contarCitasExistentesBatch($centerId, $fecha, $horasToValidate);
+        $hcpByHour = $batchResult['_hcp_by_hour'] ?? null;
+        $hcpFromByHour = $batchResult['_hcp_from_by_hour'] ?? null;
+        $platesByHour = $batchResult['_plates_by_hour'] ?? null;
+        $hcpStats = null;
+        $totalAppointments = isset($batchResult['_total']) ? (int) $batchResult['_total'] : null;
+        if (is_array($hcpByHour)) {
+            $hcpSum = ['hcp' => 0, 'no_hcp' => 0];
+            foreach ($hcpByHour as $h => $counts) {
+                if (isset($counts['hcp'])) $hcpSum['hcp'] += (int) $counts['hcp'];
+                if (isset($counts['no_hcp'])) $hcpSum['no_hcp'] += (int) $counts['no_hcp'];
+            }
+            $hcpStats = $hcpSum;
+        }
 
         $validatedSlots = [];
         foreach ($slotsByHora as $hora => $slot) {
@@ -837,13 +883,20 @@ class AvailabilityService
             $disponible = $citasExistentes < $capacidadMaxima;
 
             $slot['is_available'] = $disponible;
+            $hourHcp = $hcpByHour[$hora] ?? null;
+            $hourHcpFrom = $hcpFromByHour[$hora] ?? null;
+            $hourPlates = $platesByHour[$hora] ?? null;
             $slot['capacity_validation'] = [
                 'validated' => true,
                 'max_capacity' => $capacidadMaxima,
                 'existing_appointments' => $citasExistentes,
                 'remaining_capacity' => $capacidadMaxima - $citasExistentes,
                 'available' => $disponible,
-                'reason' => $disponible ? 'Capacidad disponible' : "Capacidad agotada ({$citasExistentes}/{$capacidadMaxima})"
+                'reason' => $disponible ? 'Capacidad disponible' : "Capacidad agotada ({$citasExistentes}/{$capacidadMaxima})",
+                'hcp_count' => is_array($hourHcp) ? ($hourHcp['hcp'] ?? null) : null,
+                'no_hcp_count' => is_array($hourHcp) ? ($hourHcp['no_hcp'] ?? null) : null,
+                'hcp_from' => is_array($hourHcpFrom) ? $hourHcpFrom : null,
+                'plates' => is_array($hourPlates) ? $hourPlates : null,
             ];
 
             $validatedSlots[] = $slot;
@@ -858,7 +911,11 @@ class AvailabilityService
             'mejora_vs_paralelo' => '~70% más rápido'
         ]);
 
-        return $validatedSlots;
+        return [
+            'slots' => $validatedSlots,
+            'hcp_stats' => $hcpStats,
+            'total_appointments' => $totalAppointments,
+        ];
     }
 
     /**
@@ -916,6 +973,14 @@ class AvailabilityService
 
             // Inicializar contadores
             $citasPorHora = array_fill_keys($horas, 0);
+            $hcpByHour = [];
+            $hcpFromByHour = [];
+            $platesByHour = [];
+            foreach ($horas as $h) {
+                $hcpByHour[$h] = ['hcp' => 0, 'no_hcp' => 0];
+                $hcpFromByHour[$h] = [];
+                $platesByHour[$h] = [];
+            }
 
             // Procesar respuesta
             try {
@@ -944,29 +1009,69 @@ class AvailabilityService
                     }
                 }
 
-                // Contar citas por hora - MANTENIENDO UTC
+                // Contar citas por hora con regla HCP (-5h) condicionada a igualdad con ScheduledStartDateTime
                 foreach ($citas as $cita) {
                     if (is_array($cita)) {
-                        // SAP guarda zHoraInicio en UTC - mantener en UTC
+                        // Tomar horas como cadenas, sin convertir TZ
                         $horaSAP = $cita['zHoraInicio'] ?? '';
-                        
-                        // Mantener hora en UTC sin conversión
-                        $horaUTC = date('H:i:s', strtotime($horaSAP));
-                        
-                        Log::info('🕐 [BATCH DEBUG] Hora en UTC', [
+                        $vieneHcp = $cita['zVieneHCP'] ?? null;
+                        $scheduledRaw = $cita['ScheduledStartDateTime'] ?? null;
+                        $scheduledTime = null;
+                        if (is_string($scheduledRaw) && strpos($scheduledRaw, 'T') !== false) {
+                            $tpos = strpos($scheduledRaw, 'T');
+                            $scheduledTime = substr($scheduledRaw, $tpos + 1, 8); // HH:MM:SS
+                        }
+
+                        // Hora original desde zHoraInicio
+                        $horaOriginal = '';
+                        $horaEfectiva = '';
+                        if (!empty($horaSAP)) {
+                            $horaOriginal = date('H:i:s', strtotime($horaSAP));
+                            $horaEfectiva = $horaOriginal;
+                        }
+
+                        // Aplicar -5h SOLO si: HCP marcado y ScheduledStartDateTime (HH:MM:SS) es IGUAL a zHoraInicio
+                        $didAdjust = false;
+                        if ($vieneHcp === 'X' && !empty($scheduledTime) && $scheduledTime === $horaOriginal) {
+                            $horaEfectiva = date('H:i:s', strtotime($horaOriginal) - 5 * 3600);
+                            $didAdjust = true;
+                        }
+
+                        Log::info('🕐 [BATCH DEBUG] Hora efectiva para conteo', [
                             'hora_sap_utc' => $horaSAP,
-                            'hora_utc' => $horaUTC,
-                            'esta_en_lista_buscada' => in_array($horaUTC, $horas),
-                            'placa' => $cita['zPlaca'] ?? 'N/A'
+                            'viene_hcp' => $vieneHcp === 'X',
+                            'scheduled_time' => $scheduledTime,
+                            'hora_original' => $horaOriginal,
+                            'hora_efectiva' => $horaEfectiva,
+                            'esta_en_lista_buscada' => in_array($horaEfectiva, $horas),
                         ]);
-                        
-                        if (in_array($horaUTC, $horas)) {
-                            $citasPorHora[$horaUTC]++;
+
+                        if (in_array($horaEfectiva, $horas)) {
+                            $citasPorHora[$horaEfectiva]++;
                             Log::info('✅ [BATCH DEBUG] Cita contada correctamente', [
-                                'hora_utc' => $horaUTC,
-                                'contador_actual' => $citasPorHora[$horaUTC],
+                                'hora_efectiva' => $horaEfectiva,
+                                'contador_actual' => $citasPorHora[$horaEfectiva],
                                 'placa' => $cita['zPlaca'] ?? 'N/A'
                             ]);
+                            // Guardar placa en lista por hora efectiva
+                            $placa = $cita['zPlaca'] ?? null;
+                            if (!empty($placa)) {
+                                if (!in_array($placa, $platesByHour[$horaEfectiva], true)) {
+                                    $platesByHour[$horaEfectiva][] = $placa;
+                                }
+                            }
+                            // Contabilizar flag HCP POR HORA
+                            if ($vieneHcp === 'X') {
+                                $hcpByHour[$horaEfectiva]['hcp']++;
+                                // Guardar hora original SOLO si hubo ajuste (-5h)
+                                if ($didAdjust) {
+                                    if (!in_array($horaOriginal, $hcpFromByHour[$horaEfectiva], true)) {
+                                        $hcpFromByHour[$horaEfectiva][] = $horaOriginal;
+                                    }
+                                }
+                            } else {
+                                $hcpByHour[$horaEfectiva]['no_hcp']++;
+                            }
                         }
                     }
                 }
@@ -986,10 +1091,20 @@ class AvailabilityService
                 return $this->contarCitasExistentesIndividual($centerId, $fecha, $horas);
             }
 
+            $total = array_sum($citasPorHora);
+
             Log::info('✅ [AvailabilityService] Consulta BATCH exitosa', [
                 'resultados_por_hora' => $citasPorHora,
-                'total_citas_encontradas' => array_sum($citasPorHora)
+                'total_citas_encontradas' => $total,
+                'hcp_by_hour' => $hcpByHour,
+                'plates_by_hour' => $platesByHour
             ]);
+
+            // Adjuntar métricas HCP a los resultados
+            $citasPorHora['_hcp_by_hour'] = $hcpByHour;
+            $citasPorHora['_hcp_from_by_hour'] = $hcpFromByHour;
+            $citasPorHora['_plates_by_hour'] = $platesByHour;
+            $citasPorHora['_total'] = $total;
 
             return $citasPorHora;
 
@@ -1032,6 +1147,7 @@ class AvailabilityService
     protected function validarCapacidadSlotsParallel(array $slotsToProcess, string $centerId, string $fecha): array
     {
         $validatedSlots = [];
+        $totalAppointments = 0;
         
         // Preparar todas las consultas SOAP para ejecución paralela
         $soapPromises = [];
@@ -1092,6 +1208,7 @@ class AvailabilityService
                 ];
             } else {
                 $citasExistentes = $result['count'];
+                $totalAppointments += (int) $citasExistentes;
                 $disponible = $citasExistentes < $capacidadMaxima;
 
                 // ✅ LOG COMPRENSIBLE CONSOLIDADO
@@ -1146,7 +1263,11 @@ class AvailabilityService
             $validatedSlots[$index] = $slot;
         }
 
-        return array_values($validatedSlots);
+        return [
+            'slots' => array_values($validatedSlots),
+            'hcp_stats' => null,
+            'total_appointments' => $totalAppointments,
+        ];
     }
 
     /**
@@ -1538,4 +1659,3 @@ class AvailabilityService
         return $analysis;
     }
 }
-
