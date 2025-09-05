@@ -347,19 +347,22 @@
                         @if(!empty($horariosDisponibles))
                         <div id="debug-capacity-info" class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs" style="display: none;">
                             <div class="font-semibold text-yellow-800 mb-2">🔍 DEBUG - Información de Capacidad:</div>
-                            <div class="grid grid-cols-2 md:grid-cols-5 gap-2 text-yellow-700">
+                            <div class="grid grid-cols-2 md:grid-cols-8 gap-2 text-yellow-700">
                                 <div><strong>Centro:</strong> {{ $localSeleccionado ?? 'N/A' }}</div>
                                 <div><strong>Fecha:</strong> {{ $fechaSeleccionada ?? 'N/A' }}</div>
                                 <div><strong>Total:</strong> {{ $debugInfo['total_slots'] ?? count($horariosDisponibles) }}</div>
                                 <div><strong>Validados:</strong> {{ $debugInfo['slots_validados'] ?? 'N/A' }}</div>
                                 <div><strong>Disponibles:</strong> {{ $debugInfo['slots_disponibles'] ?? 'N/A' }}</div>
+                                <div><strong>HCP (X):</strong> {{ $debugInfo['hcp'] ?? 'N/A' }}</div>
+                                <div><strong>No-HCP:</strong> {{ $debugInfo['no_hcp'] ?? 'N/A' }}</div>
+                                <div><strong>Total citas:</strong> {{ $debugInfo['total_citas'] ?? 'N/A' }}</div>
                             </div>
                             <div class="mt-1 text-xs text-yellow-600">
                                 <strong>Método:</strong> {{ $debugInfo['validation_method'] ?? 'N/A' }}
                             </div>
                             <div class="mt-2 text-xs text-yellow-600">
                                 <div class="font-medium">Estado:
-                                    <span class="
+                                    <span id="validation-status" class="
                                         @if(str_contains($debugInfo['status'] ?? '', 'Listo'))
                                             text-green-600 font-semibold
                                         @elseif(str_contains($debugInfo['status'] ?? '', 'progreso'))
@@ -1460,7 +1463,7 @@ document.addEventListener('livewire:updated', function() {
 document.addEventListener('horarios-cargados-activar-progressive', function() {
     console.log('🔄 Evento recibido: activando validación');
 
-    // Actualizar debug info cuando se recibe el evento
+    // Actualizar debug info cuando se recibe el evento (oculto por decisión de UX)
     const validationStatus = document.getElementById('validation-status');
     const capacityBreakdown = document.getElementById('capacity-breakdown');
 
@@ -1563,6 +1566,8 @@ document.addEventListener('progressive-validation-completed', function(event) {
         const validationStatus = document.getElementById('validation-status');
         const capacityBreakdown = document.getElementById('capacity-breakdown');
 
+        // Mantener panel de debug oculto (sin cambiar display)
+
         if (validationStatus) {
             validationStatus.textContent = 'Completada ✅';
             validationStatus.className = 'text-green-600 font-semibold';
@@ -1577,9 +1582,15 @@ document.addEventListener('progressive-validation-completed', function(event) {
                 const existing = capacity.existing_appointments || 'N/A';
                 const remaining = capacity.remaining_capacity || 'N/A';
 
-                breakdown += `<div class="flex justify-between items-center py-1 border-b border-yellow-200">
-                    <span>${status} ${slot.start_time_formatted}</span>
-                    <span class="text-xs">zTope: ${maxCap} | Citas: ${existing} | Libre: ${remaining}</span>
+                const hcp = capacity.hcp_count ?? 'N/A';
+                const noHcp = capacity.no_hcp_count ?? 'N/A';
+                const hcpFrom = Array.isArray(capacity.hcp_from) ? capacity.hcp_from : [];
+                const plates = Array.isArray(capacity.plates) ? capacity.plates : [];
+                const platesText = plates.length ? ` | Placas: ${plates.join(', ')}` : '';
+
+                breakdown += `<div class=\"flex justify-between items-center py-1 border-b border-yellow-200\">\
+                    <span>${status} ${slot.start_time_formatted}</span>\
+                    <span class=\"text-xs\">zTope: ${maxCap} | Citas: ${existing} | Libre: ${remaining} | <span class='px-1 rounded bg-purple-100 text-purple-700'>HCP: ${hcp} (-5h)</span> | No-HCP: ${noHcp}${platesText}</span>\
                 </div>`;
             });
             capacityBreakdown.innerHTML = breakdown;

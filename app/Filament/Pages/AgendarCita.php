@@ -3595,8 +3595,12 @@ class AgendarCita extends Page
                         $maxCap = $slot['capacity_validation']['max_capacity'] ?? 'N/A';
                         $existing = $slot['capacity_validation']['existing_appointments'] ?? 'N/A';
                         $remaining = $slot['capacity_validation']['remaining_capacity'] ?? 'N/A';
+                        $hcpCount = $slot['capacity_validation']['hcp_count'] ?? 'N/A';
+                        $noHcpCount = $slot['capacity_validation']['no_hcp_count'] ?? 'N/A';
+                        $platesArr = $slot['capacity_validation']['plates'] ?? [];
+                        $platesStr = is_array($platesArr) && count($platesArr) ? implode(', ', $platesArr) : '';
 
-                        $detalles[] = "{$status} {$slot['start_time_formatted']} | zTope: {$maxCap} | Citas: {$existing} | Libre: {$remaining}";
+                        $detalles[] = "{$status} {$slot['start_time_formatted']} | zTope: {$maxCap} | Citas: {$existing} | Libre: {$remaining} | HCP: {$hcpCount} (-5h) | No-HCP: {$noHcpCount}" . ($platesStr ? " | Placas: {$platesStr}" : '');
 
                         if ($slot['is_available']) {
                             $slotsDisponibles++;
@@ -3604,13 +3608,20 @@ class AgendarCita extends Page
                     }
                 }
 
+                // Extraer métricas HCP si están presentes
+                $hcpCount = $result['hcp_stats']['hcp'] ?? null;
+                $noHcpCount = $result['hcp_stats']['no_hcp'] ?? null;
+
                 $this->debugInfo = [
                     'status' => 'Validación completada ✅',
                     'details' => implode("\n", $detalles), // Mostrar TODOS los horarios
                     'total_slots' => $result['total_slots'],
                     'validation_method' => 'C4C BATCH + zTope',
                     'slots_validados' => $slotsValidados,
-                    'slots_disponibles' => $slotsDisponibles
+                    'slots_disponibles' => $slotsDisponibles,
+                    'hcp' => $hcpCount,
+                    'no_hcp' => $noHcpCount,
+                    'total_citas' => $result['total_appointments'] ?? 'N/A',
                 ];
 
                 // Enviar resultado a Alpine.js
