@@ -4288,13 +4288,9 @@ class AgendarCita extends Page
                     'condition_wildcard' => $isWildcardClient ? 'TRUE' : 'FALSE'
                 ]);
 
-                if ($this->paqueteId && !$isWildcardClient) {
-                    CreateOfferJob::dispatch($appointment)->delay(now()->addMinutes(1));
-                    Log::info('📤 Job de creación de oferta despachado', [
-                        'appointment_id' => $appointment->id,
-                        'delay' => '1 minuto'
-                    ]);
-                } else if ($isWildcardClient) {
+                // Para clientes normales: NO disparar CreateOfferJob aquí.
+                // La oferta se generará después de descargar productos del paquete correcto (DownloadProductsJob).
+                if ($isWildcardClient) {
                     // Para clientes wildcard, disparar CreateOfferJob inmediatamente (sin delay)
                     CreateOfferJob::dispatch($appointment);
                     Log::info('📤 Job de creación de oferta wildcard despachado', [

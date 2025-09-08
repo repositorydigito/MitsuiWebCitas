@@ -130,33 +130,28 @@ class AppointmentSyncService
 
             // ✅ OBTENER PACKAGE_ID desde ProductService con lógica dinámica
             $packageId = null;
+            // Para clientes normales, NO fijar package_id aquí para evitar condición de carrera.
+            // Se calculará y fijará por UpdateAppointmentPackageIdJob tras actualizar TVT.
+
             if ($appointment->maintenance_type) {
-                // Cargar vehículo si no está cargado
                 if (!$appointment->relationLoaded('vehicle')) {
                     $appointment->load('vehicle');
                 }
-
-                $packageId = $this->productService->obtenerPaquetePorTipo(
+                $previewPackageId = $this->productService->obtenerPaquetePorTipo(
                     $appointment->maintenance_type,
                     $appointment->vehicle
                 );
-
-                Log::info('📦 Package ID obtenido dinámicamente durante sincronización', [
+                Log::info('📦 (preview) Package calculado durante sincronización (no se fija)', [
                     'appointment_id' => $appointment->id,
                     'maintenance_type' => $appointment->maintenance_type,
-                    'package_id' => $packageId,
+                    'preview_package_id' => $previewPackageId,
                     'vehicle_tipo_valor_trabajo' => $appointment->vehicle?->tipo_valor_trabajo,
                     'vehicle_brand_code' => $appointment->vehicle?->brand_code
-                ]);
-            } else {
-                Log::warning('⚠️ No se puede calcular package_id sin maintenance_type', [
-                    'appointment_id' => $appointment->id
                 ]);
             }
 
             $appointment->update([
                 'c4c_uuid' => $c4cUuid,
-                'package_id' => $packageId, // ✅ AGREGAR PACKAGE_ID
                 'is_synced' => true,
                 'synced_at' => now(),
                 'c4c_status' => 'created'
@@ -171,7 +166,7 @@ class AppointmentSyncService
             return [
                 'success' => true,
                 'c4c_uuid' => $c4cUuid,
-                'package_id' => $packageId,
+                'package_id' => $appointment->package_id, // no fijado aquí
                 'synced_at' => $appointment->synced_at,
                 'message' => 'Cita sincronizada exitosamente con C4C'
             ];
@@ -262,4 +257,3 @@ class AppointmentSyncService
                $durations['regular'];
     }
 }
-

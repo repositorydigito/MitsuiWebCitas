@@ -148,13 +148,10 @@ class UpdateVehicleTipoValorTrabajoJob implements ShouldQueue
     protected function dispatchPackageIdUpdateJobs(Vehicle $vehicle): void
     {
         try {
-            // Buscar citas activas del vehículo que necesiten actualización de package_id
+            // Buscar citas activas del vehículo que puedan requerir actualización de package_id
+            // (incluye las que ya tienen package_id para permitir corrección si el cálculo difiere)
             $appointments = $vehicle->appointments()
                 ->whereNotNull('maintenance_type')
-                ->where(function($q) {
-                    $q->whereNull('package_id')
-                      ->orWhere('package_id', '');
-                })
                 ->whereIn('status', ['confirmed', 'pending'])
                 ->get();
 
@@ -176,6 +173,7 @@ class UpdateVehicleTipoValorTrabajoJob implements ShouldQueue
             foreach ($appointments as $index => $appointment) {
                 $delay = now()->addSeconds($index * 5); // 5 segundos entre cada job
                 
+                // No forzar: el job decidirá sobrescribir si el nuevo package_id difiere del actual
                 UpdateAppointmentPackageIdJob::dispatch($appointment->id, false)
                     ->delay($delay);
 
