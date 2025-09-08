@@ -88,6 +88,7 @@ class DiagnoseOffersCommand extends Command
             // 4) Lectura de logs (si corresponde)
             if (in_array($mode, ['both','logs'])) {
                 $this->diagnoseFromLogs($a->id, $a->vehicle->license_plate ?? $a->vehicle_plate, $a->customer_ruc);
+                $this->printJobTimeline($a->id, $a->vehicle->license_plate ?? $a->vehicle_plate, $a->customer_ruc);
             }
 
             // 5) Análisis de causa raíz (reglas sobre código/modelos/jobs)
@@ -152,10 +153,22 @@ class DiagnoseOffersCommand extends Command
             $reasons[] = "package_id esperado={$expectedPackageId} pero la cita no lo tiene: la oferta puede haber usado un paquete por defecto o equivocado.";
         }
 
-        // 5) Señales en logs cercanas a la cita (últimos 20KB)
+        // 5) Señales en logs cercanas a la cita (últimos 20-50KB)
         $logEvidence = $this->collectBriefLogEvidence($a->id, $a->vehicle->license_plate ?? $a->vehicle_plate, $a->customer_ruc);
         if ($logEvidence) {
             $reasons[] = 'Ver evidencias en logs (líneas relevantes encontradas): ' . count($logEvidence) . ' coincidencias.';
+        }
+
+        // 6) Heurística exacta: paquete fijado temprano y job de actualización lo omitió
+        $logPath = storage_path('logs/laravel.log');
+        if (file_exists($logPath)) {
+            $content = $this->tailFile($logPath, 50000);
+            $hasSetInEnviar = (bool) preg_match('/EnviarCitaC4CJob.*Package ID asignado/i', $content);
+            $hasAlreadyHas = (bool) preg_match('/Cita ya tiene package_id/i', $content);
+            $hasUpdateTipo = (bool) preg_match('/UpdateVehicleTipoValorTrabajoJob/i', $content);
+            if ($hasSetInEnviar && $hasAlreadyHas && $hasUpdateTipo) {
+                $reasons[] = 'Paquete asignado temprano (EnviarCitaC4CJob) antes de actualizar tipo_valor_trabajo; luego UpdateAppointmentPackageIdJob lo omitió (already_has_package_id).';
+            }
         }
 
         return [
@@ -284,6 +297,57 @@ class DiagnoseOffersCommand extends Command
 
         } catch (\Throwable $e) {
             $this->warn('  (logs) Error analizando logs: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Mostrar una línea de tiempo de jobs relevantes para la cita desde logs.
+     */
+    protected function printJobTimeline(int $appointmentId, ?string $plate, ?string $dni): void
+    {
+        $logPath = storage_path('logs/laravel.log');
+        if (!file_exists($logPath)) return;
+        $content = $this->tailFile($logPath, 50000); // ampliar ventana para timeline
+        $lines = preg_split('/\r?\n/', $content);
+
+        $keywords = [
+            'EnviarCitaC4CJob',
+            'SyncAppointmentToC4CJob',
+            'ProcessAppointmentAfterCreationJob',
+            'UpdateVehicleTipoValorTrabajoJob',
+            'UpdateAppointmentPackageIdJob',
+            'DownloadProductsJob',
+            'CreateOfferJob',
+            'Package ID actualizado',
+            'Cita ya tiene package_id',
+        ];
+
+        $events = [];
+        foreach ($lines as $line) {
+            if (
+                (strpos($line, "appointment_id\" => {$appointmentId}") !== false) ||
+                ($plate && stripos($line, $plate) !== false) ||
+                ($dni && stripos($line, $dni) !== false)
+            ) {
+                foreach ($keywords as $k) {
+                    if (stripos($line, $k) !== false) {
+                        // Extraer timestamp si existe al inicio del log
+                        if (preg_match('/^\[(.*?)\]\s+.*$/', $line, $m)) {
+                            $events[] = [$m[1], $k, $line];
+                        } else {
+                            $events[] = ['(sin-ts)', $k, $line];
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ($events) {
+            $this->line('  (timeline) Jobs y eventos:');
+            foreach (array_slice($events, -12) as [$ts, $k, $raw]) {
+                $this->line("    · {$ts} | {$k}");
+            }
         }
     }
 
