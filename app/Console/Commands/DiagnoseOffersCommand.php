@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
 
 class DiagnoseOffersCommand extends Command
 {
-    protected $signature = 'offers:diagnose {--last=10} {--dni=} {--plate=} {--mode=both : logs|db|both}';
+    protected $signature = 'offers:diagnose {--last=10} {--dni=} {--plate=} {--mode=both : logs|db|both} {--log-bytes=100000 : Bytes a leer de logs} {--log-lines=50 : Máximo de líneas de log} {--raw-logs}';
 
     protected $description = 'Diagnostica las últimas citas y posibles errores de paquete/oferta (DB y/o logs)';
 
@@ -20,6 +20,9 @@ class DiagnoseOffersCommand extends Command
         $dni = $this->option('dni');
         $plate = $this->option('plate');
         $mode = strtolower($this->option('mode') ?? 'both');
+        $logBytes = (int) $this->option('log-bytes');
+        $logMaxLines = (int) $this->option('log-lines');
+        $rawLogs = (bool) $this->option('raw-logs');
 
         $this->info('🔎 Diagnóstico de ofertas y paquetes');
         $this->line("Parámetros: last={$last}, dni=".($dni ?: 'N/A').", plate=".($plate ?: 'N/A').", mode={$mode}");
@@ -87,8 +90,8 @@ class DiagnoseOffersCommand extends Command
 
             // 4) Lectura de logs (si corresponde)
             if (in_array($mode, ['both','logs'])) {
-                $this->diagnoseFromLogs($a->id, $a->vehicle->license_plate ?? $a->vehicle_plate, $a->customer_ruc);
-                $this->printJobTimeline($a->id, $a->vehicle->license_plate ?? $a->vehicle_plate, $a->customer_ruc);
+                $this->diagnoseFromLogs($a->id, $a->vehicle->license_plate ?? $a->vehicle_plate, $a->customer_ruc, $logBytes, $logMaxLines, $rawLogs);
+                $this->printJobTimeline($a->id, $a->vehicle->license_plate ?? $a->vehicle_plate, $a->customer_ruc, $logBytes);
             }
 
             // 5) Análisis de causa raíz (reglas sobre código/modelos/jobs)
@@ -99,6 +102,8 @@ class DiagnoseOffersCommand extends Command
                     $this->error('    - ' . $r);
                 }
             }
+            // 6) Resumen extendido de BD (fechas, oferta y productos)
+            $this->printDatabaseExtendedSummary($a);
         }
 
         return self::SUCCESS;
@@ -178,9 +183,7 @@ class DiagnoseOffersCommand extends Command
 
     protected function collectBriefLogEvidence(int $appointmentId, ?string $plate, ?string $dni): array
     {
-        $logPath = storage_path('logs/laravel.log');
-        if (!file_exists($logPath)) return [];
-        $content = $this->tailFile($logPath, 20000);
+        $content = $this->tailLogsAcrossFiles(50000);
         $lines = preg_split('/\r?\n/', $content);
         $hits = [];
         foreach ($lines as $line) {
@@ -245,16 +248,14 @@ class DiagnoseOffersCommand extends Command
     /**
      * Buscar señales en logs para una cita específica
      */
-    protected function diagnoseFromLogs(int $appointmentId, ?string $plate, ?string $dni): void
+    protected function diagnoseFromLogs(int $appointmentId, ?string $plate, ?string $dni, int $logBytes, int $logMaxLines, bool $raw): void
     {
         try {
-            $logPath = storage_path('logs/laravel.log');
-            if (!file_exists($logPath)) {
-                $this->warn('  (logs) No existe storage/logs/laravel.log');
+            $content = $this->tailLogsAcrossFiles($logBytes);
+            if ($content === '') {
+                $this->warn('  (logs) No hay logs disponibles');
                 return;
             }
-
-            $content = $this->tailFile($logPath, 20000); // leer últimos ~20KB
             $patterns = [
                 '/CreateOfferJob.*appointment_id[^\d]*(\d+)/i',
                 '/OfferService.*center_code[^A-Za-z0-9]*([A-Z0-9]+)/i',
@@ -263,7 +264,11 @@ class DiagnoseOffersCommand extends Command
                 '/vehicle_brand_code[^A-Za-z0-9]*([A-Z0-9]+)/i',
                 '/vehicle.*license_plate[^A-Za-z0-9]*([A-Z0-9\-]+)/i',
                 '/CustomerQuoteBundleMaintainRequest_sync_V1/i',
-                '/zOVIDCentro/i'
+                '/zOVIDCentro/i',
+                '/EnviarCitaC4CJob/i',
+                '/UpdateAppointmentPackageIdJob/i',
+                '/UpdateVehicleTipoValorTrabajoJob/i',
+                '/DownloadProductsJob/i'
             ];
 
             $lines = preg_split('/\r?\n/', $content);
@@ -288,8 +293,8 @@ class DiagnoseOffersCommand extends Command
 
             if ($hits) {
                 $this->line('  (logs) Coincidencias relevantes:');
-                foreach (array_slice($hits, -10) as $h) {
-                    $this->line('    · ' . $h);
+                foreach (array_slice($hits, -$logMaxLines) as $h) {
+                    $this->line('    · ' . ($raw ? $h : $this->compactLogLine($h)));
                 }
             } else {
                 $this->line('  (logs) Sin coincidencias relevantes recientes para esta cita');
@@ -303,11 +308,9 @@ class DiagnoseOffersCommand extends Command
     /**
      * Mostrar una línea de tiempo de jobs relevantes para la cita desde logs.
      */
-    protected function printJobTimeline(int $appointmentId, ?string $plate, ?string $dni): void
+    protected function printJobTimeline(int $appointmentId, ?string $plate, ?string $dni, int $logBytes): void
     {
-        $logPath = storage_path('logs/laravel.log');
-        if (!file_exists($logPath)) return;
-        $content = $this->tailFile($logPath, 50000); // ampliar ventana para timeline
+        $content = $this->tailLogsAcrossFiles($logBytes);
         $lines = preg_split('/\r?\n/', $content);
 
         $keywords = [
@@ -364,5 +367,63 @@ class DiagnoseOffersCommand extends Command
         $data = stream_get_contents($fp);
         fclose($fp);
         return $data ?: '';
+    }
+
+    /**
+     * Leer múltiples archivos de log (laravel.log y rotados) desde el más reciente.
+     */
+    protected function tailLogsAcrossFiles(int $maxBytes): string
+    {
+        $dir = storage_path('logs');
+        if (!is_dir($dir)) return '';
+        $files = glob($dir . '/*.log') ?: [];
+        usort($files, fn($a, $b) => filemtime($b) <=> filemtime($a));
+
+        $remaining = $maxBytes;
+        $chunks = [];
+        foreach ($files as $f) {
+            if ($remaining <= 0) break;
+            $size = @filesize($f) ?: 0;
+            if ($size <= 0) continue;
+            $read = min($size, $remaining);
+            $chunks[] = $this->tailFile($f, $read);
+            $remaining -= $read;
+        }
+        return implode("\n--- FILE BREAK ---\n", array_filter($chunks));
+    }
+
+    /**
+     * Compactar una línea de log para lectura rápida.
+     */
+    protected function compactLogLine(string $line): string
+    {
+        $line = preg_replace('/\{[^}]*\}/', '{...}', $line, 1);
+        return strlen($line) > 300 ? substr($line, 0, 300) . ' …' : $line;
+    }
+
+    /**
+     * Resumen extendido de BD sobre oferta y productos.
+     */
+    protected function printDatabaseExtendedSummary(\App\Models\Appointment $a): void
+    {
+        $this->line('  (db) Fechas: created_at=' . ($a->created_at ?: 'N/A') . ', synced_at=' . ($a->synced_at ?: 'N/A') . ', offer_created_at=' . ($a->offer_created_at ?: 'N/A'));
+        if ($a->offer_creation_failed) {
+            $this->error('  (db) Oferta marcada como fallida: ' . ($a->offer_creation_error ?: 'sin mensaje'));
+        }
+
+        // Resumen de productos por tipo
+        $summary = \App\Models\Product::query()
+            ->forAppointment($a->id)
+            ->selectRaw('position_type, COUNT(*) as total, COALESCE(SUM(quantity),0) as qty, COALESCE(SUM(work_time_value),0) as work_time')
+            ->groupBy('position_type')
+            ->orderBy('position_type')
+            ->get();
+        if ($summary->isNotEmpty()) {
+            foreach ($summary as $row) {
+                $this->line(sprintf('  (db) Productos cita: type=%s total=%d qty=%.2f work=%.2f', $row->position_type ?: 'N/A', $row->total, $row->qty, $row->work_time));
+            }
+        } else {
+            $this->line('  (db) Productos cita: ninguno');
+        }
     }
 }
