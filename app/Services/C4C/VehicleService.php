@@ -140,6 +140,75 @@ class VehicleService
     }
 
     /**
+     * **NUEVO: Consulta optimizada para múltiples placas en una sola petición (Batch Query)**
+     * 
+     * @param array $placas Array de placas para consultar
+     * @return array Asociativo con placa => tipo_valor_trabajo
+     */
+    public function obtenerTipoValorTrabajoPorPlacas(array $placas): array
+    {
+        $this->initializeConfig();
+        
+        if (empty($placas)) {
+            return [];
+        }
+
+        try {
+            // Construir filtro OR para múltiples placas
+            $orConditions = array_map(fn($placa) => "zPlaca eq '$placa'", $placas);
+            $filter = implode(' or ', $orConditions);
+            
+            Log::info("[VehicleService] BATCH: Consultando " . count($placas) . " placas en una sola petición", [
+                'placas_sample' => array_slice($placas, 0, 3),
+                'total_placas' => count($placas)
+            ]);
+
+            $queryParams = [
+                '$format' => 'json',
+                '$filter' => $filter
+            ];
+
+            $response = Http::withBasicAuth($this->username, $this->password)
+                ->timeout($this->timeout)
+                ->get($this->baseUrl, $queryParams);
+
+            $resultado = [];
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $vehiculos = $data['d']['results'] ?? [];
+
+                // Mapear resultados por placa
+                foreach ($vehiculos as $vehiculo) {
+                    $placa = $vehiculo['zPlaca'] ?? null;
+                    $tipoValor = $vehiculo['zTipoValorTrabajo'] ?? null;
+                    
+                    if ($placa && $tipoValor) {
+                        $resultado[$placa] = $tipoValor;
+                    }
+                }
+
+                Log::info("[VehicleService] BATCH: Obtenidos " . count($resultado) . " de " . count($placas) . " tipo_valor_trabajo", [
+                    'encontrados' => count($resultado),
+                    'solicitados' => count($placas)
+                ]);
+
+            } else {
+                Log::error("[VehicleService] BATCH: Error HTTP en consulta batch", [
+                    'status' => $response->status(),
+                    'body' => $response->body()
+                ]);
+            }
+
+            return $resultado;
+
+        } catch (\Exception $e) {
+            Log::error("[VehicleService] BATCH: Error en consulta de múltiples placas: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * Obtener tipo_valor_trabajo por placa específicamente
      */
     public function obtenerTipoValorTrabajoPorPlaca(string $placa): ?string

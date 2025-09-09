@@ -929,6 +929,45 @@ class VehiculoSoapService
                 }
             }
 
+            // **NUEVO: BATCH QUERY OPTIMIZATION** - Consultar C4C una sola vez para todos los vehículos
+            $vehicleService = app(\App\Services\C4C\VehicleService::class);
+            $c4cDisponible = true;
+            $tipoValorTrabajoMap = [];
+
+            // Recopilar placas de vehículos que necesitan tipo_valor_trabajo
+            $placasParaConsultar = [];
+            foreach ($vehiculos as $vehiculoData) {
+                $licensePlate = $vehiculoData['numpla'] ?? '';
+                $vehicleId = $vehiculoData['vhclie'] ?? '';
+                
+                if (empty($licensePlate) || empty($vehicleId)) {
+                    continue;
+                }
+                
+                // Verificar si ya tiene tipo_valor_trabajo en BD
+                $existingCheck = Vehicle::where('vehicle_id', $vehicleId)
+                    ->orWhere('license_plate', $licensePlate)
+                    ->first();
+                
+                if (!$existingCheck || empty($existingCheck->tipo_valor_trabajo)) {
+                    $placasParaConsultar[] = $licensePlate;
+                }
+            }
+
+            // **BATCH QUERY**: Una sola consulta C4C para todas las placas que lo necesitan
+            if (!empty($placasParaConsultar)) {
+                try {
+                    Log::info("[VehiculoSoapService] PERSISTENCIA: Consultando C4C en BATCH para " . count($placasParaConsultar) . " placas");
+                    $tipoValorTrabajoMap = $vehicleService->obtenerTipoValorTrabajoPorPlacas($placasParaConsultar);
+                    Log::info("[VehiculoSoapService] PERSISTENCIA: BATCH completado - obtenidos " . count($tipoValorTrabajoMap) . " tipo_valor_trabajo");
+                } catch (\Exception $e) {
+                    Log::warning("[VehiculoSoapService] PERSISTENCIA: Error en consulta BATCH C4C, continuando sin tipo_valor_trabajo: " . $e->getMessage());
+                    $c4cDisponible = false;
+                }
+            } else {
+                Log::info("[VehiculoSoapService] PERSISTENCIA: Todos los vehículos ya tienen tipo_valor_trabajo, saltando consulta C4C");
+            }
+
             $vehiculosGuardados = 0;
             $vehiculosActualizados = 0;
 
@@ -946,7 +985,6 @@ class VehiculoSoapService
                     // Validar que tenemos datos mínimos
                     if (empty($vehicleId) || empty($licensePlate)) {
                         Log::warning('[VehiculoSoapService] PERSISTENCIA: Vehículo con datos insuficientes, saltando: '.json_encode($vehiculoData));
-
                         continue;
                     }
 
@@ -955,9 +993,20 @@ class VehiculoSoapService
                         ->orWhere('license_plate', $licensePlate)
                         ->first();
 
+                    // **OPTIMIZADO: Obtener tipo_valor_trabajo del mapa batch (sin consultas individuales)**
+                    $tipoValorTrabajo = $tipoValorTrabajoMap[$licensePlate] ?? null;
+                    
+                    if ($tipoValorTrabajo) {
+                        Log::debug("[VehiculoSoapService] PERSISTENCIA: tipo_valor_trabajo obtenido del BATCH para {$licensePlate}: {$tipoValorTrabajo}");
+                    } elseif ($existingVehicle && !empty($existingVehicle->tipo_valor_trabajo)) {
+                        Log::debug("[VehiculoSoapService] PERSISTENCIA: {$licensePlate} ya tiene tipo_valor_trabajo: {$existingVehicle->tipo_valor_trabajo}");
+                    } else {
+                        Log::debug("[VehiculoSoapService] PERSISTENCIA: No se encontró tipo_valor_trabajo para {$licensePlate}");
+                    }
+
                     if ($existingVehicle) {
                         // Actualizar vehículo existente
-                        $existingVehicle->update([
+                        $updateData = [
                             'model' => $model,
                             'year' => $year,
                             'brand_code' => $brandCode,
@@ -979,14 +1028,21 @@ class VehiculoSoapService
                             'prepaid_maintenance_expiry' => isset($vehiculoData['mantenimiento_prepagado_vencimiento']) ?
                                 (\Carbon\Carbon::createFromFormat('Y-m-d', $vehiculoData['mantenimiento_prepagado_vencimiento'])->format('Y-m-d') ?? null) : null,
                             'image_url' => $vehiculoData['imagen_url'] ?? null,
-                        ]);
+                        ];
+
+                        // **NUEVO: Agregar tipo_valor_trabajo si se obtuvo**
+                        if ($tipoValorTrabajo) {
+                            $updateData['tipo_valor_trabajo'] = $tipoValorTrabajo;
+                        }
+
+                        $existingVehicle->update($updateData);
 
                         $vehiculosActualizados++;
                         Log::debug("[VehiculoSoapService] PERSISTENCIA: Vehículo actualizado - ID: {$vehicleId}, Placa: {$licensePlate}");
 
                     } else {
                         // Crear nuevo vehículo
-                        Vehicle::create([
+                        $createData = [
                             'vehicle_id' => $vehicleId,
                             'license_plate' => $licensePlate,
                             'model' => $model,
@@ -1010,7 +1066,14 @@ class VehiculoSoapService
                             'prepaid_maintenance_expiry' => isset($vehiculoData['mantenimiento_prepagado_vencimiento']) ?
                                 (\Carbon\Carbon::createFromFormat('Y-m-d', $vehiculoData['mantenimiento_prepagado_vencimiento'])->format('Y-m-d') ?? null) : null,
                             'image_url' => $vehiculoData['imagen_url'] ?? null,
-                        ]);
+                        ];
+
+                        // **NUEVO: Agregar tipo_valor_trabajo si se obtuvo**
+                        if ($tipoValorTrabajo) {
+                            $createData['tipo_valor_trabajo'] = $tipoValorTrabajo;
+                        }
+
+                        Vehicle::create($createData);
 
                         $vehiculosGuardados++;
                         Log::debug("[VehiculoSoapService] PERSISTENCIA: Nuevo vehículo creado - ID: {$vehicleId}, Placa: {$licensePlate}");
