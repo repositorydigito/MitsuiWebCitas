@@ -53,7 +53,7 @@ class DashboardKpi extends Page
 
     public int $citasCanceladas = 0;
 
-    public int $porcentajeNoShow = 0;
+    public int $porcentajeCancelacion = 0; // Changed from porcentajeNoShow
 
     public int $citasMantenimiento = 0;
 
@@ -264,6 +264,11 @@ class DashboardKpi extends Page
             ? round(($this->citasEfectivas / $this->citasGeneradas) * 100) 
             : 0;
 
+        // Porcentaje de cancelación (citas canceladas / citas generadas)
+        $this->porcentajeCancelacion = $this->citasGeneradas > 0 
+            ? round(($this->citasCanceladas / $this->citasGeneradas) * 100) 
+            : 0;
+
         // Citas por mantenimiento (que tienen maintenance_type)
         $citasConMantenimiento = (clone $query)->whereNotNull('maintenance_type')
             ->where('maintenance_type', '!=', '')
@@ -277,19 +282,28 @@ class DashboardKpi extends Page
         // Citas diferidas/reprogramadas (usando la nueva columna rescheduled)
         $this->citasDiferidas = (clone $query)->where('rescheduled', 1)->count();
 
-        // Valores por defecto para campos que aún no implementamos
-        $this->porcentajeNoShow = 0; // TODO: Implementar cuando se defina la lógica
-        $this->citasMantenimientoPrepagados = 0; // TODO: Implementar cuando se defina la lógica
-        $this->porcentajePrepagados = 0; // TODO: Implementar cuando se defina la lógica
+        // Citas sin mantenimiento (que tienen datos en wildcard_selections)
+        $citasSinMantenimiento = (clone $query)->whereNotNull('wildcard_selections')
+            ->where('wildcard_selections', '!=', 'null')
+            ->where('wildcard_selections', '!=', '')
+            ->count();
+
+        $this->citasMantenimientoPrepagados = $citasSinMantenimiento;
+        $this->porcentajePrepagados = $this->citasGeneradas > 0 
+            ? round(($citasSinMantenimiento / $this->citasGeneradas) * 100) 
+            : 0;
 
         Log::info('[DashboardKpi] KPIs calculados:', [
             'citasGeneradas' => $this->citasGeneradas,
             'citasEfectivas' => $this->citasEfectivas,
             'citasCanceladas' => $this->citasCanceladas,
+            'porcentajeCancelacion' => $this->porcentajeCancelacion, // Changed from porcentajeNoShow
             'citasDiferidas' => $this->citasDiferidas,
             'porcentajeEfectividad' => $this->porcentajeEfectividad,
             'citasMantenimiento' => $this->citasMantenimiento,
             'porcentajeMantenimiento' => $this->porcentajeMantenimiento,
+            'citasMantenimientoPrepagados' => $this->citasMantenimientoPrepagados,
+            'porcentajePrepagados' => $this->porcentajePrepagados,
         ]);
     }
 
@@ -525,7 +539,7 @@ class DashboardKpi extends Page
         $this->porcentajeEfectividad = 0;
         $this->citasDiferidas = 0;
         $this->citasCanceladas = 0;
-        $this->porcentajeNoShow = 0;
+        $this->porcentajeCancelacion = 0; // Changed from porcentajeNoShow
         $this->citasMantenimiento = 0;
         $this->citasMantenimientoPrepagados = 0;
         $this->porcentajeMantenimiento = 0;
