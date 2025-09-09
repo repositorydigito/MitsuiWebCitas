@@ -183,17 +183,7 @@ class UpdateAppointmentPackageIdJob implements ShouldQueue
         }
 
         $vehicle = $appointment->vehicle;
-
-        // Verificar si ya tiene package_id y no es forzado
-        if (!$this->forceUpdate && !empty($appointment->package_id)) {
-            Log::info('ℹ️ Cita ya tiene package_id', [
-                'appointment_id' => $appointment->id,
-                'package_id' => $appointment->package_id
-            ]);
-            return ['updated' => false, 'reason' => 'already_has_package_id'];
-        }
-
-        // Calcular nuevo package_id usando el servicio centralizado
+        // Calcular nuevo package_id usando el servicio centralizado (antes de decidir sobrescritura)
         $calculator = app(PackageIdCalculator::class);
         $newPackageId = $calculator->calculate($vehicle, $appointment->maintenance_type);
 
@@ -221,17 +211,48 @@ class UpdateAppointmentPackageIdJob implements ShouldQueue
             return ['updated' => false, 'reason' => 'wildcard_client'];
         }
 
-        // Actualizar la cita (solo para clientes normales)
+        // Decidir si se sobrescribe el package_id existente
+        $current = $appointment->package_id;
+        if (!$this->forceUpdate && !empty($current)) {
+            if ($current === $newPackageId) {
+                Log::info('ℹ️ Package ID ya es el correcto, no se actualiza', [
+                    'appointment_id' => $appointment->id,
+                    'package_id' => $current
+                ]);
+                return ['updated' => false, 'reason' => 'no_change'];
+            }
+
+            Log::warning('✳️ Package ID difiere, se sobrescribirá', [
+                'appointment_id' => $appointment->id,
+                'old_package_id' => $current,
+                'new_package_id' => $newPackageId
+            ]);
+        }
+
+        // Limpiar productos previamente vinculados a esta cita para evitar mezclar paquetes
+        try {
+            \App\Models\Product::forAppointment($appointment->id)->delete();
+            Log::info('🧹 Productos de cita eliminados antes de vincular nuevo paquete', [
+                'appointment_id' => $appointment->id
+            ]);
+        } catch (\Exception $e) {
+            Log::error('💥 Error eliminando productos previos de la cita', [
+                'appointment_id' => $appointment->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        // Actualizar la cita con el nuevo package_id (solo para clientes normales)
         $appointment->package_id = $newPackageId;
         $appointment->save();
 
         Log::info('✅ Package ID actualizado', [
             'appointment_id' => $appointment->id,
-            'old_package_id' => $appointment->getOriginal('package_id'),
+            'old_package_id' => $current,
             'new_package_id' => $newPackageId
         ]);
 
-        // 🚀 NUEVO: Disparar descarga de productos vinculados
+        // 🚀 Disparar descarga de productos vinculados del paquete correcto
         $this->dispatchProductDownload($appointment->id, $newPackageId);
 
         return ['updated' => true, 'package_id' => $newPackageId];

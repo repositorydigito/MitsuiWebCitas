@@ -168,8 +168,8 @@ class ProcessAppointmentAfterCreationJob implements ShouldQueue
         ]);
 
         // Despachar job con delay para que el tipo_valor_trabajo se actualice primero
-        UpdateAppointmentPackageIdJob::dispatch($appointment->id, false)
-            ->delay(now()->addMinutes(2)); // 2 minutos de delay
+        // Despachar inmediatamente para reducir ventana de carrera
+        UpdateAppointmentPackageIdJob::dispatch($appointment->id, false);
     }
 
     /**

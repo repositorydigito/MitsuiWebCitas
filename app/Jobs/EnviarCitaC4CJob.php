@@ -110,7 +110,7 @@ class EnviarCitaC4CJob implements ShouldQueue
                     }
                 }
 
-                // ✅ OBTENER PACKAGE_ID usando ProductService con lógica dinámica
+                // ✅ OBTENER PACKAGE_ID usando ProductService con lógica dinámica (solo para referencia)
                 $packageId = null;
 
                 // 🔍 DEBUG: Estado del appointment al llegar
@@ -180,13 +180,7 @@ class EnviarCitaC4CJob implements ShouldQueue
                     'condition_not_wildcard' => !$isWildcardClient ? 'TRUE' : 'FALSE'
                 ]);
 
-                if ($packageId && !$isWildcardClient) {
-                    $updateData['package_id'] = $packageId;
-                    Log::info('✅ [EnviarCitaC4CJob] Package ID asignado (cliente normal)', [
-                        'appointment_id' => $appointment->id,
-                        'package_id' => $packageId
-                    ]);
-                } else if ($isWildcardClient) {
+                if ($isWildcardClient) {
                     // 🎯 FORZAR package_id = NULL para clientes wildcard
                     $updateData['package_id'] = null;
                     Log::info('⚠️ [EnviarCitaC4CJob] FORZADO package_id = NULL (cliente comodín)', [
@@ -194,12 +188,6 @@ class EnviarCitaC4CJob implements ShouldQueue
                         'is_wildcard_client' => true,
                         'calculated_package_id' => $packageId,
                         'forced_package_id' => null
-                    ]);
-                } else {
-                    Log::info('⚠️ [EnviarCitaC4CJob] No se asignó package_id (sin packageId)', [
-                        'appointment_id' => $appointment->id,
-                        'package_id' => $packageId,
-                        'is_wildcard' => $isWildcardClient
                     ]);
                 }
 
