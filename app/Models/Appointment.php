@@ -39,6 +39,7 @@ class Appointment extends Model
         'c4c_status',
         'is_synced',
         'synced_at',
+        'rescheduled',
         // ✅ NUEVOS CAMPOS PARA MAPEO ORGANIZACIONAL
         'package_id',
         'vehicle_plate',
@@ -65,6 +66,7 @@ class Appointment extends Model
         'offer_created_at' => 'datetime',
         'offer_creation_failed' => 'boolean',
         'offer_creation_attempts' => 'integer',
+        'rescheduled' => 'integer',
     ];
 
     /**

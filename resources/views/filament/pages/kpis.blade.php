@@ -9,12 +9,12 @@
                     <input
                         type="text"
                         id="fecha"
-                        wire:model="rangoFechas"
-                        value="{{ $rangoFechas }}"
+                        wire:model.live="rangoFechas"
                         placeholder="Seleccionar rango"
                         class="w-auto border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500 datepicker"
                         style="min-width: 220px;"
                         autocomplete="off"
+                        readonly
                     >
                 </div>
             </div>
@@ -53,8 +53,18 @@
                 </div>
             </div>
 
-            {{-- Botón para descargar --}}
-            <div class="ml-auto">
+            {{-- Botones de acción --}}
+            <div class="ml-auto flex gap-2">
+                <button
+                    type="button"
+                    wire:click="limpiarFiltros"
+                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                >
+                    <span class="mr-2">LIMPIAR</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 110 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                    </svg>
+                </button>
                 <button
                     type="button"
                     wire:click="exportarExcel"
@@ -157,17 +167,37 @@
             });
         });
 
+        // Escuchar cambios específicos en el modelo de Livewire
+        document.addEventListener('livewire:updated', function (event) {
+            // Solo actualizar el datepicker si cambió el rango de fechas desde el servidor
+            if (event.detail && event.detail.name === 'rangoFechas') {
+                console.log('📅 Rango de fechas actualizado desde servidor:', event.detail.value);
+                setTimeout(() => {
+                    updateDatepickerValue();
+                }, 50);
+            }
+        });
+
         let flatpickrInstance = null;
 
         function initDatepicker() {
             const datepickerEl = document.querySelector('.datepicker');
 
+            // Si ya existe una instancia y el elemento es el mismo, no recrear
+            if (flatpickrInstance !== null && flatpickrInstance.element === datepickerEl) {
+                console.log('📅 Datepicker ya existe, actualizando valor...');
+                updateDatepickerValue();
+                return;
+            }
+
             // Destruir la instancia anterior si existe
             if (flatpickrInstance !== null) {
                 flatpickrInstance.destroy();
+                flatpickrInstance = null;
             }
 
             if (datepickerEl) {
+                console.log('📅 Creando nueva instancia de datepicker...');
                 flatpickrInstance = flatpickr(datepickerEl, {
                     mode: "range",
                     dateFormat: "d/m/Y",
@@ -177,29 +207,78 @@
                     allowInput: true,
                     disableMobile: true,
                     onChange: function(selectedDates, dateStr, instance) {
-                        if (selectedDates.length > 0) {
-                            window.livewire.find(datepickerEl.closest('[wire\\:id]').getAttribute('wire:id'))
-                                .set('rangoFechas', dateStr);
+                        console.log('📅 Rango de fechas cambiado:', dateStr);
+                        console.log('📅 Fechas seleccionadas:', selectedDates);
+                        
+                        // Solo procesar si tenemos un rango completo
+                        if (selectedDates.length !== 2) {
+                            console.log('⏳ Esperando segunda fecha...');
+                            return;
+                        }
+                        
+                        // Forzar el formato correcto si viene con "a"
+                        if (dateStr.includes(' a ')) {
+                            dateStr = dateStr.replace(' a ', ' - ');
+                            console.log('🔧 Formato corregido:', dateStr);
+                        }
+                        
+                        console.log('✅ Rango completo, actualizando Livewire...');
+                        
+                        // Usar Livewire para actualizar el modelo
+                        const livewireComponent = window.Livewire.find(datepickerEl.closest('[wire\\:id]').getAttribute('wire:id'));
+                        if (livewireComponent) {
+                            // Desactivar temporalmente los eventos para evitar loops
+                            datepickerEl.setAttribute('data-updating', 'true');
+                            livewireComponent.set('rangoFechas', dateStr);
+                            livewireComponent.call('aplicarFiltros');
                         }
                     },
                     onClose: function(selectedDates, dateStr, instance) {
-                        if (selectedDates.length > 0) {
-                            window.livewire.find(datepickerEl.closest('[wire\\:id]').getAttribute('wire:id'))
-                                .call('aplicarFiltros');
-                        }
+                        console.log('🔒 Datepicker cerrado:', dateStr);
+                        // Remover el flag de actualización
+                        datepickerEl.removeAttribute('data-updating');
                     }
                 });
 
-                // Si ya hay un valor en el modelo, establecerlo en el datepicker
-                const initialValue = datepickerEl.value;
-                if (initialValue) {
-                    const dates = initialValue.split(' - ').map(date => date.trim());
-                    if (dates.length > 0) {
+                // Establecer el valor inicial
+                updateDatepickerValue();
+            }
+        }
+
+        function updateDatepickerValue() {
+            const datepickerEl = document.querySelector('.datepicker');
+            if (!datepickerEl || !flatpickrInstance) return;
+
+            // No actualizar si estamos en medio de una actualización desde el datepicker
+            if (datepickerEl.getAttribute('data-updating') === 'true') {
+                console.log('📅 Saltando actualización, datepicker está actualizando...');
+                return;
+            }
+
+            const currentValue = datepickerEl.value;
+            console.log('📅 Actualizando datepicker con valor:', currentValue);
+
+            if (currentValue && currentValue.includes(' - ')) {
+                const dates = currentValue.split(' - ').map(date => date.trim());
+                if (dates.length === 2) {
+                    try {
                         const parsedDates = dates.map(date => {
                             const parts = date.split('/');
                             return new Date(parts[2], parts[1] - 1, parts[0]);
                         });
-                        flatpickrInstance.setDate(parsedDates);
+                        
+                        // Verificar si las fechas son diferentes a las actuales
+                        const currentDates = flatpickrInstance.selectedDates;
+                        const needsUpdate = currentDates.length !== 2 || 
+                            currentDates[0].getTime() !== parsedDates[0].getTime() ||
+                            currentDates[1].getTime() !== parsedDates[1].getTime();
+
+                        if (needsUpdate) {
+                            console.log('📅 Estableciendo fechas en datepicker:', parsedDates);
+                            flatpickrInstance.setDate(parsedDates, false); // false = no trigger onChange
+                        }
+                    } catch (e) {
+                        console.error('❌ Error parseando fechas para datepicker:', e);
                     }
                 }
             }

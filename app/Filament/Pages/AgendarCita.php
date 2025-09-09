@@ -4691,6 +4691,25 @@ class AgendarCita extends Page
 
             Log::info('[AgendarCita::reprogramarCita] Cita original actualizada a Diferida');
 
+            // ✅ MARCAR LA CITA ORIGINAL COMO REPROGRAMADA EN LA BD LOCAL
+            $originalAppointment = Appointment::where('c4c_uuid', $this->originalUuid)->first();
+            if ($originalAppointment) {
+                $originalAppointment->update([
+                    'status' => 'cancelled',
+                    'rescheduled' => 1
+                ]);
+                
+                Log::info('[AgendarCita::reprogramarCita] Cita original marcada como reprogramada', [
+                    'appointment_id' => $originalAppointment->id,
+                    'appointment_number' => $originalAppointment->appointment_number,
+                    'rescheduled' => 1
+                ]);
+            } else {
+                Log::warning('[AgendarCita::reprogramarCita] No se encontró la cita original en BD local', [
+                    'uuid' => $this->originalUuid
+                ]);
+            }
+
             // 2. CREAR nueva cita con datos seleccionados - LLAMAR DIRECTAMENTE A CREACIÓN
             $this->crearNuevaCitaReprogramada();
 
