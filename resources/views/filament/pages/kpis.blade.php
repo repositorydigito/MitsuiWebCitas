@@ -2,20 +2,42 @@
     {{-- Filtros y búsqueda --}}
     <div class="mb-4 rounded-lg">
         <div class="flex flex-wrap items-end gap-4">
-            {{-- Filtro de fecha --}}
+            {{-- Filtro de mes y año --}}
             <div class="w-auto">
-                <label for="fecha" class="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
-                <div class="relative">
-                    <input
-                        type="text"
-                        id="fecha"
-                        wire:model.live="rangoFechas"
-                        placeholder="Seleccionar rango"
-                        class="w-auto border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500 datepicker"
-                        style="min-width: 220px;"
-                        autocomplete="off"
-                        readonly
+                <label for="mes" class="block text-sm font-medium text-gray-700 mb-2">Mes y Año</label>
+                <div class="flex gap-2">
+                    <select
+                        id="mes"
+                        wire:model.live="mesSeleccionado"
+                        class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                        style="min-width: 120px;"
                     >
+                        <option value="">Seleccionar mes</option>
+                        <option value="1">Enero</option>
+                        <option value="2">Febrero</option>
+                        <option value="3">Marzo</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Mayo</option>
+                        <option value="6">Junio</option>
+                        <option value="7">Julio</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Septiembre</option>
+                        <option value="10">Octubre</option>
+                        <option value="11">Noviembre</option>
+                        <option value="12">Diciembre</option>
+                    </select>
+                    
+                    <select
+                        id="anio"
+                        wire:model.live="anioSeleccionado"
+                        class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                        style="min-width: 100px;"
+                    >
+                        <option value="">Seleccionar año</option>
+                        @for ($i = date('Y'); $i >= 2020; $i--)
+                            <option value="{{ $i }}">{{ $i }}</option>
+                        @endfor
+                    </select>
                 </div>
             </div>
 
@@ -118,7 +140,20 @@
                                 {{ $kpi['cantidad'] }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-center @if(!$kpi['meta']) bg-gray-200 @endif">
-                                {{ $kpi['meta'] }}
+                                <div class="flex items-center justify-between">
+                                    <span>{{ $kpi['meta'] }}</span>
+                                    @if($kpi['id'] == 1 || $kpi['id'] == 2)
+                                        <button 
+                                            wire:click="openModal('{{ $kpi['id'] }}')"
+                                            class="text-primary-600 hover:text-primary-800"
+                                            title="Configurar meta"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                            </svg>
+                                        </button>
+                                    @endif
+                                </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-center @if(!$kpi['contribucion']) bg-gray-200 @endif">
                                 @if($kpi['contribucion'])
@@ -149,139 +184,140 @@
         </div>
     </div>
 
-    {{-- Scripts para el datepicker --}}
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+    <!-- Modal para configurar metas -->
+    @if($showModal)
+        <div class="fixed inset-0 z-50 overflow-y-auto">
+            <div class="flex items-center justify-center min-h-screen px-4 py-6 text-center sm:block sm:p-0">
 
-    <script>
-        // Inicializar el datepicker cuando el DOM esté listo
-        document.addEventListener('DOMContentLoaded', function () {
-            initDatepicker();
-        });
+            <!-- Overlay de fondo oscuro (clic para cerrar) -->
+            <div class="fixed inset-0 bg-black/50" aria-hidden="true" wire:click="cerrarModal"></div>
 
-        // Reinicializar el datepicker cuando Livewire actualice el DOM
-        document.addEventListener('livewire:load', function () {
-            Livewire.hook('message.processed', (message, component) => {
-                initDatepicker();
-            });
-        });
+                <!-- Fondo oscuro -->
+                <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                    <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+                </div>
 
-        // Escuchar cambios específicos en el modelo de Livewire
-        document.addEventListener('livewire:updated', function (event) {
-            // Solo actualizar el datepicker si cambió el rango de fechas desde el servidor
-            if (event.detail && event.detail.name === 'rangoFechas') {
-                console.log('📅 Rango de fechas actualizado desde servidor:', event.detail.value);
-                setTimeout(() => {
-                    updateDatepickerValue();
-                }, 50);
-            }
-        });
+                <!-- Contenido del modal -->
+                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                <h3 class="pb-4 text-lg leading-6 font-medium text-gray-900">
+                                    Configurar Meta
+                                </h3>
+                                <div class="mt-2">
+                                    <form>
+                                        <div class="grid grid-cols-1 gap-4">
+                                            <!-- Marca -->
+                                            <div>
+                                                <label for="modalBrand" class="block text-left text-sm font-medium text-gray-700">Marca</label>
+                                                <select
+                                                    id="modalBrand"
+                                                    wire:model="modalBrand"
+                                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                                >
+                                                    <option value="">Todas</option>
+                                                    @foreach($marcas as $marca)
+                                                        @if($marca !== 'Todas')
+                                                            <option value="{{ $marca }}">{{ $marca }}</option>
+                                                        @endif
+                                                    @endforeach
+                                                </select>
+                                            </div>
 
-        let flatpickrInstance = null;
+                                            <!-- Local -->
+                                            <div>
+                                                <label for="modalLocal" class="block text-left text-sm font-medium text-gray-700">Local</label>
+                                                <select
+                                                    id="modalLocal"
+                                                    wire:model="modalLocal"
+                                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                                >
+                                                    <option value="">Todos</option>
+                                                    @foreach($locales as $codigo => $nombre)
+                                                        @if($codigo !== 'Todos')
+                                                            <option value="{{ $codigo }}">{{ $nombre }}</option>
+                                                        @endif
+                                                    @endforeach
+                                                </select>
+                                            </div>
 
-        function initDatepicker() {
-            const datepickerEl = document.querySelector('.datepicker');
+                                            <!-- Mes -->
+                                            <div>
+                                                <label for="modalMonth" class="block text-left text-sm font-medium text-gray-700">Mes</label>
+                                                <select
+                                                    id="modalMonth"
+                                                    wire:model="modalMonth"
+                                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                                >
+                                                    <option value="">Todos</option>
+                                                    <option value="1">Enero</option>
+                                                    <option value="2">Febrero</option>
+                                                    <option value="3">Marzo</option>
+                                                    <option value="4">Abril</option>
+                                                    <option value="5">Mayo</option>
+                                                    <option value="6">Junio</option>
+                                                    <option value="7">Julio</option>
+                                                    <option value="8">Agosto</option>
+                                                    <option value="9">Septiembre</option>
+                                                    <option value="10">Octubre</option>
+                                                    <option value="11">Noviembre</option>
+                                                    <option value="12">Diciembre</option>
+                                                </select>
+                                            </div>
 
-            // Si ya existe una instancia y el elemento es el mismo, no recrear
-            if (flatpickrInstance !== null && flatpickrInstance.element === datepickerEl) {
-                console.log('📅 Datepicker ya existe, actualizando valor...');
-                updateDatepickerValue();
-                return;
-            }
+                                            <!-- Año -->
+                                            <div>
+                                                <label for="modalYear" class="block text-left text-sm font-medium text-gray-700">Año</label>
+                                                <select
+                                                    id="modalYear"
+                                                    wire:model="modalYear"
+                                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                                >
+                                                    <option value="">Todos</option>
+                                                    @for ($i = date('Y'); $i >= 2020; $i--)
+                                                        <option value="{{ $i }}">{{ $i }}</option>
+                                                    @endfor
+                                                </select>
+                                            </div>
 
-            // Destruir la instancia anterior si existe
-            if (flatpickrInstance !== null) {
-                flatpickrInstance.destroy();
-                flatpickrInstance = null;
-            }
+                                            <!-- Valor de la meta -->
+                                            <div>
+                                                <label for="targetValue" class="block text-left text-sm font-medium text-gray-700">Valor de la Meta</label>
+                                                <input
+                                                    type="number"
+                                                    id="targetValue"
+                                                    wire:model="targetValue"
+                                                    min="0"
+                                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                                >
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 gap-2 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button
+                            type="button"
+                            wire:click="saveTarget"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm"
+                        >
+                            Guardar
+                        </button>
+                        <button
+                            type="button"
+                            wire:click="closeModal"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                        >
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 
-            if (datepickerEl) {
-                console.log('📅 Creando nueva instancia de datepicker...');
-                flatpickrInstance = flatpickr(datepickerEl, {
-                    mode: "range",
-                    dateFormat: "d/m/Y",
-                    locale: "es",
-                    rangeSeparator: " - ",
-                    altInput: false,
-                    allowInput: true,
-                    disableMobile: true,
-                    onChange: function(selectedDates, dateStr, instance) {
-                        console.log('📅 Rango de fechas cambiado:', dateStr);
-                        console.log('📅 Fechas seleccionadas:', selectedDates);
-                        
-                        // Solo procesar si tenemos un rango completo
-                        if (selectedDates.length !== 2) {
-                            console.log('⏳ Esperando segunda fecha...');
-                            return;
-                        }
-                        
-                        // Forzar el formato correcto si viene con "a"
-                        if (dateStr.includes(' a ')) {
-                            dateStr = dateStr.replace(' a ', ' - ');
-                            console.log('🔧 Formato corregido:', dateStr);
-                        }
-                        
-                        console.log('✅ Rango completo, actualizando Livewire...');
-                        
-                        // Usar Livewire para actualizar el modelo
-                        const livewireComponent = window.Livewire.find(datepickerEl.closest('[wire\\:id]').getAttribute('wire:id'));
-                        if (livewireComponent) {
-                            // Desactivar temporalmente los eventos para evitar loops
-                            datepickerEl.setAttribute('data-updating', 'true');
-                            livewireComponent.set('rangoFechas', dateStr);
-                            livewireComponent.call('aplicarFiltros');
-                        }
-                    },
-                    onClose: function(selectedDates, dateStr, instance) {
-                        console.log('🔒 Datepicker cerrado:', dateStr);
-                        // Remover el flag de actualización
-                        datepickerEl.removeAttribute('data-updating');
-                    }
-                });
-
-                // Establecer el valor inicial
-                updateDatepickerValue();
-            }
-        }
-
-        function updateDatepickerValue() {
-            const datepickerEl = document.querySelector('.datepicker');
-            if (!datepickerEl || !flatpickrInstance) return;
-
-            // No actualizar si estamos en medio de una actualización desde el datepicker
-            if (datepickerEl.getAttribute('data-updating') === 'true') {
-                console.log('📅 Saltando actualización, datepicker está actualizando...');
-                return;
-            }
-
-            const currentValue = datepickerEl.value;
-            console.log('📅 Actualizando datepicker con valor:', currentValue);
-
-            if (currentValue && currentValue.includes(' - ')) {
-                const dates = currentValue.split(' - ').map(date => date.trim());
-                if (dates.length === 2) {
-                    try {
-                        const parsedDates = dates.map(date => {
-                            const parts = date.split('/');
-                            return new Date(parts[2], parts[1] - 1, parts[0]);
-                        });
-                        
-                        // Verificar si las fechas son diferentes a las actuales
-                        const currentDates = flatpickrInstance.selectedDates;
-                        const needsUpdate = currentDates.length !== 2 || 
-                            currentDates[0].getTime() !== parsedDates[0].getTime() ||
-                            currentDates[1].getTime() !== parsedDates[1].getTime();
-
-                        if (needsUpdate) {
-                            console.log('📅 Estableciendo fechas en datepicker:', parsedDates);
-                            flatpickrInstance.setDate(parsedDates, false); // false = no trigger onChange
-                        }
-                    } catch (e) {
-                        console.error('❌ Error parseando fechas para datepicker:', e);
-                    }
-                }
-            }
-        }
-    </script>
+    {{-- Eliminamos los scripts del datepicker ya que no los necesitamos --}}
 </x-filament-panels::page>

@@ -4,11 +4,14 @@ namespace App\Filament\Pages;
 
 use App\Models\Local;
 use App\Models\Vehicle;
+use App\Models\KpiTarget;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class Kpis extends Page
 {
@@ -33,11 +36,24 @@ class Kpis extends Page
 
     public string $rangoFechas = '';
 
+    public ?int $mesSeleccionado = null;
+
+    public ?int $anioSeleccionado = null;
+
     public string $marcaSeleccionada = 'Todas';
 
     public string $localSeleccionado = 'Todos';
 
     public string $tipoSeleccionado = 'Post Venta';
+
+    // Propiedades para el modal de configuración de metas
+    public bool $showModal = false;
+    public string $kpiId = '';
+    public ?string $modalBrand = null;
+    public ?string $modalLocal = null;
+    public ?int $modalMonth = null;
+    public ?int $modalYear = null;
+    public int $targetValue = 0;
 
     // Datos de KPIs
     public Collection $kpis;
@@ -136,7 +152,14 @@ class Kpis extends Page
             $fechaInicio = null;
             $fechaFin = null;
             
-            if (!empty($this->rangoFechas)) {
+            // Si se han seleccionado mes y año, usar esos valores
+            if ($this->mesSeleccionado && $this->anioSeleccionado) {
+                $fechaInicio = Carbon::create($this->anioSeleccionado, $this->mesSeleccionado, 1);
+                $fechaFin = $fechaInicio->copy()->endOfMonth();
+                $this->fechaInicio = $fechaInicio->format('d/m/Y');
+                $this->fechaFin = $fechaFin->format('d/m/Y');
+                $this->rangoFechas = $this->fechaInicio.' - '.$this->fechaFin;
+            } else if (!empty($this->rangoFechas)) {
                 $fechas = explode(' - ', $this->rangoFechas);
                 if (count($fechas) === 2) {
                     $fechaInicio = \Carbon\Carbon::createFromFormat('d/m/Y', trim($fechas[0]));
@@ -235,10 +258,15 @@ class Kpis extends Page
 
             \Log::info("KPIs calculados - Con filtros: {$todasLasCitas}, Solo fecha: {$todasSinFiltrosRestrictivos}, Generadas: {$citasGeneradas}");
 
-            // Calcular desviaciones
-            $metaGeneradas = 80;
-            $metaEfectivas = 10;
+            // Obtener valores meta de la base de datos
+            // Convertir "Todas"/"Todos" a null para la búsqueda
+            $brand = $this->marcaSeleccionada !== 'Todas' ? $this->marcaSeleccionada : null;
+            $local = $this->localSeleccionado !== 'Todos' ? $this->localSeleccionado : null;
             
+            $metaGeneradas = KpiTarget::getTargetValue('1', $brand, $local, $this->mesSeleccionado, $this->anioSeleccionado) ?? 80;
+            $metaEfectivas = KpiTarget::getTargetValue('2', $brand, $local, $this->mesSeleccionado, $this->anioSeleccionado) ?? 10;
+            
+            // Calcular desviaciones
             $desviacionGeneradas = $metaGeneradas > 0 ? round((($citasGeneradas - $metaGeneradas) / $metaGeneradas) * 100, 1) : 0;
             $desviacionEfectivas = $metaEfectivas > 0 ? round((($citasEfectivas - $metaEfectivas) / $metaEfectivas) * 100, 1) : -100;
 
@@ -283,30 +311,6 @@ class Kpis extends Page
                     'contribucion' => true,
                     'desviacion' => null,
                 ],
-                // [
-                //     'id' => 6,
-                //     'nombre' => 'Cantidad de usuarios',
-                //     'cantidad' => '',
-                //     'meta' => null,
-                //     'contribucion' => false,
-                //     'desviacion' => null,
-                // ],
-                // [
-                //     'id' => 7,
-                //     'nombre' => 'Cantidad de citas de mantenimientos prepagados realizadas',
-                //     'cantidad' => '',
-                //     'meta' => null,
-                //     'contribucion' => false,
-                //     'desviacion' => null,
-                // ],
-                // [
-                //     'id' => 8,
-                //     'nombre' => 'Cantidad de citas con no show',
-                //     'cantidad' => '',
-                //     'meta' => null,
-                //     'contribucion' => false,
-                //     'desviacion' => null,
-                // ],
             ]);
 
         } catch (\Exception $e) {
@@ -387,6 +391,16 @@ class Kpis extends Page
         $this->cargarKpis();
     }
 
+    public function updatedMesSeleccionado(): void
+    {
+        $this->cargarKpis();
+    }
+
+    public function updatedAnioSeleccionado(): void
+    {
+        $this->cargarKpis();
+    }
+
     public function updatedMarcaSeleccionada(): void
     {
         $this->cargarKpis();
@@ -408,6 +422,8 @@ class Kpis extends Page
         $this->rangoFechas = $this->fechaInicio.' - '.$this->fechaFin;
         
         // Restablecer otros filtros
+        $this->mesSeleccionado = null;
+        $this->anioSeleccionado = null;
         $this->marcaSeleccionada = 'Todas';
         $this->localSeleccionado = 'Todos';
         
@@ -415,15 +431,132 @@ class Kpis extends Page
         $this->cargarKpis();
     }
 
-    public function exportarExcel(): void
+    public function exportarExcel()
     {
-        // Aquí iría la lógica para exportar a Excel
-        // Por ahora, solo mostraremos una notificación
+        // Crear un nuevo libro de trabajo
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        
+        // Establecer el título de la hoja
+        $sheet->setTitle('KPIs');
+        
+        // Agregar encabezados
+        $sheet->setCellValue('A1', '#');
+        $sheet->setCellValue('B1', 'KPI');
+        $sheet->setCellValue('C1', 'Cantidad');
+        $sheet->setCellValue('D1', 'Meta');
+        $sheet->setCellValue('E1', 'Contribución');
+        $sheet->setCellValue('F1', 'Desviación');
+        
+        // Aplicar estilo a los encabezados
+        $headerStyle = [
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF']
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '2563EB']
+            ]
+        ];
+        
+        $sheet->getStyle('A1:F1')->applyFromArray($headerStyle);
+        
+        // Agregar datos de los KPIs
+        $row = 2;
+        foreach ($this->kpis as $kpi) {
+            $sheet->setCellValue('A' . $row, $kpi['id']);
+            $sheet->setCellValue('B' . $row, $kpi['nombre']);
+            $sheet->setCellValue('C' . $row, $kpi['cantidad']);
+            $sheet->setCellValue('D' . $row, $kpi['meta'] ?? '');
+            $sheet->setCellValue('E' . $row, $kpi['contribucion'] ? 'SÍ' : '');
+            $sheet->setCellValue('F' . $row, $kpi['desviacion'] ?? '');
+            $row++;
+        }
+        
+        // Ajustar el ancho de las columnas
+        foreach (range('A', 'F') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+        
+        // Crear el nombre del archivo con la fecha actual
+        $fecha = now()->format('Y-m-d_H-i-s');
+        $fileName = "kpis_{$fecha}.xlsx";
+        
+        // Guardar el archivo temporalmente
+        $tempFilePath = storage_path('app/temp/' . $fileName);
+        $tempDir = storage_path('app/temp');
+        
+        // Crear el directorio temporal si no existe
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+        
+        // Guardar el archivo
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($tempFilePath);
+        
+        // Devolver el archivo como descarga
+        return response()->download($tempFilePath)->deleteFileAfterSend(true);
+    }
 
-        \Filament\Notifications\Notification::make()
-            ->title('Exportación iniciada')
-            ->body('El archivo Excel se está generando y se descargará en breve.')
-            ->success()
-            ->send();
+    // Métodos para el modal de configuración de metas
+    public function openModal(string $kpiId): void
+    {
+        $this->kpiId = $kpiId;
+        $this->modalBrand = $this->marcaSeleccionada !== 'Todas' ? $this->marcaSeleccionada : null;
+        $this->modalLocal = $this->localSeleccionado !== 'Todos' ? $this->localSeleccionado : null;
+        $this->modalMonth = $this->mesSeleccionado;
+        $this->modalYear = $this->anioSeleccionado;
+        
+        // Obtener el valor actual si existe
+        $currentTarget = KpiTarget::getTargetValue($kpiId, $this->modalBrand, $this->modalLocal, $this->modalMonth, $this->modalYear);
+        $this->targetValue = $currentTarget ?? 0;
+        
+        $this->showModal = true;
+    }
+
+    public function closeModal(): void
+    {
+        $this->showModal = false;
+        $this->resetModal();
+    }
+
+    public function resetModal(): void
+    {
+        $this->kpiId = '';
+        $this->modalBrand = null;
+        $this->modalLocal = null;
+        $this->modalMonth = null;
+        $this->modalYear = null;
+        $this->targetValue = 0;
+    }
+
+    public function saveTarget(): void
+    {
+        // Validar que se haya proporcionado un valor
+        if ($this->targetValue < 0) {
+            // Mostrar mensaje de error
+            // En un entorno real, usarías notificaciones de Filament
+            return;
+        }
+
+        // Crear o actualizar el registro
+        $target = KpiTarget::updateOrCreate(
+            [
+                'kpi_id' => $this->kpiId,
+                'brand' => $this->modalBrand,
+                'local' => $this->modalLocal,
+                'month' => $this->modalMonth,
+                'year' => $this->modalYear,
+            ],
+            [
+                'target_value' => $this->targetValue,
+            ]
+        );
+
+        // Cerrar el modal y recargar los KPIs
+        $this->closeModal();
+        $this->cargarKpis();
     }
 }
