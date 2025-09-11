@@ -74,9 +74,50 @@ class DownloadProductsJob implements ShouldQueue
 
             $resultado = $this->downloadProductsFromC4C($productService);
 
-            if (!$resultado['success']) {
-                throw new \Exception($resultado['error']);
+            // ===== INICIO: FORMATO ALTERNATIVO PACKAGE_ID (ROLLBACK: Comentar desde aquí hasta FINAL) =====
+            // 🔥 NUEVA LÓGICA: Intentar formato alternativo si es necesario
+            if (!$resultado['success'] || count($resultado['productos'] ?? []) === 0) {
+                // Intentar formato alternativo solo si cumple TODAS las condiciones
+                if ($this->shouldTryAlternativeFormat()) {
+                    Log::info('🔄 Intentando formato alternativo para package_id', [
+                        'original_package_id' => $this->packageId,
+                        'appointment_id' => $this->appointmentId,
+                        'original_error' => $resultado['error'] ?? 'No products found'
+                    ]);
+                    
+                    try {
+                        $alternativeResult = $this->tryAlternativePackageFormat($productService);
+                        
+                        if ($alternativeResult['success'] && count($alternativeResult['productos'] ?? []) > 0) {
+                            Log::info('✅ Formato alternativo exitoso', [
+                                'alternative_package_id' => str_replace('-', '=', $this->packageId),
+                                'products_found' => count($alternativeResult['productos'])
+                            ]);
+                            
+                            // Actualizar package_id en la cita
+                            $this->updateAppointmentPackageId(str_replace('-', '=', $this->packageId));
+                            
+                            // Usar el resultado alternativo
+                            $resultado = $alternativeResult;
+                        } else {
+                            Log::info('❌ Formato alternativo también falló', [
+                                'alternative_package_id' => str_replace('-', '=', $this->packageId)
+                            ]);
+                            throw new \Exception($resultado['error'] ?? 'No products found with either format');
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('💥 Error en formato alternativo', [
+                            'error' => $e->getMessage(),
+                            'original_package_id' => $this->packageId
+                        ]);
+                        throw new \Exception($resultado['error'] ?? 'Product download failed');
+                    }
+                } else {
+                    // No cumple condiciones, comportamiento original
+                    throw new \Exception($resultado['error'] ?? 'Product download failed');
+                }
             }
+            // ===== FINAL: FORMATO ALTERNATIVO PACKAGE_ID (ROLLBACK: Comentar hasta aquí) =====
 
             // 3. PROCESAR y guardar productos maestros
             $productosCreados = $this->saveProductsToDatabase($resultado['productos']);
@@ -349,4 +390,170 @@ class DownloadProductsJob implements ShouldQueue
             ]);
         }
     }
+
+    // ===== INICIO: MÉTODOS AUXILIARES FORMATO ALTERNATIVO (ROLLBACK: Comentar estos métodos) =====
+    /**
+     * 🔒 Verificar si debe intentar formato alternativo
+     * SOLO para PRIORIDAD 2 + CLIENTE NORMAL + CON APPOINTMENT_ID
+     */
+    protected function shouldTryAlternativeFormat(): bool
+    {
+        try {
+            // Verificación 1: Debe tener appointment_id
+            if (!$this->appointmentId) {
+                return false;
+            }
+
+            // Verificación 2: Debe ser PRIORIDAD 2 (servicios adicionales)
+            if (!$this->isPriority2Package()) {
+                return false;
+            }
+
+            // Verificación 3: Debe ser cliente normal (no wildcard)
+            if (!$this->isNormalClient()) {
+                return false;
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Error en shouldTryAlternativeFormat', [
+                'error' => $e->getMessage(),
+                'package_id' => $this->packageId,
+                'appointment_id' => $this->appointmentId
+            ]);
+            return false; // En caso de error, no intentar formato alternativo
+        }
+    }
+
+    /**
+     * 🔍 Detectar si es PRIORIDAD 2 (servicios adicionales)
+     * Formato: M2275-PQLEX, M2275-PQWYNNS8, etc.
+     */
+    protected function isPriority2Package(): bool
+    {
+        // Regex más estricto: M + dígitos + guión + al menos una letra mayúscula
+        return preg_match('/^M\d+-[A-Z]+[A-Z0-9]*$/i', $this->packageId) === 1;
+    }
+
+    /**
+     * 👤 Verificar si es cliente normal (no wildcard)
+     */
+    protected function isNormalClient(): bool
+    {
+        try {
+            if (!$this->appointmentId) {
+                return false;
+            }
+
+            $appointment = \App\Models\Appointment::find($this->appointmentId);
+            if (!$appointment || !$appointment->customer_ruc) {
+                return false;
+            }
+
+            $user = \App\Models\User::where('document_number', $appointment->customer_ruc)
+                                    ->whereNotNull('c4c_internal_id')
+                                    ->first();
+
+            if (!$user) {
+                return false; // Sin usuario asociado, no procesar
+            }
+
+            // FALSE si es wildcard, TRUE si es normal
+            return $user->c4c_internal_id !== '1200166011';
+            
+        } catch (\Exception $e) {
+            Log::error('Error verificando cliente normal', [
+                'error' => $e->getMessage(),
+                'appointment_id' => $this->appointmentId
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * 🔄 Intentar descargar con formato alternativo M2275=PQLEX
+     */
+    protected function tryAlternativePackageFormat(ProductService $productService): array
+    {
+        $alternativePackageId = str_replace('-', '=', $this->packageId);
+        
+        Log::info('🔄 Intentando descarga con formato alternativo', [
+            'original' => $this->packageId,
+            'alternative' => $alternativePackageId
+        ]);
+
+        // Filtros para la API con formato alternativo
+        $filtros = [
+            'zIDPadre' => $alternativePackageId,
+            'zEstado' => '02' // Solo productos activos
+        ];
+
+        // Llamar al ProductService
+        $resultado = $productService->obtenerProductosVinculados($filtros);
+
+        if (!$resultado['success']) {
+            Log::warning('⚠️ Formato alternativo falló', [
+                'alternative_package_id' => $alternativePackageId,
+                'error' => $resultado['error']
+            ]);
+            
+            return [
+                'success' => false,
+                'error' => $resultado['error'],
+                'productos' => []
+            ];
+        }
+
+        $productos = $resultado['data'] ?? [];
+        
+        Log::info('📦 Productos obtenidos con formato alternativo', [
+            'alternative_package_id' => $alternativePackageId,
+            'total_productos' => count($productos)
+        ]);
+
+        return [
+            'success' => true,
+            'productos' => $productos,
+            'total' => count($productos)
+        ];
+    }
+
+    /**
+     * 💾 Actualizar package_id en la cita con el formato que funcionó
+     */
+    protected function updateAppointmentPackageId(string $newPackageId): void
+    {
+        try {
+            if (!$this->appointmentId) {
+                return;
+            }
+
+            $appointment = \App\Models\Appointment::find($this->appointmentId);
+            if (!$appointment) {
+                Log::warning('⚠️ No se pudo actualizar package_id: appointment no encontrada', [
+                    'appointment_id' => $this->appointmentId
+                ]);
+                return;
+            }
+
+            $oldPackageId = $appointment->package_id;
+            $appointment->package_id = $newPackageId;
+            $appointment->save();
+
+            Log::info('✅ Package ID actualizado en la cita', [
+                'appointment_id' => $this->appointmentId,
+                'old_package_id' => $oldPackageId,
+                'new_package_id' => $newPackageId
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('💥 Error actualizando package_id en la cita', [
+                'appointment_id' => $this->appointmentId,
+                'new_package_id' => $newPackageId,
+                'error' => $e->getMessage()
+            ]);
+            // No relanzar excepción, continuar con el procesamiento
+        }
+    }
+    // ===== FINAL: MÉTODOS AUXILIARES FORMATO ALTERNATIVO (ROLLBACK: Comentar hasta aquí) =====
 }
