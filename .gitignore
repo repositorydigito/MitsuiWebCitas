@@ -43,3 +43,6 @@ test_soap.php
 .env.example
 AGENTS.md
 package.md
+codebuff.json
+.gitignore
+knowledge.md

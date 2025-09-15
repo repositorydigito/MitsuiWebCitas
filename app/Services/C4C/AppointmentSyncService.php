@@ -192,8 +192,8 @@ class AppointmentSyncService
     protected function prepareC4CData(Appointment $appointment, string $c4cCenterId): array
     {
         $startDateTime = Carbon::parse($appointment->appointment_date->format('Y-m-d') . ' ' . $appointment->appointment_time->format('H:i:s'));
-        $endDateTime = $appointment->appointment_end_time ? 
-            Carbon::parse($appointment->appointment_end_time) : 
+        $endDateTime = $appointment->appointment_end_time ?
+            Carbon::parse($appointment->appointment_end_time) :
             $startDateTime->copy()->addMinutes($this->calculateDuration($appointment));
 
         return [

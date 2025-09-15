@@ -4,7 +4,9 @@ namespace App\Services\C4C;
 
 use App\Models\Appointment;
 use App\Models\CenterOrganizationMapping;
+use App\Models\Vehicle;
 use App\Services\C4C\C4CClient;
+use App\Services\C4C\CustomerService;
 use Illuminate\Support\Facades\Log;
 
 class OfferService
@@ -102,13 +104,30 @@ class OfferService
                 // ✅ VERIFICAR ERRORES EN LA RESPUESTA C4C ANTES DE PROCESAR
                 $validationResult = $this->verificarErroresC4C($data);
                 if (!$validationResult['success']) {
+                    // Log adicional de contexto completo para diagnóstico
+                    try {
+                        $userForBuyer = \App\Models\User::where('document_number', $appointment->customer_ruc)->first();
+                        $buyerPartyId = $userForBuyer?->c4c_internal_id;
+                    } catch (\Throwable $e) {
+                        $buyerPartyId = null;
+                    }
+
                     Log::error('❌ Error de validación en C4C al crear oferta', [
                         'appointment_id' => $appointment->id,
                         'errors' => $validationResult['errors'],
-                        'response_data' => $data
+                        'error_message' => $validationResult['error_message'] ?? null,
+                        'response_log_max_severity' => $validationResult['max_severity'] ?? null,
+                        'buyer_party_c4c_id' => $buyerPartyId,
+                        'appointment_customer_ruc' => $appointment->customer_ruc,
+                        'appointment_uuid' => $appointment->c4c_uuid,
+                        'vehicle_plate' => $appointment->vehicle->license_plate ?? null,
+                        'center_code' => $appointment->center_code,
+                        'brand_code' => $appointment->vehicle_brand_code,
+                        'package_id' => $appointment->package_id
                     ]);
 
-                    // Actualizar appointment con información del error
+
+                    // Actualizar appointment con información del error (COMPORTAMIENTO ORIGINAL)
                     $appointment->update([
                         'offer_creation_failed' => true,
                         'offer_creation_error' => $validationResult['error_message'],
@@ -283,8 +302,43 @@ class OfferService
             throw new \Exception("Vehículo no encontrado para appointment_id: {$appointment->id}");
         }
 
+        // ✅ FALLBACK SIMPLE: Si no encuentra usuario por customer_ruc O el vehículo tiene propietario diferente, usar vehicle->user
+        $shouldUseVehicleOwner = false;
+
         if (!$user || !$user->c4c_internal_id) {
-            throw new \Exception("Usuario C4C no encontrado para RUC: {$appointment->customer_ruc}");
+            $shouldUseVehicleOwner = true;
+            Log::info('🔄 Usuario no encontrado o sin C4C ID - usando propietario del vehículo', [
+                'appointment_id' => $appointment->id,
+                'customer_ruc' => $appointment->customer_ruc,
+                'user_found' => $user ? 'YES' : 'NO',
+                'user_c4c_id' => $user?->c4c_internal_id ?: 'NULL'
+            ]);
+        } elseif ($vehicle->user_id && $vehicle->user && $vehicle->user->c4c_internal_id) {
+            // Verificar si el customer_ruc corresponde al propietario real del vehículo
+            if ($user->document_number !== $vehicle->user->document_number) {
+                $shouldUseVehicleOwner = true;
+                Log::info('🔄 Discrepancia entre cliente de cita y propietario de vehículo - usando propietario real', [
+                    'appointment_id' => $appointment->id,
+                    'appointment_customer' => $user->name . ' (' . $user->document_number . ')',
+                    'vehicle_owner' => $vehicle->user->name . ' (' . $vehicle->user->document_number . ')',
+                    'reason' => 'different_owner'
+                ]);
+            }
+        }
+
+        if ($shouldUseVehicleOwner && $vehicle->user_id) {
+            $user = $vehicle->user;
+            Log::info('✅ Usando propietario del vehículo como cliente para oferta', [
+                'appointment_id' => $appointment->id,
+                'original_customer_ruc' => $appointment->customer_ruc,
+                'vehicle_owner_name' => $user?->name,
+                'vehicle_owner_document' => $user?->document_number,
+                'vehicle_owner_c4c_id' => $user?->c4c_internal_id
+            ]);
+        }
+
+        if (!$user || !$user->c4c_internal_id) {
+            throw new \Exception("Usuario C4C no encontrado para RUC: {$appointment->customer_ruc} ni por vehicle owner");
         }
 
         // ✅ OBTENER PRODUCTOS SEGÚN DOCUMENTACIÓN (líneas 131-142)
@@ -309,6 +363,9 @@ class OfferService
             'brand_code' => $vehicle->brand_code,
             'total_productos' => $productos->count(),
         ]);
+
+        // ✅ USAR CLIENTE ORIGINAL (sin fallback automático)
+        $buyerC4CId = $user->c4c_internal_id;
 
         // ✅ ESTRUCTURA SOAP SEGÚN DOCUMENTACIÓN EXACTA
         $params = [
@@ -341,7 +398,7 @@ class OfferService
                 // ✅ DATOS DEL CLIENTE (según documentación línea 158)
                 'BuyerParty' => [
                     'contactPartyListCompleteTransmissionIndicator' => '',
-                    'BusinessPartnerInternalID' => $user->c4c_internal_id
+                    'BusinessPartnerInternalID' => $buyerC4CId
                 ],
 
                 // ✅ EMPLEADO RESPONSABLE
@@ -430,6 +487,16 @@ class OfferService
             'sales_org' => $mapping->sales_organization_id,
             'sales_office' => $mapping->sales_office_id,
             'division' => $mapping->division_code
+        ]);
+
+        // 🔍 LOG: BuyerParty elegido (usuario u owner) y UUID de cita referenciado
+        Log::info('🔍 BuyerParty elegido y UUID de cita para oferta', [
+            'appointment_id' => $appointment->id,
+            'buyer_party_c4c_id' => $buyerC4CId,
+            'quote_ref_uuid' => $appointment->c4c_uuid,
+            'vehicle_plate' => $vehicle->license_plate,
+            'center_code' => $appointment->center_code,
+            'brand_code' => $vehicle->brand_code
         ]);
 
         return $params;
@@ -1096,4 +1163,5 @@ class OfferService
 
         return $comentarioFinal;
     }
+
 }
