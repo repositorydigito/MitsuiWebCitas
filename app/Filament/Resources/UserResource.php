@@ -18,6 +18,9 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Illuminate\Support\Facades\Response;
 
 class UserResource extends Resource
 {
@@ -268,6 +271,15 @@ class UserResource extends Resource
                     ->color('gray')
                     ->button(),
             ])
+            ->headerActions([
+                Tables\Actions\Action::make('exportar_excel')
+                    ->label('Exportar a Excel')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('success')
+                    ->action(function () {
+                        return static::exportToExcel();
+                    }),
+            ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
@@ -404,5 +416,89 @@ class UserResource extends Resource
         }
 
         return $details;
+    }
+
+    public static function exportToExcel()
+    {
+        // Obtener todos los usuarios con sus relaciones
+        $users = User::with(['roles', 'vehicles'])->get();
+
+        // Crear una nueva hoja de cálculo
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Configurar el título de la hoja
+        $sheet->setTitle('Lista de Usuarios');
+
+        // Definir los encabezados
+        $headers = [
+            'A1' => 'ID',
+            'B1' => 'Nombre Completo',
+            'C1' => 'Email',
+            'D1' => 'Teléfono',
+            'E1' => 'Tipo de Documento',
+            'F1' => 'Número de Documento',
+            'G1' => 'Roles',
+            'H1' => 'Usuario Comodín',
+            'I1' => 'ID Interno C4C',
+            'J1' => 'UUID C4C',
+            'K1' => 'Cantidad de Vehículos',
+            'L1' => 'Fecha de Registro',
+            'M1' => 'Última Actualización'
+        ];
+
+        // Escribir los encabezados
+        foreach ($headers as $cell => $header) {
+            $sheet->setCellValue($cell, $header);
+        }
+
+        // Aplicar estilo a los encabezados
+        $sheet->getStyle('A1:M1')->getFont()->setBold(true);
+        $sheet->getStyle('A1:M1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID);
+        $sheet->getStyle('A1:M1')->getFill()->getStartColor()->setRGB('E2E8F0');
+
+        // Escribir los datos de los usuarios
+        $row = 2;
+        foreach ($users as $user) {
+            $sheet->setCellValue('A' . $row, $user->id);
+            $sheet->setCellValue('B' . $row, $user->name);
+            $sheet->setCellValue('C' . $row, $user->email);
+            $sheet->setCellValue('D' . $row, $user->phone);
+            $sheet->setCellValue('E' . $row, $user->document_type);
+            $sheet->setCellValue('F' . $row, $user->document_number);
+            $sheet->setCellValue('G' . $row, $user->roles->pluck('name')->join(', '));
+            $sheet->setCellValue('H' . $row, $user->is_comodin ? 'Sí' : 'No');
+            $sheet->setCellValue('I' . $row, $user->c4c_internal_id);
+            $sheet->setCellValue('J' . $row, $user->c4c_uuid);
+            $sheet->setCellValue('K' . $row, $user->vehicles->count());
+            $sheet->setCellValue('L' . $row, $user->created_at ? $user->created_at->format('d/m/Y H:i') : '');
+            $sheet->setCellValue('M' . $row, $user->updated_at ? $user->updated_at->format('d/m/Y H:i') : '');
+            $row++;
+        }
+
+        // Ajustar el ancho de las columnas automáticamente
+        foreach (range('A', 'M') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        // Crear el writer
+        $writer = new Xlsx($spreadsheet);
+
+        // Generar el nombre del archivo con fecha y hora
+        $filename = 'usuarios_' . date('Y-m-d_H-i-s') . '.xlsx';
+
+        // Configurar las cabeceras para la descarga
+        $headers = [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'max-age=0',
+        ];
+
+        // Crear un archivo temporal
+        $tempFile = tempnam(sys_get_temp_dir(), 'usuarios_export');
+        $writer->save($tempFile);
+
+        // Retornar la respuesta de descarga
+        return Response::download($tempFile, $filename, $headers)->deleteFileAfterSend(true);
     }
 }
