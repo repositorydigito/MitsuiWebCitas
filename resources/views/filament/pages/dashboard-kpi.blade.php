@@ -2,6 +2,25 @@
     {{-- Filtros superiores --}}
     <div class="mb-2 rounded-lg">
         <div class="flex flex-wrap items-end gap-4">
+            {{-- Filtro de marca --}}
+            <div class="w-auto">
+                <label for="marca" class="block text-sm font-medium text-primary-600 mb-2">Marca</label>
+                <div class="relative">
+                    <select
+                        id="marca"
+                        wire:model.live="marcaSeleccionada"
+                        class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                        style="min-width: 160px;"
+                    >
+                        @foreach ($marcas as $marca)
+                            <option value="{{ $marca }}">{{ $marca }}</option>
+                        @endforeach
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    </div>
+                </div>
+            </div>
+
             {{-- Filtro de local --}}
             <div class="w-auto">
                 <label for="local" class="block text-sm font-medium text-primary-600 mb-2">Local</label>
@@ -33,25 +52,6 @@
                         autocomplete="off"
                         readonly
                     >
-                </div>
-            </div>
-
-            {{-- Filtro de marca --}}
-            <div class="w-auto">
-                <label for="marca" class="block text-sm font-medium text-primary-600 mb-2">Marca</label>
-                <div class="relative">
-                    <select
-                        id="marca"
-                        wire:model.live="marcaSeleccionada"
-                        class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                        style="min-width: 160px;"
-                    >
-                        @foreach ($marcas as $marca)
-                            <option value="{{ $marca }}">{{ $marca }}</option>
-                        @endforeach
-                    </select>
-                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    </div>
                 </div>
             </div>
         </div>
@@ -91,7 +91,7 @@
             <div class="bg-white p-4 rounded-lg shadow border border-gray-200 text-center">
                 <h3 class="text-sm font-semibold text-gray-700 mb-2">% EFECTIVIDAD</h3>
                 <p class="font-bold text-primary-600" style="font-size: 2rem !important;">{{ $porcentajeEfectividad }}%</p>
-            </div>
+            </div>            
         </div>
 
         <!-- Segunda fila de KPIs -->
@@ -107,6 +107,14 @@
             <div class="bg-white p-4 rounded-lg shadow border border-gray-200 text-center">
                 <h3 class="text-sm font-semibold text-gray-700 mb-2">% CANCELACIÓN</h3>
                 <p class="font-bold text-primary-600" style="font-size: 2rem !important;">{{ $porcentajeCancelacion }}%</p>
+            </div>
+        </div>
+
+        <!-- Cantidad de usuarios -->
+         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white p-4 rounded-lg shadow border border-gray-200 text-center">
+                <h3 class="text-sm font-semibold text-gray-700 mb-2">CANTIDAD USUARIOS</h3>
+                <p class="font-bold text-primary-600" style="font-size: 2rem !important;">{{ $cantidadUsuarios }}</p>
             </div>
         </div>
     </div>
@@ -147,25 +155,6 @@
     {{-- Filtros para gráficos inferiores --}}
     <div class="mb-6 bg-blue-50 rounded-lg">
         <div class="flex flex-wrap items-end gap-4">
-            {{-- Filtro de local --}}
-            <div class="w-auto">
-                <label for="local2" class="block text-sm font-medium text-primary-600 mb-2">Local</label>
-                <div class="relative">
-                    <select
-                        id="local2"
-                        wire:model.live="localSeleccionadoGraficos"
-                        class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                        style="min-width: 160px;"
-                    >
-                        @foreach ($locales as $codigo => $nombre)
-                            <option value="{{ $codigo }}">{{ $nombre }}</option>
-                        @endforeach
-                    </select>
-                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    </div>
-                </div>
-            </div>
-
             {{-- Filtro de marca --}}
             <div class="w-auto">
                 <label for="marca2" class="block text-sm font-medium text-primary-600 mb-2">Marca</label>
@@ -178,6 +167,25 @@
                     >
                         @foreach ($marcas as $marca)
                             <option value="{{ $marca }}">{{ $marca }}</option>
+                        @endforeach
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    </div>
+                </div>
+            </div>
+            
+            {{-- Filtro de local --}}
+            <div class="w-auto">
+                <label for="local2" class="block text-sm font-medium text-primary-600 mb-2">Local</label>
+                <div class="relative">
+                    <select
+                        id="local2"
+                        wire:model.live="localSeleccionadoGraficos"
+                        class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                        style="min-width: 160px;"
+                    >
+                        @foreach ($localesGraficos as $codigo => $nombre)
+                            <option value="{{ $codigo }}">{{ $nombre }}</option>
                         @endforeach
                     </select>
                     <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">

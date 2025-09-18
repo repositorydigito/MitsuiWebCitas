@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\Local;
 use App\Models\Appointment;
 use App\Models\Vehicle;
+use App\Models\User;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Log;
@@ -63,6 +64,8 @@ class DashboardKpi extends Page
 
     public int $porcentajePrepagados = 0;
 
+    public int $cantidadUsuarios = 0;
+
     // Datos para los gráficos
     public array $datosCantidadCitas = [];
 
@@ -72,6 +75,8 @@ class DashboardKpi extends Page
     public array $marcas = ['Todos'];
 
     public array $locales = [];
+
+    public array $localesGraficos = [];
 
     public function mount(): void
     {
@@ -86,6 +91,9 @@ class DashboardKpi extends Page
         // Cargar locales y marcas desde la base de datos
         $this->cargarLocales();
         $this->cargarMarcas();
+        
+        // Inicializar locales para gráficos
+        $this->actualizarLocalesPorMarcaGraficos();
 
         // Cargar datos iniciales
         $this->cargarDatos();
@@ -97,11 +105,8 @@ class DashboardKpi extends Page
     protected function cargarLocales(): void
     {
         try {
-            // Obtener los locales activos usando el método del modelo
-            $localesActivos = Local::getActivosParaSelector();
-
-            // Agregar la opción "Todos" al principio
-            $this->locales = ['Todos' => 'Todos'] + $localesActivos;
+            // Obtener los locales activos filtrados por marca si es necesario
+            $this->actualizarLocalesPorMarca();
 
             Log::info('[DashboardKpi] Locales cargados: '.json_encode($this->locales));
         } catch (\Exception $e) {
@@ -109,6 +114,56 @@ class DashboardKpi extends Page
 
             // Si hay un error, usar algunos valores por defecto
             $this->locales = ['Todos' => 'Todos'];
+        }
+    }
+
+    /**
+     * Actualiza la lista de locales basada en la marca seleccionada
+     */
+    protected function actualizarLocalesPorMarca(): void
+    {
+        $query = Local::where('is_active', true);
+        
+        // Si hay una marca seleccionada que no sea "Todos", filtrar por marca
+        if ($this->marcaSeleccionada !== 'Todos') {
+            $query->where('brand', $this->marcaSeleccionada);
+        }
+        
+        $localesActivos = $query->orderBy('name')
+            ->pluck('name', 'code')
+            ->toArray();
+
+        // Agregar la opción "Todos" al principio
+        $this->locales = ['Todos' => 'Todos'] + $localesActivos;
+        
+        // Si el local actualmente seleccionado no está en la nueva lista, resetear a "Todos"
+        if ($this->localSeleccionado !== 'Todos' && !array_key_exists($this->localSeleccionado, $this->locales)) {
+            $this->localSeleccionado = 'Todos';
+        }
+    }
+
+    /**
+     * Actualiza la lista de locales para gráficos basada en la marca seleccionada
+     */
+    protected function actualizarLocalesPorMarcaGraficos(): void
+    {
+        $query = Local::where('is_active', true);
+        
+        // Si hay una marca seleccionada que no sea "Todos", filtrar por marca
+        if ($this->marcaSeleccionadaGraficos !== 'Todos') {
+            $query->where('brand', $this->marcaSeleccionadaGraficos);
+        }
+        
+        $localesActivos = $query->orderBy('name')
+            ->pluck('name', 'code')
+            ->toArray();
+
+        // Agregar la opción "Todos" al principio
+        $this->localesGraficos = ['Todos' => 'Todos'] + $localesActivos;
+        
+        // Si el local actualmente seleccionado para gráficos no está en la nueva lista, resetear a "Todos"
+        if ($this->localSeleccionadoGraficos !== 'Todos' && !array_key_exists($this->localSeleccionadoGraficos, $this->localesGraficos)) {
+            $this->localSeleccionadoGraficos = 'Todos';
         }
     }
 
@@ -183,6 +238,9 @@ class DashboardKpi extends Page
             // Calcular KPIs principales
             $this->calcularKpisPrincipales($query);
 
+            // Calcular cantidad de usuarios
+            $this->calcularCantidadUsuarios();
+
             // Cargar datos para gráficos
             $this->cargarDatosGraficos($fechaInicioCarbon, $fechaFinCarbon);
 
@@ -247,8 +305,16 @@ class DashboardKpi extends Page
      */
     protected function calcularKpisPrincipales($query): void
     {
-        // Citas generadas (total de citas)
-        $this->citasGeneradas = (clone $query)->count();
+        // Citas generadas (solo confirmed y cancelled sin reprogramación)
+        $this->citasGeneradas = (clone $query)
+            ->where(function($q) {
+                $q->where('status', 'confirmed')
+                  ->orWhere(function($q2) {
+                      $q2->where('status', 'cancelled')
+                         ->where('rescheduled', 0);
+                  });
+            })
+            ->count();
 
         // Log para debugging
         Log::info('[DashboardKpi] Citas encontradas en el rango: ' . $this->citasGeneradas);
@@ -256,8 +322,11 @@ class DashboardKpi extends Page
         // Citas efectivas (confirmed)
         $this->citasEfectivas = (clone $query)->where('status', 'confirmed')->count();
 
-        // Citas canceladas
-        $this->citasCanceladas = (clone $query)->where('status', 'cancelled')->count();
+        // Citas canceladas (solo las que no fueron reprogramadas)
+        $this->citasCanceladas = (clone $query)
+            ->where('status', 'cancelled')
+            ->where('rescheduled', 0)
+            ->count();
 
         // Porcentaje de efectividad
         $this->porcentajeEfectividad = $this->citasGeneradas > 0 
@@ -269,8 +338,16 @@ class DashboardKpi extends Page
             ? round(($this->citasCanceladas / $this->citasGeneradas) * 100) 
             : 0;
 
-        // Citas por mantenimiento (que tienen maintenance_type)
-        $citasConMantenimiento = (clone $query)->whereNotNull('maintenance_type')
+        // Citas por mantenimiento (de las citas generadas que tienen maintenance_type lleno)
+        $citasConMantenimiento = (clone $query)
+            ->where(function($q) {
+                $q->where('status', 'confirmed')
+                  ->orWhere(function($q2) {
+                      $q2->where('status', 'cancelled')
+                         ->where('rescheduled', 0);
+                  });
+            })
+            ->whereNotNull('maintenance_type')
             ->where('maintenance_type', '!=', '')
             ->count();
 
@@ -305,6 +382,22 @@ class DashboardKpi extends Page
             'citasMantenimientoPrepagados' => $this->citasMantenimientoPrepagados,
             'porcentajePrepagados' => $this->porcentajePrepagados,
         ]);
+    }
+
+    /**
+     * Calcula la cantidad de usuarios con rol "Usuario"
+     */
+    protected function calcularCantidadUsuarios(): void
+    {
+        try {
+            // Contar usuarios que tienen el rol "Usuario"
+            $this->cantidadUsuarios = User::role('Usuario')->count();
+            
+            Log::info('[DashboardKpi] Cantidad de usuarios con rol "Usuario": ' . $this->cantidadUsuarios);
+        } catch (\Exception $e) {
+            Log::error('[DashboardKpi] Error al calcular cantidad de usuarios: ' . $e->getMessage());
+            $this->cantidadUsuarios = 0;
+        }
     }
 
     /**
@@ -544,6 +637,7 @@ class DashboardKpi extends Page
         $this->citasMantenimientoPrepagados = 0;
         $this->porcentajeMantenimiento = 0;
         $this->porcentajePrepagados = 0;
+        $this->cantidadUsuarios = 0;
         $this->datosCantidadCitas = ['labels' => [], 'generadas' => [], 'efectivas' => []];
         $this->datosTiempoPromedio = ['labels' => [], 'tiempos' => []];
     }
@@ -594,6 +688,10 @@ class DashboardKpi extends Page
      */
     public function updatedMarcaSeleccionada(): void
     {
+        // Actualizar la lista de locales basada en la nueva marca
+        $this->actualizarLocalesPorMarca();
+        
+        // Cargar datos con los nuevos filtros
         $this->cargarDatos();
     }
 
@@ -610,6 +708,10 @@ class DashboardKpi extends Page
      */
     public function updatedMarcaSeleccionadaGraficos(): void
     {
+        // Actualizar la lista de locales basada en la nueva marca para gráficos
+        $this->actualizarLocalesPorMarcaGraficos();
+        
+        // Cargar datos con los nuevos filtros
         $this->cargarDatos();
     }
 
