@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\Local;
 use App\Models\Vehicle;
 use App\Models\KpiTarget;
+use App\Models\User;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 use Illuminate\Support\Collection;
@@ -63,6 +64,8 @@ class Kpis extends Page
 
     public array $locales = [];
 
+    public array $localesModal = [];
+
     public array $tipos = ['Post Venta', 'Venta', 'Todos'];
 
     public function mount(): void
@@ -78,6 +81,9 @@ class Kpis extends Page
         // Cargar locales y marcas desde la base de datos
         $this->cargarLocales();
         $this->cargarMarcas();
+        
+        // Inicializar locales para modal
+        $this->actualizarLocalesModal();
 
         // Cargar datos iniciales
         $this->cargarKpis();
@@ -89,15 +95,62 @@ class Kpis extends Page
     protected function cargarLocales(): void
     {
         try {
-            // Obtener los locales activos usando el método del modelo
-            $localesActivos = Local::getActivosParaSelector();
-
-            // Agregar la opción "Todos" al principio
-            $this->locales = ['Todos' => 'Todos'] + $localesActivos;
+            // Obtener los locales activos filtrados por marca si es necesario
+            $this->actualizarLocalesPorMarca();
 
         } catch (\Exception $e) {
             // Si hay un error, usar algunos valores por defecto
             $this->locales = ['Todos' => 'Todos'];
+        }
+    }
+
+    /**
+     * Actualiza la lista de locales basada en la marca seleccionada
+     */
+    protected function actualizarLocalesPorMarca(): void
+    {
+        $query = Local::where('is_active', true);
+        
+        // Si hay una marca seleccionada que no sea "Todas", filtrar por marca
+        if ($this->marcaSeleccionada !== 'Todas') {
+            $query->where('brand', $this->marcaSeleccionada);
+        }
+        
+        $localesActivos = $query->orderBy('name')
+            ->pluck('name', 'code')
+            ->toArray();
+
+        // Agregar la opción "Todos" al principio
+        $this->locales = ['Todos' => 'Todos'] + $localesActivos;
+        
+        // Si el local actualmente seleccionado no está en la nueva lista, resetear a "Todos"
+        if ($this->localSeleccionado !== 'Todos' && !array_key_exists($this->localSeleccionado, $this->locales)) {
+            $this->localSeleccionado = 'Todos';
+        }
+    }
+
+    /**
+     * Actualiza la lista de locales para el modal basada en la marca seleccionada en el modal
+     */
+    protected function actualizarLocalesModal(): void
+    {
+        $query = Local::where('is_active', true);
+        
+        // Si hay una marca seleccionada en el modal que no sea null, filtrar por marca
+        if ($this->modalBrand) {
+            $query->where('brand', $this->modalBrand);
+        }
+        
+        $localesActivos = $query->orderBy('name')
+            ->pluck('name', 'code')
+            ->toArray();
+
+        // Agregar la opción "Todos" al principio
+        $this->localesModal = ['Todos' => 'Todos'] + $localesActivos;
+        
+        // Si el local actualmente seleccionado en el modal no está en la nueva lista, resetear a null
+        if ($this->modalLocal && $this->modalLocal !== 'Todos' && !array_key_exists($this->modalLocal, $this->localesModal)) {
+            $this->modalLocal = null;
         }
     }
 
@@ -256,28 +309,40 @@ class Kpis extends Page
                                              ->where('maintenance_type', '!=', '')
                                              ->count();
 
-            \Log::info("KPIs calculados - Con filtros: {$todasLasCitas}, Solo fecha: {$todasSinFiltrosRestrictivos}, Generadas: {$citasGeneradas}");
+            // KPI 6: Cantidad de clientes registrados (usuarios con rol "Usuario") filtrados por fecha
+            $cantidadUsuarios = $this->calcularCantidadUsuarios($fechaInicio, $fechaFin);
 
-            // Obtener valores meta de la base de datos
+            \Log::info("KPIs calculados - Con filtros: {$todasLasCitas}, Solo fecha: {$todasSinFiltrosRestrictivos}, Generadas: {$citasGeneradas}, Usuarios: {$cantidadUsuarios}");
+
+            // Obtener valores meta de la base de datos para todos los KPIs
             // Convertir "Todas"/"Todos" a null para la búsqueda
             $brand = $this->marcaSeleccionada !== 'Todas' ? $this->marcaSeleccionada : null;
             $local = $this->localSeleccionado !== 'Todos' ? $this->localSeleccionado : null;
             
-            $metaGeneradas = KpiTarget::getTargetValue('1', $brand, $local, $this->mesSeleccionado, $this->anioSeleccionado) ?? 80;
-            $metaEfectivas = KpiTarget::getTargetValue('2', $brand, $local, $this->mesSeleccionado, $this->anioSeleccionado) ?? 10;
+            // Obtener metas para todos los KPIs
+            $metaGeneradas = KpiTarget::getTargetValue('1', $brand, $local, $this->mesSeleccionado, $this->anioSeleccionado);
+            $metaEfectivas = KpiTarget::getTargetValue('2', $brand, $local, $this->mesSeleccionado, $this->anioSeleccionado);
+            $metaCanceladas = KpiTarget::getTargetValue('3', $brand, $local, $this->mesSeleccionado, $this->anioSeleccionado);
+            $metaReprogramadas = KpiTarget::getTargetValue('4', $brand, $local, $this->mesSeleccionado, $this->anioSeleccionado);
+            $metaMantenimiento = KpiTarget::getTargetValue('5', $brand, $local, $this->mesSeleccionado, $this->anioSeleccionado);
+            $metaUsuarios = KpiTarget::getTargetValue('6', $brand, $local, $this->mesSeleccionado, $this->anioSeleccionado);
             
-            // Calcular desviaciones
-            $desviacionGeneradas = $metaGeneradas > 0 ? round((($citasGeneradas - $metaGeneradas) / $metaGeneradas) * 100, 1) : 0;
-            $desviacionEfectivas = $metaEfectivas > 0 ? round((($citasEfectivas - $metaEfectivas) / $metaEfectivas) * 100, 1) : -100;
+            // Calcular desviaciones para todos los KPIs
+            $desviacionGeneradas = $this->calcularDesviacion($todasLasCitas, $metaGeneradas);
+            $desviacionEfectivas = $this->calcularDesviacion($citasEfectivas, $metaEfectivas);
+            $desviacionCanceladas = $this->calcularDesviacion($citasCanceladas, $metaCanceladas);
+            $desviacionReprogramadas = $this->calcularDesviacion($citasReprogramadas, $metaReprogramadas);
+            $desviacionMantenimiento = $this->calcularDesviacion($citasMantenimiento, $metaMantenimiento);
+            $desviacionUsuarios = $this->calcularDesviacion($cantidadUsuarios, $metaUsuarios);
 
             $this->kpis = collect([
                 [
                     'id' => 1,
                     'nombre' => 'Cantidad de citas generadas',
-                    'cantidad' => $todasLasCitas, // Usar el conteo con todos los filtros aplicados
+                    'cantidad' => $todasLasCitas,
                     'meta' => $metaGeneradas,
                     'contribucion' => false,
-                    'desviacion' => $desviacionGeneradas != 0 ? ($desviacionGeneradas > 0 ? "+{$desviacionGeneradas}%" : "{$desviacionGeneradas}%") : "0%",
+                    'desviacion' => $desviacionGeneradas,
                 ],
                 [
                     'id' => 2,
@@ -285,37 +350,97 @@ class Kpis extends Page
                     'cantidad' => $citasEfectivas,
                     'meta' => $metaEfectivas,
                     'contribucion' => false,
-                    'desviacion' => $desviacionEfectivas != -100 ? ($desviacionEfectivas > 0 ? "+{$desviacionEfectivas}%" : "{$desviacionEfectivas}%") : "-100%",
+                    'desviacion' => $desviacionEfectivas,
                 ],
                 [
                     'id' => 3,
                     'nombre' => 'Cantidad de citas canceladas',
                     'cantidad' => $citasCanceladas,
-                    'meta' => null,
+                    'meta' => $metaCanceladas,
                     'contribucion' => true,
-                    'desviacion' => null,
+                    'desviacion' => $desviacionCanceladas,
                 ],
                 [
                     'id' => 4,
                     'nombre' => 'Cantidad de citas diferidas / reprogramadas',
                     'cantidad' => $citasReprogramadas,
-                    'meta' => null,
+                    'meta' => $metaReprogramadas,
                     'contribucion' => true,
-                    'desviacion' => null,
+                    'desviacion' => $desviacionReprogramadas,
                 ],
                 [
                     'id' => 5,
                     'nombre' => 'Cantidad citas por mantenimiento',
                     'cantidad' => $citasMantenimiento,
-                    'meta' => null,
+                    'meta' => $metaMantenimiento,
                     'contribucion' => true,
-                    'desviacion' => null,
+                    'desviacion' => $desviacionMantenimiento,
+                ],
+                [
+                    'id' => 6,
+                    'nombre' => 'Cantidad de clientes registrados',
+                    'cantidad' => $cantidadUsuarios,
+                    'meta' => $metaUsuarios,
+                    'contribucion' => false,
+                    'desviacion' => $desviacionUsuarios,
                 ],
             ]);
 
         } catch (\Exception $e) {
             \Log::error('Error al cargar KPIs: ' . $e->getMessage());
             $this->kpis = collect([]);
+        }
+    }
+
+    /**
+     * Calcula la cantidad de usuarios con rol "Usuario" filtrados por fecha de creación
+     */
+    protected function calcularCantidadUsuarios($fechaInicio = null, $fechaFin = null): int
+    {
+        try {
+            // Construir query base para usuarios con rol "Usuario"
+            $query = User::role('Usuario');
+            
+            // Aplicar filtro de fecha si se proporcionan fechas válidas
+            if ($fechaInicio && $fechaFin) {
+                $fechaInicioStr = $fechaInicio->format('Y-m-d');
+                $fechaFinStr = $fechaFin->format('Y-m-d');
+                
+                $query->whereBetween('created_at', [$fechaInicioStr . ' 00:00:00', $fechaFinStr . ' 23:59:59']);
+                
+                \Log::info('[Kpis] Filtro de fecha aplicado para usuarios: ' . $fechaInicioStr . ' - ' . $fechaFinStr);
+            } else {
+                \Log::info('[Kpis] Sin filtro de fecha para usuarios (mostrando todos)');
+            }
+            
+            $cantidadUsuarios = $query->count();
+            
+            \Log::info('[Kpis] Cantidad de usuarios con rol "Usuario" (filtrados): ' . $cantidadUsuarios);
+            
+            return $cantidadUsuarios;
+        } catch (\Exception $e) {
+            \Log::error('[Kpis] Error al calcular cantidad de usuarios: ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Calcula la desviación porcentual entre el valor actual y la meta
+     */
+    protected function calcularDesviacion(?int $valorActual, ?int $meta): ?string
+    {
+        if ($meta === null || $meta == 0) {
+            return null;
+        }
+        
+        $desviacion = round((($valorActual - $meta) / $meta) * 100, 1);
+        
+        if ($desviacion == 0) {
+            return "0%";
+        } elseif ($desviacion > 0) {
+            return "+{$desviacion}%";
+        } else {
+            return "{$desviacion}%";
         }
     }
 
@@ -403,6 +528,10 @@ class Kpis extends Page
 
     public function updatedMarcaSeleccionada(): void
     {
+        // Actualizar la lista de locales basada en la nueva marca
+        $this->actualizarLocalesPorMarca();
+        
+        // Cargar datos con los nuevos filtros
         $this->cargarKpis();
     }
 
@@ -509,6 +638,9 @@ class Kpis extends Page
         $this->modalMonth = $this->mesSeleccionado;
         $this->modalYear = $this->anioSeleccionado;
         
+        // Actualizar locales del modal basado en la marca seleccionada
+        $this->actualizarLocalesModal();
+        
         // Obtener el valor actual si existe
         $currentTarget = KpiTarget::getTargetValue($kpiId, $this->modalBrand, $this->modalLocal, $this->modalMonth, $this->modalYear);
         $this->targetValue = $currentTarget ?? 0;
@@ -558,5 +690,14 @@ class Kpis extends Page
         // Cerrar el modal y recargar los KPIs
         $this->closeModal();
         $this->cargarKpis();
+    }
+
+    /**
+     * Se ejecuta cuando cambia la marca seleccionada en el modal
+     */
+    public function updatedModalBrand(): void
+    {
+        // Actualizar la lista de locales del modal basada en la nueva marca
+        $this->actualizarLocalesModal();
     }
 }

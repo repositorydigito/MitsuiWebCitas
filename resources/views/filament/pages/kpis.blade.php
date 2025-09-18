@@ -2,6 +2,39 @@
     {{-- Filtros y búsqueda --}}
     <div class="mb-4 rounded-lg">
         <div class="flex flex-wrap items-end gap-4">
+            {{-- Filtro de marca --}}
+            <div class="w-auto">
+                <label for="marca" class="block text-sm font-medium text-gray-700 mb-2">Marca</label>
+                <div class="relative">
+                    <select
+                        id="marca"
+                        wire:model.live="marcaSeleccionada"
+                        class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                        style="min-width: 160px;"
+                    >
+                        @foreach ($marcas as $marca)
+                            <option value="{{ $marca }}">{{ $marca }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
+            {{-- Filtro de local --}}
+            <div class="w-auto">
+                <label for="local" class="block text-sm font-medium text-gray-700 mb-2">Local</label>
+                <div class="relative">
+                    <select
+                        id="local"
+                        wire:model.live="localSeleccionado"
+                        class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                        style="min-width: 160px;"
+                    >
+                        @foreach ($locales as $codigo => $nombre)
+                            <option value="{{ $codigo }}">{{ $nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
             {{-- Filtro de mes y año --}}
             <div class="w-auto">
                 <label for="mes" class="block text-sm font-medium text-gray-700 mb-2">Mes y Año</label>
@@ -37,40 +70,6 @@
                         @for ($i = date('Y'); $i >= 2020; $i--)
                             <option value="{{ $i }}">{{ $i }}</option>
                         @endfor
-                    </select>
-                </div>
-            </div>
-
-            {{-- Filtro de marca --}}
-            <div class="w-auto">
-                <label for="marca" class="block text-sm font-medium text-gray-700 mb-2">Marca</label>
-                <div class="relative">
-                    <select
-                        id="marca"
-                        wire:model.live="marcaSeleccionada"
-                        class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                        style="min-width: 160px;"
-                    >
-                        @foreach ($marcas as $marca)
-                            <option value="{{ $marca }}">{{ $marca }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-
-            {{-- Filtro de local --}}
-            <div class="w-auto">
-                <label for="local" class="block text-sm font-medium text-gray-700 mb-2">Local</label>
-                <div class="relative">
-                    <select
-                        id="local"
-                        wire:model.live="localSeleccionado"
-                        class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                        style="min-width: 160px;"
-                    >
-                        @foreach ($locales as $codigo => $nombre)
-                            <option value="{{ $codigo }}">{{ $nombre }}</option>
-                        @endforeach
                     </select>
                 </div>
             </div>
@@ -120,10 +119,7 @@
                             Meta
                         </th>
                         <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider w-24">
-                            Contribución
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider w-24">
-                            Desviación
+                            Cumplimiento
                         </th>
                     </tr>
                 </thead>
@@ -141,28 +137,25 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-center @if(!$kpi['meta']) bg-gray-200 @endif">
                                 <div class="flex items-center justify-between">
-                                    <span>{{ $kpi['meta'] }}</span>
-                                    @if($kpi['id'] == 1 || $kpi['id'] == 2)
-                                        <button 
-                                            wire:click="openModal('{{ $kpi['id'] }}')"
-                                            class="text-primary-600 hover:text-primary-800"
-                                            title="Configurar meta"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                                            </svg>
-                                        </button>
-                                    @endif
+                                    <span>{{ $kpi['meta'] ?? '-' }}</span>
+                                    <button 
+                                        wire:click="openModal('{{ $kpi['id'] }}')"
+                                        class="text-primary-600 hover:text-primary-800"
+                                        title="Configurar meta"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                        </svg>
+                                    </button>
                                 </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center @if(!$kpi['contribucion']) bg-gray-200 @endif">
-                                @if($kpi['contribucion'])
-                                    <span class="text-primary-500 font-medium">SÍ</span>
-                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-center @if(!$kpi['desviacion']) bg-gray-200 @endif">
                                 @if($kpi['desviacion'])
-                                    <span class="text-primary-500 font-medium">{{ $kpi['desviacion'] }}</span>
+                                    <span class="font-medium @if(str_starts_with($kpi['desviacion'], '+')) text-green-600 @elseif(str_starts_with($kpi['desviacion'], '-')) text-red-600 @else text-gray-600 @endif">
+                                        {{ $kpi['desviacion'] }}
+                                    </span>
+                                @else
+                                    <span class="text-gray-400">-</span>
                                 @endif
                             </td>
                         </tr>
@@ -213,7 +206,7 @@
                                                 <label for="modalBrand" class="block text-left text-sm font-medium text-gray-700">Marca</label>
                                                 <select
                                                     id="modalBrand"
-                                                    wire:model="modalBrand"
+                                                    wire:model.live="modalBrand"
                                                     class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500"
                                                 >
                                                     <option value="">Todas</option>
@@ -234,7 +227,7 @@
                                                     class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500"
                                                 >
                                                     <option value="">Todos</option>
-                                                    @foreach($locales as $codigo => $nombre)
+                                                    @foreach($localesModal as $codigo => $nombre)
                                                         @if($codigo !== 'Todos')
                                                             <option value="{{ $codigo }}">{{ $nombre }}</option>
                                                         @endif
