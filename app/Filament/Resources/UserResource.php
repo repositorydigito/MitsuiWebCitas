@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Hash;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Illuminate\Support\Facades\Response;
+use Carbon\Carbon;
 
 class UserResource extends Resource
 {
@@ -223,7 +224,7 @@ class UserResource extends Resource
 
                         Tables\Columns\TextColumn::make('created_at')
                             ->label('Registrado')
-                            ->dateTime('d/m/Y')
+                            ->formatStateUsing(fn ($state) => $state ? Carbon::parse($state)->setTimezone('America/Lima')->format('d/m/Y H:i') : '')
                             ->size('sm')
                             ->color('gray'),
                     ])->space(1),
@@ -361,11 +362,11 @@ class UserResource extends Resource
                             ->schema([
                                 Components\TextEntry::make('created_at')
                                     ->label('Fecha de Registro')
-                                    ->dateTime('d/m/Y H:i'),
+                                    ->formatStateUsing(fn ($state) => $state ? Carbon::parse($state)->setTimezone('America/Lima')->format('d/m/Y H:i') : ''),
 
                                 Components\TextEntry::make('updated_at')
                                     ->label('Última Actualización')
-                                    ->dateTime('d/m/Y H:i'),
+                                    ->formatStateUsing(fn ($state) => $state ? Carbon::parse($state)->setTimezone('America/Lima')->format('d/m/Y H:i') : ''),
                             ]),
                     ]),
             ]);
@@ -471,8 +472,8 @@ class UserResource extends Resource
             $sheet->setCellValue('I' . $row, $user->c4c_internal_id);
             $sheet->setCellValue('J' . $row, $user->c4c_uuid);
             $sheet->setCellValue('K' . $row, $user->vehicles->count());
-            $sheet->setCellValue('L' . $row, $user->created_at ? $user->created_at->format('d/m/Y H:i') : '');
-            $sheet->setCellValue('M' . $row, $user->updated_at ? $user->updated_at->format('d/m/Y H:i') : '');
+            $sheet->setCellValue('L' . $row, $user->created_at ? Carbon::parse($user->created_at)->setTimezone('America/Lima')->format('d/m/Y H:i') : '');
+            $sheet->setCellValue('M' . $row, $user->updated_at ? Carbon::parse($user->updated_at)->setTimezone('America/Lima')->format('d/m/Y H:i') : '');
             $row++;
         }
 
