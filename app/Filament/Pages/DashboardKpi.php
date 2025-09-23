@@ -238,8 +238,8 @@ class DashboardKpi extends Page
             // Calcular KPIs principales
             $this->calcularKpisPrincipales($query);
 
-            // Calcular cantidad de usuarios
-            $this->calcularCantidadUsuarios();
+            // Calcular cantidad de usuarios filtrados por fecha
+            $this->calcularCantidadUsuarios($fechaInicioCarbon, $fechaFinCarbon);
 
             // Cargar datos para gráficos
             $this->cargarDatosGraficos($fechaInicioCarbon, $fechaFinCarbon);
@@ -385,15 +385,30 @@ class DashboardKpi extends Page
     }
 
     /**
-     * Calcula la cantidad de usuarios con rol "Usuario"
+     * Calcula la cantidad de usuarios con rol "Usuario" filtrados por fecha de creación
      */
-    protected function calcularCantidadUsuarios(): void
+    protected function calcularCantidadUsuarios(Carbon $fechaInicio = null, Carbon $fechaFin = null): void
     {
         try {
-            // Contar usuarios que tienen el rol "Usuario"
-            $this->cantidadUsuarios = User::role('Usuario')->count();
+            $query = User::role('Usuario');
             
-            Log::info('[DashboardKpi] Cantidad de usuarios con rol "Usuario": ' . $this->cantidadUsuarios);
+            // Aplicar filtro de fechas si se proporcionan
+            if ($fechaInicio && $fechaFin) {
+                $query->whereBetween('created_at', [
+                    $fechaInicio->format('Y-m-d 00:00:00'),
+                    $fechaFin->format('Y-m-d 23:59:59')
+                ]);
+                
+                Log::info('[DashboardKpi] Filtrando usuarios por fecha de creación', [
+                    'fecha_inicio' => $fechaInicio->format('Y-m-d'),
+                    'fecha_fin' => $fechaFin->format('Y-m-d')
+                ]);
+            }
+            
+            $this->cantidadUsuarios = $query->count();
+            
+            Log::info('[DashboardKpi] Cantidad de usuarios con rol "Usuario"' . 
+                ($fechaInicio && $fechaFin ? ' en el rango de fechas' : '') . ': ' . $this->cantidadUsuarios);
         } catch (\Exception $e) {
             Log::error('[DashboardKpi] Error al calcular cantidad de usuarios: ' . $e->getMessage());
             $this->cantidadUsuarios = 0;
@@ -411,22 +426,14 @@ class DashboardKpi extends Page
         // Determinar el tipo de agrupación basado en el rango de fechas
         $diasDiferencia = $fechaInicio->diffInDays($fechaFin);
         
-        Log::info('[DashboardKpi] Configurando agrupación de datos', [
+        Log::info('[DashboardKpi] Configurando agrupación de datos por día', [
             'fecha_inicio' => $fechaInicio->format('Y-m-d'),
             'fecha_fin' => $fechaFin->format('Y-m-d'),
             'dias_diferencia' => $diasDiferencia
         ]);
 
-        if ($diasDiferencia <= 31) {
-            // Rango de 1 mes o menos: agrupar por semana
-            $this->cargarDatosPorSemana($queryGraficos, $fechaInicio, $fechaFin);
-        } elseif ($diasDiferencia <= 365) {
-            // Rango de hasta 1 año: agrupar por mes
-            $this->cargarDatosPorMes($queryGraficos, $fechaInicio, $fechaFin);
-        } else {
-            // Rango mayor a 1 año: agrupar por trimestre
-            $this->cargarDatosPorTrimestre($queryGraficos, $fechaInicio, $fechaFin);
-        }
+        // Siempre agrupar por día según requerimiento del usuario
+        $this->cargarDatosPorDia($queryGraficos, $fechaInicio, $fechaFin);
     }
 
     /**
@@ -468,15 +475,85 @@ class DashboardKpi extends Page
             $fechaActual->addWeek();
         }
 
+        // Calcular porcentajes de efectividad por semana
+        $porcentajesEfectividad = [];
+        for ($i = 0; $i < count($generadas); $i++) {
+            $porcentajesEfectividad[] = $generadas[$i] > 0 
+                ? round(($efectivas[$i] / $generadas[$i]) * 100, 1) 
+                : 0;
+        }
+
         $this->datosCantidadCitas = [
             'labels' => $labels,
             'generadas' => $generadas,
             'efectivas' => $efectivas,
+            'porcentajesEfectividad' => $porcentajesEfectividad,
         ];
 
         Log::info('[DashboardKpi] Datos cargados por semana', [
             'total_semanas' => count($labels),
             'labels' => $labels
+        ]);
+    }
+
+    /**
+     * Cargar datos agrupados por día
+     */
+    protected function cargarDatosPorDia($query, Carbon $fechaInicio, Carbon $fechaFin): void
+    {
+        $datosPorDia = $query
+            ->select(
+                DB::raw('DATE(appointment_date) as fecha'),
+                DB::raw('COUNT(*) as total'),
+                DB::raw('SUM(CASE WHEN status = "confirmed" THEN 1 ELSE 0 END) as efectivas')
+            )
+            ->groupBy('fecha')
+            ->orderBy('fecha')
+            ->get()
+            ->keyBy('fecha'); // Usar fecha como clave para búsqueda rápida
+
+        // Generar todos los días en el rango
+        $labels = [];
+        $generadas = [];
+        $efectivas = [];
+        $porcentajesEfectividad = []; // Nueva array para porcentajes de efectividad
+        
+        $fechaActual = $fechaInicio->copy();
+        while ($fechaActual <= $fechaFin) {
+            $fechaStr = $fechaActual->format('Y-m-d');
+            
+            // Buscar datos para este día
+            $datoDia = $datosPorDia->get($fechaStr);
+            
+            $citasGeneradasDia = $datoDia ? $datoDia->total : 0;
+            $citasEfectivasDia = $datoDia ? $datoDia->efectivas : 0;
+            
+            // Calcular porcentaje de efectividad del día
+            $porcentajeEfectividadDia = $citasGeneradasDia > 0 
+                ? round(($citasEfectivasDia / $citasGeneradasDia) * 100, 1) 
+                : 0;
+            
+            // Formatear etiqueta como dd/mm para mejor legibilidad
+            $labels[] = $fechaActual->format('d/m');
+            $generadas[] = $citasGeneradasDia;
+            $efectivas[] = $citasEfectivasDia;
+            $porcentajesEfectividad[] = $porcentajeEfectividadDia;
+            
+            $fechaActual->addDay();
+        }
+
+        $this->datosCantidadCitas = [
+            'labels' => $labels,
+            'generadas' => $generadas,
+            'efectivas' => $efectivas,
+            'porcentajesEfectividad' => $porcentajesEfectividad, // Agregar porcentajes de efectividad
+        ];
+
+        Log::info('[DashboardKpi] Datos cargados por día con efectividad', [
+            'total_dias' => count($labels),
+            'rango' => $fechaInicio->format('d/m/Y') . ' - ' . $fechaFin->format('d/m/Y'),
+            'labels_muestra' => array_slice($labels, 0, 5), // Mostrar solo los primeros 5 para el log
+            'efectividad_muestra' => array_slice($porcentajesEfectividad, 0, 5) // Mostrar porcentajes de muestra
         ]);
     }
 
@@ -519,10 +596,19 @@ class DashboardKpi extends Page
             $fechaActual->addMonth();
         }
 
+        // Calcular porcentajes de efectividad por mes
+        $porcentajesEfectividad = [];
+        for ($i = 0; $i < count($generadas); $i++) {
+            $porcentajesEfectividad[] = $generadas[$i] > 0 
+                ? round(($efectivas[$i] / $generadas[$i]) * 100, 1) 
+                : 0;
+        }
+
         $this->datosCantidadCitas = [
             'labels' => $labels,
             'generadas' => $generadas,
             'efectivas' => $efectivas,
+            'porcentajesEfectividad' => $porcentajesEfectividad,
         ];
 
         Log::info('[DashboardKpi] Datos cargados por mes', [
@@ -570,10 +656,19 @@ class DashboardKpi extends Page
             $fechaActual->addQuarter();
         }
 
+        // Calcular porcentajes de efectividad por trimestre
+        $porcentajesEfectividad = [];
+        for ($i = 0; $i < count($generadas); $i++) {
+            $porcentajesEfectividad[] = $generadas[$i] > 0 
+                ? round(($efectivas[$i] / $generadas[$i]) * 100, 1) 
+                : 0;
+        }
+
         $this->datosCantidadCitas = [
             'labels' => $labels,
             'generadas' => $generadas,
             'efectivas' => $efectivas,
+            'porcentajesEfectividad' => $porcentajesEfectividad,
         ];
 
         Log::info('[DashboardKpi] Datos cargados por trimestre', [
@@ -637,8 +732,9 @@ class DashboardKpi extends Page
         $this->citasMantenimientoPrepagados = 0;
         $this->porcentajeMantenimiento = 0;
         $this->porcentajePrepagados = 0;
-        $this->cantidadUsuarios = 0;
-        $this->datosCantidadCitas = ['labels' => [], 'generadas' => [], 'efectivas' => []];
+        // Calcular cantidad total de usuarios (sin filtro de fechas) como fallback
+        $this->calcularCantidadUsuarios();
+        $this->datosCantidadCitas = ['labels' => [], 'generadas' => [], 'efectivas' => [], 'porcentajesEfectividad' => []];
         $this->datosTiempoPromedio = ['labels' => [], 'tiempos' => []];
     }
 

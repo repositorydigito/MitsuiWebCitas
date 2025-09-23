@@ -200,7 +200,7 @@
         {{-- Gráfico: Cantidad de Citas --}}
         <div class="bg-white p-4 rounded-lg shadow">
             <h3 class="text-sm font-semibold text-gray-700 mb-4">CANTIDAD DE CITAS</h3>
-            <div class="h-64" wire:ignore>
+            <div class="h-96 py-4" wire:ignore>
                 <canvas id="chartCantidadCitas"></canvas>
             </div>
         </div>
@@ -215,82 +215,43 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
-        // Variables globales para mantener las instancias de los gráficos
         let chartMantenimiento = null;
         let chartPrepagados = null;
         let chartCantidadCitas = null;
         let chartTiempoPromedio = null;
         let flatpickrInstance = null;
 
-        // Función para calcular línea de tendencia usando regresión lineal
-        function calculateTrendLine(data) {
-            if (!data || data.length < 2) {
-                return data; // Si no hay suficientes datos, devolver los originales
+        function getEfectividadData(data) {
+            if (!data || !data.porcentajesEfectividad) {
+                return [];
             }
 
-            const n = data.length;
-            let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
-
-            // Calcular sumas necesarias para la regresión lineal
-            for (let i = 0; i < n; i++) {
-                const x = i; // Posición en el array (0, 1, 2, ...)
-                const y = data[i] || 0; // Valor de citas
-                
-                sumX += x;
-                sumY += y;
-                sumXY += x * y;
-                sumXX += x * x;
-            }
-
-            // Calcular pendiente (m) e intercepto (b) de la línea y = mx + b
-            const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-            const intercept = (sumY - slope * sumX) / n;
-
-            // Generar puntos de la línea de tendencia
-            const trendLine = [];
-            for (let i = 0; i < n; i++) {
-                trendLine.push(Math.max(0, Math.round(slope * i + intercept))); // No valores negativos
-            }
-
-            console.log('📈 Línea de tendencia calculada:', {
-                slope: slope.toFixed(2),
-                intercept: intercept.toFixed(2),
-                original: data,
-                trend: trendLine
-            });
-
-            return trendLine;
+            return data.porcentajesEfectividad;
         }
 
-        // Inicializar cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', function () {
             initDatepicker();
             initCharts();
         });
 
-        // Escuchar eventos de Livewire para actualizar gráficos
         document.addEventListener('livewire:navigated', function () {
             initDatepicker();
             initCharts();
         });
 
-        // Escuchar cuando Livewire actualiza el componente
         document.addEventListener('livewire:update', function () {
             setTimeout(() => {
-                initDatepicker(); // Reinicializar datepicker si es necesario
+                initDatepicker();
                 updateCharts();
             }, 100);
         });
 
-        // Escuchar evento de Livewire para actualizar gráficos
         window.addEventListener('updateCharts', function (event) {
-            console.log('📡 Evento updateCharts recibido con datos:', event.detail);
             setTimeout(() => {
                 updateChartsWithData(event.detail);
             }, 50);
         });
 
-        // Fallback para versiones anteriores de Livewire
         if (typeof Livewire !== 'undefined') {
             Livewire.hook('message.processed', (message, component) => {
                 setTimeout(() => {
@@ -300,11 +261,8 @@
             });
         }
 
-        // Escuchar cambios específicos en el modelo de Livewire
         document.addEventListener('livewire:updated', function (event) {
-            // Solo actualizar el datepicker si cambió el rango de fechas desde el servidor
             if (event.detail && event.detail.name === 'rangoFechas') {
-                console.log('📅 Rango de fechas actualizado desde servidor:', event.detail.value);
                 setTimeout(() => {
                     updateDatepickerValue();
                 }, 50);
@@ -314,21 +272,17 @@
         function initDatepicker() {
             const datepickerEl = document.querySelector('.datepicker');
 
-            // Si ya existe una instancia y el elemento es el mismo, no recrear
             if (flatpickrInstance !== null && flatpickrInstance.element === datepickerEl) {
-                console.log('📅 Datepicker ya existe, actualizando valor...');
                 updateDatepickerValue();
                 return;
             }
 
-            // Destruir la instancia anterior si existe
             if (flatpickrInstance !== null) {
                 flatpickrInstance.destroy();
                 flatpickrInstance = null;
             }
 
             if (datepickerEl) {
-                console.log('📅 Creando nueva instancia de datepicker...');
                 flatpickrInstance = flatpickr(datepickerEl, {
                     mode: "range",
                     dateFormat: "d/m/Y",
@@ -337,40 +291,26 @@
                     altInput: false,
                     allowInput: true,
                     disableMobile: true,
-                    onChange: function(selectedDates, dateStr, instance) {
-                        console.log('📅 Rango de fechas cambiado:', dateStr);
-                        console.log('📅 Fechas seleccionadas:', selectedDates);
-                        
-                        // Solo procesar si tenemos un rango completo
+                    onChange: function(selectedDates, dateStr, instance) {                        
                         if (selectedDates.length !== 2) {
-                            console.log('⏳ Esperando segunda fecha...');
                             return;
                         }
                         
-                        // Forzar el formato correcto si viene con "a"
                         if (dateStr.includes(' a ')) {
                             dateStr = dateStr.replace(' a ', ' - ');
-                            console.log('🔧 Formato corregido:', dateStr);
                         }
-                        
-                        console.log('✅ Rango completo, actualizando Livewire...');
-                        
-                        // Usar Livewire para actualizar el modelo
+                                                
                         const livewireComponent = window.Livewire.find(datepickerEl.closest('[wire\\:id]').getAttribute('wire:id'));
                         if (livewireComponent) {
-                            // Desactivar temporalmente los eventos para evitar loops
                             datepickerEl.setAttribute('data-updating', 'true');
                             livewireComponent.set('rangoFechas', dateStr);
                         }
                     },
                     onClose: function(selectedDates, dateStr, instance) {
-                        console.log('🔒 Datepicker cerrado:', dateStr);
-                        // Remover el flag de actualización
                         datepickerEl.removeAttribute('data-updating');
                     }
                 });
 
-                // Establecer el valor inicial
                 updateDatepickerValue();
             }
         }
@@ -379,14 +319,11 @@
             const datepickerEl = document.querySelector('.datepicker');
             if (!datepickerEl || !flatpickrInstance) return;
 
-            // No actualizar si estamos en medio de una actualización desde el datepicker
             if (datepickerEl.getAttribute('data-updating') === 'true') {
-                console.log('📅 Saltando actualización, datepicker está actualizando...');
                 return;
             }
 
             const currentValue = datepickerEl.value;
-            console.log('📅 Actualizando datepicker con valor:', currentValue);
 
             if (currentValue && currentValue.includes(' - ')) {
                 const dates = currentValue.split(' - ').map(date => date.trim());
@@ -397,15 +334,13 @@
                             return new Date(parts[2], parts[1] - 1, parts[0]);
                         });
                         
-                        // Verificar si las fechas son diferentes a las actuales
                         const currentDates = flatpickrInstance.selectedDates;
                         const needsUpdate = currentDates.length !== 2 || 
                             currentDates[0].getTime() !== parsedDates[0].getTime() ||
                             currentDates[1].getTime() !== parsedDates[1].getTime();
 
                         if (needsUpdate) {
-                            console.log('📅 Estableciendo fechas en datepicker:', parsedDates);
-                            flatpickrInstance.setDate(parsedDates, false); // false = no trigger onChange
+                            flatpickrInstance.setDate(parsedDates, false);
                         }
                     } catch (e) {
                         console.error('❌ Error parseando fechas para datepicker:', e);
@@ -415,12 +350,8 @@
         }
 
         function initCharts() {
-            console.log('🚀 Inicializando gráficos...');
-            
-            // Gráfico de gauge para mantenimiento
             const ctxGaugeMantenimiento = document.getElementById('gaugeMantenimiento');
             if (ctxGaugeMantenimiento && !chartMantenimiento) {
-                console.log('📊 Creando gráfico de mantenimiento...');
                 chartMantenimiento = new Chart(ctxGaugeMantenimiento, {
                     type: 'doughnut',
                     data: {
@@ -467,10 +398,8 @@
                 });
             }
 
-            // Gráfico de gauge para prepagados
             const ctxGaugePrepagados = document.getElementById('gaugePrepagados');
             if (ctxGaugePrepagados && !chartPrepagados) {
-                console.log('📊 Creando gráfico de prepagados...');
                 chartPrepagados = new Chart(ctxGaugePrepagados, {
                     type: 'doughnut',
                     data: {
@@ -517,16 +446,12 @@
                 });
             }
 
-            // Gráfico de barras y línea para cantidad de citas
             const ctxCantidadCitas = document.getElementById('chartCantidadCitas');
             if (ctxCantidadCitas && !chartCantidadCitas) {
-                console.log('📊 Creando gráfico de cantidad de citas...');
                 const labels = @json($datosCantidadCitas['labels'] ?? []);
                 const generadas = @json($datosCantidadCitas['generadas'] ?? []);
                 const efectivas = @json($datosCantidadCitas['efectivas'] ?? []);
-
-                // Calcular línea de tendencia para citas generadas
-                const tendenciaGeneradas = calculateTrendLine(generadas);
+                const porcentajesEfectividad = @json($datosCantidadCitas['porcentajesEfectividad'] ?? []);
 
                 chartCantidadCitas = new Chart(ctxCantidadCitas, {
                     type: 'bar',
@@ -544,28 +469,28 @@
                             {
                                 label: 'EFECTIVAS',
                                 data: efectivas,
-                                backgroundColor: '#60a5fa',
-                                borderColor: '#60a5fa',
+                                backgroundColor: '#3fb466ff',
+                                borderColor: '#3fb466ff',
                                 borderWidth: 1,
                                 order: 3
                             },
                             {
-                                label: 'TENDENCIA',
-                                data: tendenciaGeneradas,
+                                label: '% EFECTIVIDAD',
+                                data: porcentajesEfectividad,
                                 type: 'line',
-                                borderColor: '#f59e0b', // Color ámbar para destacar
-                                backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                                borderWidth: 3,
-                                pointRadius: 5,
-                                pointBackgroundColor: '#f59e0b',
+                                borderColor: '#aab41bff', // Color verde para efectividad
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                borderWidth: 2,
+                                pointRadius: 4,
+                                pointBackgroundColor: '#aab41bff',
                                 pointBorderColor: '#ffffff',
                                 pointBorderWidth: 2,
-                                pointHoverRadius: 7,
+                                pointHoverRadius: 8,
                                 fill: false,
-                                tension: 0.2, // Suavizar un poco la línea
+                                tension: 0.3, // Suavizar la línea
                                 order: 1,
-                                borderDash: [8, 4], // Línea punteada más elegante
-                                pointStyle: 'triangle' // Estilo de punto diferente
+                                yAxisID: 'y1', // Usar eje Y secundario para porcentajes
+                                pointStyle: 'circle' // Estilo de punto circular
                             }
                         ]
                     },
@@ -576,34 +501,12 @@
                             intersect: false,
                             mode: 'index'
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: {
-                                    display: true,
-                                    color: '#e5e7eb'
-                                },
-                                title: {
-                                    display: true,
-                                    text: '',
-                                    font: {
-                                        size: 12,
-                                        weight: 'bold'
-                                    }
-                                }
-                            },
-                            x: {
-                                grid: {
-                                    display: false
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'Período',
-                                    font: {
-                                        size: 12,
-                                        weight: 'bold'
-                                    }
-                                }
+                        layout: {
+                            padding: {
+                                top: 30,
+                                bottom: 20,
+                                left: 10,
+                                right: 10
                             }
                         },
                         plugins: {
@@ -633,32 +536,117 @@
                                         const label = context.dataset.label || '';
                                         const value = context.parsed.y;
                                         
-                                        if (label === 'TENDENCIA') {
-                                            return `${label}: ${value} (proyección)`;
+                                        if (label === '% EFECTIVIDAD') {
+                                            return `${label}: ${value}%`;
                                         }
                                         return `${label}: ${value} citas`;
                                     }
                                 }
+                            },
+                            // Plugin personalizado para mostrar etiquetas de datos
+                            datalabels: false // Desactivar el plugin datalabels si está presente
+                        },
+
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                beginAtZero: true,
+                                grid: {
+                                    display: true,
+                                    color: '#e5e7eb'
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Cantidad de Citas',
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    }
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                beginAtZero: true,
+                                max: 100, // Máximo 100% para efectividad
+                                grid: {
+                                    drawOnChartArea: false, // No dibujar líneas de grid para evitar confusión
+                                },
+                                title: {
+                                    display: true,
+                                    text: '% Efectividad',
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    },
+                                    color: '#aab41bff'
+                                },
+                                ticks: {
+                                    color: '#aab41bff',
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Período',
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    }
+                                }
                             }
                         }
-                    }
+                    },
+                    plugins: [{
+                        id: 'dataLabels',
+                        afterDatasetsDraw: function(chart) {
+                            const ctx = chart.ctx;
+                            
+                            ctx.font = 'bold 10px Arial';
+                            ctx.fillStyle = '#374151';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'bottom';
+
+                            chart.data.datasets.forEach(function(dataset, datasetIndex) {
+                                // Solo mostrar etiquetas para las barras (no para la línea de efectividad)
+                                if (dataset.type !== 'line') {
+                                    const meta = chart.getDatasetMeta(datasetIndex);
+                                    if (meta.visible) {
+                                        meta.data.forEach(function(bar, index) {
+                                            const data = dataset.data[index];
+                                            if (data > 0) { // Solo mostrar si el valor es mayor a 0
+                                                ctx.fillText(data, bar.x, bar.y - 5);
+                                            }
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                    }]
                 });
             }
         }
 
         function updateCharts() {
-            // Función de fallback que usa valores estáticos
+            const datosActuales = @json($datosCantidadCitas);
+            
             updateChartsWithData({
                 porcentajeMantenimiento: {{ $porcentajeMantenimiento }},
                 porcentajePrepagados: {{ $porcentajePrepagados }},
-                datosCantidadCitas: @json($datosCantidadCitas)
+                datosCantidadCitas: datosActuales
             });
         }
 
         function updateChartsWithData(data) {
-            console.log('🔄 Actualizando gráficos con datos:', data);
-            
-            // Verificar si los elementos del DOM existen
             const ctxMantenimiento = document.getElementById('gaugeMantenimiento');
             const ctxPrepagados = document.getElementById('gaugePrepagados');
             const ctxCantidadCitas = document.getElementById('chartCantidadCitas');
@@ -671,15 +659,12 @@
                 return;
             }
 
-            // Verificar si los gráficos existen y sus canvas siguen siendo válidos
             if (chartMantenimiento && chartMantenimiento.canvas && chartMantenimiento.canvas.parentNode) {
                 try {
                     const newPercentageMantenimiento = data.porcentajeMantenimiento || 0;
                     chartMantenimiento.data.datasets[0].data = [newPercentageMantenimiento, 100 - newPercentageMantenimiento];
                     chartMantenimiento.update('none');
-                    console.log('✅ Gráfico de mantenimiento actualizado:', newPercentageMantenimiento + '%');
                 } catch (e) {
-                    console.log('❌ Error actualizando gráfico de mantenimiento:', e);
                     chartMantenimiento = null;
                 }
             }
@@ -689,45 +674,35 @@
                     const newPercentagePrepagados = data.porcentajePrepagados || 0;
                     chartPrepagados.data.datasets[0].data = [newPercentagePrepagados, 100 - newPercentagePrepagados];
                     chartPrepagados.update('none');
-                    console.log('✅ Gráfico de prepagados actualizado:', newPercentagePrepagados + '%');
                 } catch (e) {
-                    console.log('❌ Error actualizando gráfico de prepagados:', e);
                     chartPrepagados = null;
                 }
             }
 
             if (chartCantidadCitas && chartCantidadCitas.canvas && chartCantidadCitas.canvas.parentNode) {
                 try {
-                    const chartData = data.datosCantidadCitas || { labels: [], generadas: [], efectivas: [] };
+                    const chartData = data.datosCantidadCitas || { labels: [], generadas: [], efectivas: [], porcentajesEfectividad: [] };
                     const newLabels = chartData.labels || [];
                     const newGeneradas = chartData.generadas || [];
                     const newEfectivas = chartData.efectivas || [];
-
-                    // Recalcular línea de tendencia con los nuevos datos
-                    const newTendencia = calculateTrendLine(newGeneradas);
+                    const newPorcentajesEfectividad = chartData.porcentajesEfectividad || [];
 
                     chartCantidadCitas.data.labels = newLabels;
                     chartCantidadCitas.data.datasets[0].data = newGeneradas;
                     chartCantidadCitas.data.datasets[1].data = newEfectivas;
-                    chartCantidadCitas.data.datasets[2].data = newTendencia; // Usar tendencia calculada
+                    chartCantidadCitas.data.datasets[2].data = newPorcentajesEfectividad; // Usar porcentajes de efectividad
                     chartCantidadCitas.update('none');
-                    console.log('✅ Gráfico de cantidad de citas actualizado con nueva tendencia');
                 } catch (e) {
-                    console.log('❌ Error actualizando gráfico de cantidad:', e);
                     chartCantidadCitas = null;
                 }
             }
 
-            // Si algún gráfico no existe o falló, recrear todos
             if (!chartMantenimiento || !chartPrepagados || !chartCantidadCitas) {
-                console.log('🔄 Recreando gráficos faltantes...');
                 initCharts();
             }
         }
 
         function destroyCharts() {
-            console.log('🗑️ Destruyendo gráficos existentes...');
-            
             if (chartMantenimiento) {
                 chartMantenimiento.destroy();
                 chartMantenimiento = null;
@@ -746,74 +721,51 @@
             }
         }
 
-        // Funciones específicas para actualizar gráficos individuales
         function updateMantenimientoChart(newPercentage) {
-            console.log('🔄 Actualizando gráfico de mantenimiento:', newPercentage + '%');
             if (chartMantenimiento && chartMantenimiento.canvas && chartMantenimiento.canvas.parentNode) {
                 try {
                     chartMantenimiento.data.datasets[0].data = [newPercentage, 100 - newPercentage];
                     chartMantenimiento.update('none');
                 } catch (e) {
-                    console.log('❌ Error actualizando gráfico de mantenimiento:', e);
+                    console.error('❌ Error actualizando gráfico de mantenimiento:', e);
                 }
             }
         }
 
         function updatePrepagadosChart(newPercentage) {
-            console.log('🔄 Actualizando gráfico de prepagados:', newPercentage + '%');
             if (chartPrepagados && chartPrepagados.canvas && chartPrepagados.canvas.parentNode) {
                 try {
                     chartPrepagados.data.datasets[0].data = [newPercentage, 100 - newPercentage];
                     chartPrepagados.update('none');
                 } catch (e) {
-                    console.log('❌ Error actualizando gráfico de prepagados:', e);
+                    console.error('❌ Error actualizando gráfico de prepagados:', e);
                 }
             }
         }
 
-        // Función global para actualizar todos los gráficos desde Livewire
         window.updateAllCharts = function(data) {
-            console.log('🌐 Actualizando todos los gráficos:', data);
             updateMantenimientoChart(data.porcentajeMantenimiento || 0);
             updatePrepagadosChart(data.porcentajePrepagados || 0);
-            
-            // Actualizar gráfico de cantidad de citas
+        
             if (chartCantidadCitas && data.datosCantidadCitas) {
                 const chartData = data.datosCantidadCitas;
                 const generadas = chartData.generadas || [];
-                const tendencia = calculateTrendLine(generadas);
+                const efectivas = chartData.efectivas || [];
+                const porcentajesEfectividad = chartData.porcentajesEfectividad || [];
                 
                 chartCantidadCitas.data.labels = chartData.labels || [];
                 chartCantidadCitas.data.datasets[0].data = generadas;
-                chartCantidadCitas.data.datasets[1].data = chartData.efectivas || [];
-                chartCantidadCitas.data.datasets[2].data = tendencia;
+                chartCantidadCitas.data.datasets[1].data = efectivas;
+                chartCantidadCitas.data.datasets[2].data = porcentajesEfectividad;
                 chartCantidadCitas.update('none');
             }
         };
 
-        // Función de debug para probar filtros
         function debugFiltros() {
-            console.log('🔍 DEBUG - Estado actual de filtros:');
-            console.log('📅 Rango de fechas:', @this.get('rangoFechas'));
-            console.log('📅 Fecha inicio:', @this.get('fechaInicio'));
-            console.log('📅 Fecha fin:', @this.get('fechaFin'));
-            console.log('🏢 Local seleccionado:', @this.get('localSeleccionado'));
-            console.log('🚗 Marca seleccionada:', @this.get('marcaSeleccionada'));
-            console.log('📊 Citas generadas:', @this.get('citasGeneradas'));
-            
-            console.log('\n� rRANGOS CON DATOS DISPONIBLES:');
-            console.log('   • 13/08/2025 - 16/08/2025 (20 citas)');
-            console.log('   • 14/08/2025 - 14/08/2025 (9 citas)');
-            console.log('   • 13/08/2025 - 28/08/2025 (36 citas - TODOS LOS DATOS)');
-            
-            // Forzar aplicación de filtros
-            console.log('\n🔄 Forzando aplicación de filtros...');
             @this.call('debugFiltros');
         }
 
-        // Función para probar con un rango específico
         function probarRangoConDatos() {
-            console.log('🧪 PROBANDO CON RANGO QUE TIENE DATOS...');
             @this.call('probarRango', '14/08/2025 - 15/08/2025');
         }
     </script>
