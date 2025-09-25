@@ -50,6 +50,8 @@ class Appointment extends Model
         'offer_creation_attempts',
         'vehicle_brand_code',
         'center_code',
+        // ✅ NUEVO CAMPO PARA ESTADOS FRONTEND
+        'frontend_states',
     ];
 
     /**
@@ -67,6 +69,7 @@ class Appointment extends Model
         'offer_creation_failed' => 'boolean',
         'offer_creation_attempts' => 'integer',
         'rescheduled' => 'integer',
+        'frontend_states' => 'array',
     ];
 
     /**

@@ -355,6 +355,9 @@ class DetalleVehiculo extends Page
                         $localAppointmentData = $this->obtenerDatosAppointmentLocal($cita['uuid'] ?? $cita['id'] ?? '');
                         $maintenanceTypeLocal = $localAppointmentData['maintenance_type'] ?? null;
 
+                        // Guardar los estados frontend en la base de datos
+                        $this->guardarEstadosFrontendEnBD($cita['uuid'] ?? $cita['id'] ?? '', $estadoInfo);
+
                         $this->citasAgendadas[] = [
                             'id' => $cita['uuid'] ?? $cita['id'] ?? 'N/A',
                             'numero_cita' => $cita['id'] ?? 'N/A',
@@ -913,6 +916,9 @@ class DetalleVehiculo extends Page
                     // Enriquecer con datos SAP si están disponibles
                     $citaEnriquecida = $this->enriquecerCitaConDatosSAP($citaLocal);
 
+                    // Guardar los estados frontend en la base de datos
+                    $this->guardarEstadosFrontendEnBD($cita->c4c_uuid ?? 'local-' . $cita->id, $estadoInfo);
+
                     $this->citasAgendadas[] = [
                         'id' => $cita->c4c_uuid ?? 'local-' . $cita->id,
                         'numero_cita' => $cita->appointment_number ?? 'CITA-' . $cita->id,
@@ -1019,6 +1025,70 @@ class DetalleVehiculo extends Page
     }
 
     /**
+     * Save frontend states to the database for a specific appointment
+     */
+    protected function guardarEstadosFrontendEnBD(string $c4cUuid, array $estadoInfo): void
+    {
+        try {
+            // Extract the frontend states from the estadoInfo
+            $frontendStates = [
+                'cita_confirmada' => [
+                    'activo' => $estadoInfo['etapas']['cita_confirmada']['activo'] ?? false,
+                    'completado' => $estadoInfo['etapas']['cita_confirmada']['completado'] ?? false,
+                ],
+                'en_trabajo' => [
+                    'activo' => $estadoInfo['etapas']['en_trabajo']['activo'] ?? false,
+                    'completado' => $estadoInfo['etapas']['en_trabajo']['completado'] ?? false,
+                ],
+                'trabajo_concluido' => [
+                    'activo' => $estadoInfo['etapas']['trabajo_concluido']['activo'] ?? false,
+                    'completado' => $estadoInfo['etapas']['trabajo_concluido']['completado'] ?? false,
+                ]
+            ];
+            
+            // Find the appointment by c4c_uuid and update the frontend_states
+            $appointment = Appointment::where('c4c_uuid', $c4cUuid)->first();
+            
+            if ($appointment) {
+                $appointment->frontend_states = $frontendStates;
+                $appointment->save();
+                
+                Log::info("[DetalleVehiculo] Estados frontend guardados en BD para cita: {$c4cUuid}", [
+                    'frontend_states' => $frontendStates
+                ]);
+            } else {
+                Log::warning("[DetalleVehiculo] No se encontró la cita para guardar estados frontend: {$c4cUuid}");
+            }
+        } catch (\Exception $e) {
+            Log::error("[DetalleVehiculo] Error al guardar estados frontend en BD: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Retrieve frontend states from the database for a specific appointment
+     */
+    protected function obtenerEstadosFrontendDeBD(string $c4cUuid): ?array
+    {
+        try {
+            // Find the appointment by c4c_uuid and retrieve the frontend_states
+            $appointment = Appointment::where('c4c_uuid', $c4cUuid)->first();
+            
+            if ($appointment && !empty($appointment->frontend_states)) {
+                Log::info("[DetalleVehiculo] Estados frontend recuperados de BD para cita: {$c4cUuid}", [
+                    'frontend_states' => $appointment->frontend_states
+                ]);
+                return $appointment->frontend_states;
+            } else {
+                Log::info("[DetalleVehiculo] No se encontraron estados frontend en BD para cita: {$c4cUuid}");
+                return null;
+            }
+        } catch (\Exception $e) {
+            Log::error("[DetalleVehiculo] Error al obtener estados frontend de BD: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Obtener información de estado para citas locales
      */
     protected function obtenerInformacionEstadoCompletaLocal(string $statusLocal, $appointment = null): array
@@ -1032,6 +1102,8 @@ class DetalleVehiculo extends Page
                 'appointment_date' => $appointment->appointment_date,
                 'appointment_time' => $appointment->appointment_time,
                 'scheduled_start_date' => $appointment->appointment_date ? $appointment->appointment_date->format('Y-m-d') : null,
+                'uuid' => $appointment->c4c_uuid ?? 'local-' . $appointment->id,
+                'id' => 'local-' . $appointment->id,
             ];
         }
         
@@ -1899,6 +1971,29 @@ class DetalleVehiculo extends Page
             'nombre' => $estadoBase['nombre'],
             'etapas' => $estadoBase['etapas']
         ]);
+
+        // Si tenemos un UUID en los datos de la cita, intentar obtener los estados frontend de la BD
+        $uuid = null;
+        if ($currentAppointmentData) {
+            $uuid = $currentAppointmentData['uuid'] ?? $currentAppointmentData['id'] ?? null;
+            if ($uuid) {
+                $frontendStatesFromDB = $this->obtenerEstadosFrontendDeBD($uuid);
+                if ($frontendStatesFromDB) {
+                    // Usar los estados frontend de la BD
+                    $estadoBase['etapas']['cita_confirmada'] = $frontendStatesFromDB['cita_confirmada'];
+                    $estadoBase['etapas']['en_trabajo'] = $frontendStatesFromDB['en_trabajo'];
+                    $estadoBase['etapas']['trabajo_concluido'] = $frontendStatesFromDB['trabajo_concluido'];
+                    
+                    Log::info('📊 [ESTADO-FLOW] Estados frontend cargados desde BD', [
+                        'uuid' => $uuid,
+                        'etapas' => $estadoBase['etapas']
+                    ]);
+                    
+                    // Retornar el estado con los estados frontend de la BD
+                    return $estadoBase;
+                }
+            }
+        }
 
         // Aplicar lógica SAP para modificar estados dinámicamente
         if ($this->datosAsesorSAP) {
