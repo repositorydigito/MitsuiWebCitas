@@ -64,6 +64,9 @@ class DashboardKpi extends Page
 
     public int $porcentajePrepagados = 0;
 
+    // ✅ NUEVA PROPIEDAD PARA CITAS EN TRABAJO
+    public int $citasEnTrabajo = 0;
+
     public int $cantidadUsuarios = 0;
 
     // Datos para los gráficos
@@ -322,6 +325,12 @@ class DashboardKpi extends Page
         // Citas efectivas (confirmed)
         $this->citasEfectivas = (clone $query)->where('status', 'confirmed')->count();
 
+        // ✅ NUEVO: Calcular citas en estado "En Trabajo" usando la columna frontend_states
+        $this->citasEnTrabajo = (clone $query)
+            ->where('status', 'confirmed')
+            ->whereJsonContains('frontend_states', 'en_trabajo')
+            ->count();
+
         // Citas canceladas (solo las que no fueron reprogramadas)
         $this->citasCanceladas = (clone $query)
             ->where('status', 'cancelled')
@@ -373,6 +382,7 @@ class DashboardKpi extends Page
         Log::info('[DashboardKpi] KPIs calculados:', [
             'citasGeneradas' => $this->citasGeneradas,
             'citasEfectivas' => $this->citasEfectivas,
+            'citasEnTrabajo' => $this->citasEnTrabajo, // ✅ Agregado al log
             'citasCanceladas' => $this->citasCanceladas,
             'porcentajeCancelacion' => $this->porcentajeCancelacion, // Changed from porcentajeNoShow
             'citasDiferidas' => $this->citasDiferidas,

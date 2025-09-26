@@ -84,9 +84,10 @@
                 <h3 class="text-sm font-semibold text-gray-700 mb-2">CITAS GENERADAS</h3>
                 <p class="font-bold text-primary-600" style="font-size: 2rem !important;">{{ $citasGeneradas }}</p>
             </div>
+            <!-- ✅ MODIFICADO: Mostrar citas en trabajo en lugar de citas efectivas -->
             <div class="bg-white p-4 rounded-lg shadow border border-gray-200 text-center">
                 <h3 class="text-sm font-semibold text-gray-700 mb-2">CITAS EFECTIVAS</h3>
-                <p class="font-bold text-primary-600" style="font-size: 2rem !important;">{{ $citasEfectivas }}</p>
+                <p class="font-bold text-primary-600" style="font-size: 2rem !important;">{{ $citasEnTrabajo }}</p>
             </div>
             <div class="bg-white p-4 rounded-lg shadow border border-gray-200 text-center">
                 <h3 class="text-sm font-semibold text-gray-700 mb-2">% EFECTIVIDAD</h3>
@@ -148,9 +149,6 @@
         </div>
     </div>
 </div>
-
-
-
 
     {{-- Filtros para gráficos inferiores --}}
     <div class="mb-6 bg-blue-50 rounded-lg">
