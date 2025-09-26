@@ -22,7 +22,10 @@ return new class extends Migration
                         WHEN JSON_CONTAINS(frontend_states, '\"cita_confirmada\"') AND JSON_CONTAINS(frontend_states, '\"en_trabajo\"') THEN 
                             JSON_OBJECT(
                                 'cita_confirmada', DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s'),
-                                'en_trabajo', DATE_FORMAT(DATE_ADD(created_at, INTERVAL 1 HOUR), '%Y-%m-%d %H:%i:%s')
+                                'en_trabajo', JSON_OBJECT(
+                                    'activo', true,
+                                    'timestamp', DATE_FORMAT(DATE_ADD(created_at, INTERVAL 1 HOUR), '%Y-%m-%d %H:%i:%s')
+                                )
                             )
                         WHEN JSON_CONTAINS(frontend_states, '\"cita_confirmada\"') THEN 
                             JSON_OBJECT('cita_confirmada', DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s'))

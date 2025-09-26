@@ -265,10 +265,19 @@ class Appointment extends Model
     /**
      * ✅ NUEVO MÉTODO: Agregar estado frontend con timestamp
      */
-    public function addFrontendState(string $state): void
+    public function addFrontendState(string $state, string $subState = 'activo'): void
     {
         $states = $this->frontend_states ?? [];
-        $states[$state] = now()->format('Y-m-d H:i:s');
+        
+        if ($state === 'en_trabajo') {
+            $states[$state] = [
+                $subState => true,
+                'timestamp' => now()->format('Y-m-d H:i:s')
+            ];
+        } else {
+            $states[$state] = now()->format('Y-m-d H:i:s');
+        }
+        
         $this->frontend_states = $states;
         $this->save();
     }
@@ -276,9 +285,17 @@ class Appointment extends Model
     /**
      * ✅ NUEVO MÉTODO: Verificar si tiene un estado frontend
      */
-    public function hasFrontendState(string $state): bool
+    public function hasFrontendState(string $state, string $subState = null): bool
     {
         $states = $this->frontend_states ?? [];
+        
+        if ($state === 'en_trabajo' && $subState) {
+            return isset($states[$state][$subState]) && $states[$state][$subState] === true;
+        } elseif ($state === 'en_trabajo') {
+            return (isset($states[$state]['activo']) && $states[$state]['activo'] === true) ||
+                   (isset($states[$state]['completado']) && $states[$state]['completado'] === true);
+        }
+        
         return isset($states[$state]);
     }
 
@@ -288,6 +305,11 @@ class Appointment extends Model
     public function getFrontendStateTimestamp(string $state): ?string
     {
         $states = $this->frontend_states ?? [];
+        
+        if ($state === 'en_trabajo' && isset($states[$state]['timestamp'])) {
+            return $states[$state]['timestamp'];
+        }
+        
         return $states[$state] ?? null;
     }
 
@@ -324,15 +346,57 @@ class Appointment extends Model
     public function scopeNoShow($query)
     {
         return $query->where(function($q) {
-            // Citas que tienen 'cita_confirmada' pero no 'en_trabajo' y han pasado más de 10 horas
+            // Citas que tienen 'cita_confirmada' pero no 'en_trabajo' activo/completado y han pasado más de 10 horas
             $q->whereRaw("JSON_EXTRACT(frontend_states, '$.cita_confirmada') IS NOT NULL")
-              ->whereRaw("JSON_EXTRACT(frontend_states, '$.en_trabajo') IS NULL")
+              ->whereRaw("JSON_EXTRACT(frontend_states, '$.en_trabajo.activo') IS NULL")
+              ->whereRaw("JSON_EXTRACT(frontend_states, '$.en_trabajo.completado') IS NULL")
               ->whereRaw("TIMESTAMPDIFF(HOUR, STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(frontend_states, '$.cita_confirmada')), '%Y-%m-%d %H:%i:%s'), NOW()) > 10");
         })->orWhere(function($q) {
             // O citas que tienen ambos estados pero pasaron más de 10 horas entre ellos
             $q->whereRaw("JSON_EXTRACT(frontend_states, '$.cita_confirmada') IS NOT NULL")
-              ->whereRaw("JSON_EXTRACT(frontend_states, '$.en_trabajo') IS NOT NULL")
-              ->whereRaw("TIMESTAMPDIFF(HOUR, STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(frontend_states, '$.cita_confirmada')), '%Y-%m-%d %H:%i:%s'), STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(frontend_states, '$.en_trabajo')), '%Y-%m-%d %H:%i:%s')) > 10");
+              ->where(function($q2) {
+                  $q2->whereRaw("JSON_EXTRACT(frontend_states, '$.en_trabajo.activo') = true")
+                     ->orWhereRaw("JSON_EXTRACT(frontend_states, '$.en_trabajo.completado') = true");
+              })
+              ->whereRaw("TIMESTAMPDIFF(HOUR, STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(frontend_states, '$.cita_confirmada')), '%Y-%m-%d %H:%i:%s'), STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(frontend_states, '$.en_trabajo.timestamp')), '%Y-%m-%d %H:%i:%s')) > 10");
         });
+    }
+
+    /**
+     * ✅ NUEVO MÉTODO: Marcar cita como en trabajo activo
+     */
+    public function markAsEnTrabajoActivo(): void
+    {
+        $this->addFrontendState('en_trabajo', 'activo');
+    }
+
+    /**
+     * ✅ NUEVO MÉTODO: Marcar cita como en trabajo completado
+     */
+    public function markAsEnTrabajoCompletado(): void
+    {
+        $states = $this->frontend_states ?? [];
+        
+        if (isset($states['en_trabajo'])) {
+            $states['en_trabajo']['completado'] = true;
+            $states['en_trabajo']['activo'] = false;
+        } else {
+            $states['en_trabajo'] = [
+                'completado' => true,
+                'activo' => false,
+                'timestamp' => now()->format('Y-m-d H:i:s')
+            ];
+        }
+        
+        $this->frontend_states = $states;
+        $this->save();
+    }
+
+    /**
+     * ✅ NUEVO MÉTODO: Verificar si está en trabajo (activo o completado)
+     */
+    public function isEnTrabajo(): bool
+    {
+        return $this->hasFrontendState('en_trabajo');
     }
 }

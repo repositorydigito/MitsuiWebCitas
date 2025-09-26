@@ -252,11 +252,14 @@ class DashboardKpi extends Page
             })
             ->count();
 
-        $this->citasEfectivas = (clone $query)->where('status', 'confirmed')->count();
+        // $this->citasEfectivas = (clone $query)->where('status', 'confirmed')->count(); // Ya no se usa
 
         $this->citasEnTrabajo = (clone $query)
             ->where('status', 'confirmed')
-            ->whereRaw("JSON_EXTRACT(frontend_states, '$.en_trabajo') IS NOT NULL")
+            ->where(function($q) {
+                $q->whereRaw("JSON_EXTRACT(frontend_states, '$.en_trabajo.activo') = true")
+                  ->orWhereRaw("JSON_EXTRACT(frontend_states, '$.en_trabajo.completado') = true");
+            })
             ->count();
 
         $this->citasCanceladas = (clone $query)
