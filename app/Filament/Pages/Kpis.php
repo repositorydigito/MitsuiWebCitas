@@ -297,8 +297,14 @@ class Kpis extends Page
             
             // Luego con filtros específicos
             $citasGeneradas = (clone $query)->whereIn('status', ['pending', 'confirmed', 'generated', 'in_progress', 'completed'])->count();
-            // KPI 2: Citas efectivas son las que tienen estado 'confirmed'
-            $citasEfectivas = (clone $query)->where('status', 'confirmed')->count();
+            // KPI 2: Citas efectivas son las que tienen estado 'confirmed' y estado frontend 'en_trabajo' activo o completado
+            $citasEfectivas = (clone $query)
+                ->where('status', 'confirmed')
+                ->where(function($q) {
+                    $q->whereRaw("JSON_EXTRACT(frontend_states, '$.en_trabajo.activo') = true")
+                      ->orWhereRaw("JSON_EXTRACT(frontend_states, '$.en_trabajo.completado') = true");
+                })
+                ->count();
             // KPI 3: Citas canceladas son las que tienen estado 'cancelled' y rescheduled = 0
             $citasCanceladas = (clone $query)->where('status', 'cancelled')
                                           ->where('rescheduled', 0)
@@ -311,6 +317,24 @@ class Kpis extends Page
 
             // KPI 6: Cantidad de clientes registrados (usuarios con rol "Usuario") filtrados por fecha
             $cantidadUsuarios = $this->calcularCantidadUsuarios($fechaInicio, $fechaFin);
+            
+            // KPI 7: Citas No Show - citas que están en "Cita Confirmada" y después de 10 horas no han pasado a "En Trabajo"
+            $citasNoShow = (clone $query)
+                ->where('status', 'confirmed')
+                ->where(function($q) {
+                    $q->whereRaw("JSON_EXTRACT(frontend_states, '$.cita_confirmada') IS NOT NULL")
+                      ->whereRaw("JSON_EXTRACT(frontend_states, '$.en_trabajo.activo') IS NULL")
+                      ->whereRaw("JSON_EXTRACT(frontend_states, '$.en_trabajo.completado') IS NULL")
+                      ->whereRaw("TIMESTAMPDIFF(HOUR, STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(frontend_states, '$.cita_confirmada')), '%Y-%m-%d %H:%i:%s'), NOW()) > 10");
+                })->orWhere(function($q) {
+                    $q->whereRaw("JSON_EXTRACT(frontend_states, '$.cita_confirmada') IS NOT NULL")
+                      ->where(function($q2) {
+                          $q2->whereRaw("JSON_EXTRACT(frontend_states, '$.en_trabajo.activo') = true")
+                             ->orWhereRaw("JSON_EXTRACT(frontend_states, '$.en_trabajo.completado') = true");
+                      })
+                      ->whereRaw("TIMESTAMPDIFF(HOUR, STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(frontend_states, '$.cita_confirmada')), '%Y-%m-%d %H:%i:%s'), STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(frontend_states, '$.en_trabajo.timestamp')), '%Y-%m-%d %H:%i:%s')) > 10");
+                })
+                ->count();
 
             \Log::info("KPIs calculados - Con filtros: {$todasLasCitas}, Solo fecha: {$todasSinFiltrosRestrictivos}, Generadas: {$citasGeneradas}, Usuarios: {$cantidadUsuarios}");
 
@@ -326,6 +350,7 @@ class Kpis extends Page
             $metaReprogramadas = KpiTarget::getTargetValue('4', $brand, $local, $this->mesSeleccionado, $this->anioSeleccionado);
             $metaMantenimiento = KpiTarget::getTargetValue('5', $brand, $local, $this->mesSeleccionado, $this->anioSeleccionado);
             $metaUsuarios = KpiTarget::getTargetValue('6', $brand, $local, $this->mesSeleccionado, $this->anioSeleccionado);
+            $metaNoShow = KpiTarget::getTargetValue('7', $brand, $local, $this->mesSeleccionado, $this->anioSeleccionado);
             
             // Calcular desviaciones para todos los KPIs
             $desviacionGeneradas = $this->calcularDesviacion($todasLasCitas, $metaGeneradas);
@@ -334,6 +359,7 @@ class Kpis extends Page
             $desviacionReprogramadas = $this->calcularDesviacion($citasReprogramadas, $metaReprogramadas);
             $desviacionMantenimiento = $this->calcularDesviacion($citasMantenimiento, $metaMantenimiento);
             $desviacionUsuarios = $this->calcularDesviacion($cantidadUsuarios, $metaUsuarios);
+            $desviacionNoShow = $this->calcularDesviacion($citasNoShow, $metaNoShow);
 
             $this->kpis = collect([
                 [
@@ -383,6 +409,14 @@ class Kpis extends Page
                     'meta' => $metaUsuarios,
                     'contribucion' => false,
                     'desviacion' => $desviacionUsuarios,
+                ],
+                [
+                    'id' => 7,
+                    'nombre' => 'Cantidad de citas no show',
+                    'cantidad' => $citasNoShow,
+                    'meta' => $metaNoShow,
+                    'contribucion' => true,
+                    'desviacion' => $desviacionNoShow,
                 ],
             ]);
 
