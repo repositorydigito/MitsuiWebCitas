@@ -510,7 +510,7 @@ class Kpis extends Page
             $row++;
         }
         
-        $sheet->setCellValue('A' . $row, 'Generado el: ' . now()->format('d/m/Y H:i:s'));
+        $sheet->setCellValue('A' . $row, 'Generado el: ' . now()->subHours(5)->format('d/m/Y H:i:s'));
         $row += 2; 
         
         $sheet->setCellValue('A' . $row, '#');
