@@ -261,4 +261,78 @@ class Appointment extends Model
             $this->vehicle_brand_code
         )->first();
     }
+
+    /**
+     * ✅ NUEVO MÉTODO: Agregar estado frontend con timestamp
+     */
+    public function addFrontendState(string $state): void
+    {
+        $states = $this->frontend_states ?? [];
+        $states[$state] = now()->format('Y-m-d H:i:s');
+        $this->frontend_states = $states;
+        $this->save();
+    }
+
+    /**
+     * ✅ NUEVO MÉTODO: Verificar si tiene un estado frontend
+     */
+    public function hasFrontendState(string $state): bool
+    {
+        $states = $this->frontend_states ?? [];
+        return isset($states[$state]);
+    }
+
+    /**
+     * ✅ NUEVO MÉTODO: Obtener timestamp de un estado frontend
+     */
+    public function getFrontendStateTimestamp(string $state): ?string
+    {
+        $states = $this->frontend_states ?? [];
+        return $states[$state] ?? null;
+    }
+
+    /**
+     * ✅ NUEVO MÉTODO: Verificar si es una cita no show
+     * Una cita es no show si:
+     * - Tiene estado 'cita_confirmada'
+     * - NO tiene estado 'en_trabajo' O han pasado más de 10 horas desde 'cita_confirmada'
+     */
+    public function isNoShow(): bool
+    {
+        $states = $this->frontend_states ?? [];
+        
+        // Debe tener estado 'cita_confirmada'
+        if (!isset($states['cita_confirmada'])) {
+            return false;
+        }
+        
+        $citaConfirmadaTime = \Carbon\Carbon::parse($states['cita_confirmada']);
+        
+        // Si no tiene estado 'en_trabajo', verificar si han pasado más de 10 horas
+        if (!isset($states['en_trabajo'])) {
+            return $citaConfirmadaTime->addHours(10)->isPast();
+        }
+        
+        // Si tiene estado 'en_trabajo', verificar si pasaron más de 10 horas entre ambos estados
+        $enTrabajoTime = \Carbon\Carbon::parse($states['en_trabajo']);
+        return $citaConfirmadaTime->diffInHours($enTrabajoTime) > 10;
+    }
+
+    /**
+     * ✅ NUEVO SCOPE: Filtrar citas no show
+     */
+    public function scopeNoShow($query)
+    {
+        return $query->where(function($q) {
+            // Citas que tienen 'cita_confirmada' pero no 'en_trabajo' y han pasado más de 10 horas
+            $q->whereRaw("JSON_EXTRACT(frontend_states, '$.cita_confirmada') IS NOT NULL")
+              ->whereRaw("JSON_EXTRACT(frontend_states, '$.en_trabajo') IS NULL")
+              ->whereRaw("TIMESTAMPDIFF(HOUR, STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(frontend_states, '$.cita_confirmada')), '%Y-%m-%d %H:%i:%s'), NOW()) > 10");
+        })->orWhere(function($q) {
+            // O citas que tienen ambos estados pero pasaron más de 10 horas entre ellos
+            $q->whereRaw("JSON_EXTRACT(frontend_states, '$.cita_confirmada') IS NOT NULL")
+              ->whereRaw("JSON_EXTRACT(frontend_states, '$.en_trabajo') IS NOT NULL")
+              ->whereRaw("TIMESTAMPDIFF(HOUR, STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(frontend_states, '$.cita_confirmada')), '%Y-%m-%d %H:%i:%s'), STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(frontend_states, '$.en_trabajo')), '%Y-%m-%d %H:%i:%s')) > 10");
+        });
+    }
 }

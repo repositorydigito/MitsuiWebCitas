@@ -106,8 +106,8 @@
                 <p class="font-bold text-primary-600" style="font-size: 2rem !important;">{{ $citasCanceladas }}</p>
             </div>
             <div class="bg-white p-4 rounded-lg shadow border border-gray-200 text-center">
-                <h3 class="text-sm font-semibold text-gray-700 mb-2">% CANCELACIÓN</h3>
-                <p class="font-bold text-primary-600" style="font-size: 2rem !important;">{{ $porcentajeCancelacion }}%</p>
+                <h3 class="text-sm font-semibold text-gray-700 mb-2">CITAS NO SHOW</h3>
+                <p class="font-bold text-primary-600" style="font-size: 2rem !important;">{{ $citasNoShow }}</p>
             </div>
         </div>
 

@@ -54,7 +54,7 @@ class DashboardKpi extends Page
 
     public int $citasCanceladas = 0;
 
-    public int $porcentajeCancelacion = 0; // Changed from porcentajeNoShow
+    public int $citasNoShow = 0; // Changed from porcentajeCancelacion
 
     public int $citasMantenimiento = 0;
 
@@ -256,7 +256,7 @@ class DashboardKpi extends Page
 
         $this->citasEnTrabajo = (clone $query)
             ->where('status', 'confirmed')
-            ->whereJsonContains('frontend_states', 'en_trabajo')
+            ->whereRaw("JSON_EXTRACT(frontend_states, '$.en_trabajo') IS NOT NULL")
             ->count();
 
         $this->citasCanceladas = (clone $query)
@@ -264,12 +264,14 @@ class DashboardKpi extends Page
             ->where('rescheduled', 0)
             ->count();
 
+        // ✅ NUEVO: Calcular citas no show
+        $this->citasNoShow = (clone $query)
+            ->where('status', 'confirmed')
+            ->noShow()
+            ->count();
+
         $this->porcentajeEfectividad = $this->citasGeneradas > 0 
             ? round(($this->citasEnTrabajo / $this->citasGeneradas) * 100) 
-            : 0;
-
-        $this->porcentajeCancelacion = $this->citasGeneradas > 0 
-            ? round(($this->citasCanceladas / $this->citasGeneradas) * 100) 
             : 0;
 
         $citasConMantenimiento = (clone $query)
@@ -562,7 +564,7 @@ class DashboardKpi extends Page
         $this->porcentajeEfectividad = 0;
         $this->citasDiferidas = 0;
         $this->citasCanceladas = 0;
-        $this->porcentajeCancelacion = 0;
+        $this->citasNoShow = 0;
         $this->citasMantenimiento = 0;
         $this->citasMantenimientoPrepagados = 0;
         $this->porcentajeMantenimiento = 0;
