@@ -774,7 +774,7 @@
         <!-- Paso 2: Resumen de datos -->
         <div class="{{ $pasoActual == 2 ? 'block' : 'hidden' }}">
             <h2 class="text-xl font-semibold mb-4">Resumen</h2>
-            <p class="text-gray-600 mb-4">Notificaremos la confirmación de tu cita en el siguiente correo y celular. Si deseas cambiarlos vuelve al paso anterior.</p>
+            <p class="text-gray-600 mb-4">Notificaremos el agendamiento de tu cita en el siguiente correo y celular. Si deseas cambiarlos vuelve al paso anterior.</p>
 
             <div class="bg-white rounded-lg mb-4">
                 <!-- Datos personales -->
@@ -890,7 +890,7 @@
                     </div>
                 </button>
                 <button type="button" wire:click="continuar" class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success-500" wire:loading.attr="disabled">
-                    <span wire:loading.remove wire:target="continuar">{{ $editMode ? 'Reprogramar Cita' : 'Confirmar' }}</span>
+                    <span wire:loading.remove wire:target="continuar">{{ $editMode ? 'Reprogramar Cita' : 'Agendar' }}</span>
                     <span wire:loading wire:target="continuar" class="flex items-center">
                         <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -1167,7 +1167,7 @@
                     </div>
                     
                     <!-- Título más atractivo -->
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">🚗 Confirmando tu cita</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">🚗 Agendando tu cita</h3>
                     
                     <!-- Barra de progreso moderna -->
                     <div class="w-full bg-gray-200 rounded-full h-3 mb-4 shadow-inner">
@@ -1326,7 +1326,7 @@
                         </div>
 
                         <!-- Título celebratorio -->
-                        <h3 class="text-2xl font-bold text-gray-900 mb-3">🎉 ¡Cita confirmada exitosamente!</h3>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-3">🎉 ¡Cita generada exitosamente!</h3>
 
                         <!-- Información de la cita -->
                         <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6 rounded-r-lg">

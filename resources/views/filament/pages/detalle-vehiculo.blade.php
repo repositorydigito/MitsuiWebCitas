@@ -104,7 +104,7 @@
                                                     @endif
                                                 </div>
                                                 <span style="font-size: 12px; font-weight: 500; margin-top: 4px; text-align: center; color: {{ $citaCompletada ? '#059669' : '#6b7280' }};">
-                                                    Cita confirmada
+                                                    Cita Generada
                                                 </span>
                                             </div>
 
