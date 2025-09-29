@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cita Confirmada</title>
+    <title>Cita Generada</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -116,7 +116,7 @@
         </div>
         <h2 style="margin: 0; font-size: 24px; line-height: 1.3;">
             <span class="success-icon" style="color: #28a745; font-size: 24px; vertical-align: middle;">✅</span> 
-            Cita Confirmada
+            Cita Generada
         </h2>
     </div>
     

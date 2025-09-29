@@ -34,7 +34,7 @@ class CitaCreada extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '✅ Tu cita ha sido confirmada',
+            subject: '✅ Tu cita ha sido generada',
             cc: ['citasmantenimiento@mitsuiautomotriz.com'],
         );
     }
