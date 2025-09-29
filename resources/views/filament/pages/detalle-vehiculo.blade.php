@@ -247,95 +247,96 @@
                                             </div>
                                             @endif
 
-                                            @if(($concluidoActivo || $concluidoCompletado) && !empty($cita['fecha_factura']))
-                                            <br>                                                
-                                            <div class="flex justify-between items-center">
-                                                <span class="text-xs font-medium text-green-800">Fecha de factura:</span>
-                                                <span class="text-xs text-gray-600">{{ $cita['fecha_factura'] ?? '-' }}</span>
-                                            </div>
+                                            @if(($concluidoActivo || $concluidoCompletado) && !empty($cita['rut_pdf']))
+                                                <br>                                                
+                                                <div class="flex justify-between items-center">
+                                                    <span class="text-xs font-medium text-green-800">Fecha de factura:</span>
+                                                    <span class="text-xs text-gray-600">{{ $cita['fecha_factura'] ?? '-' }}</span>
+                                                </div>
 
-                                            <div class="flex justify-between items-center">
-                                                <span class="text-xs font-medium text-green-800">Hora de factura:</span>
-                                                <span class="text-xs text-gray-600">{{ $cita['hora_factura'] ?? '-' }}</span>
-                                            </div>
+                                                <div class="flex justify-between items-center">
+                                                    <span class="text-xs font-medium text-green-800">Hora de factura:</span>
+                                                    <span class="text-xs text-gray-600">{{ $cita['hora_factura'] ?? '-' }}</span>
+                                                </div>
+                                            @endif
                                         </div>
-                                    @endif
+                                    </div>
+                                </div>
+
+                                <!-- Botones de acción -->
+                                <div class="mt-4 pt-3 border-t border-gray-200">
+                                    <div class="flex flex-row md:justify-end gap-2 md:gap-4">
+                                        @if(($concluidoActivo || $concluidoCompletado) && !empty($cita['rut_pdf']))
+                                            <a href="{{ $cita['rut_pdf'] }}" target="_blank" class="text-gray-600 hover:text-primary-800 flex items-center justify-center md:justify-start text-sm py-2 rounded-md hover:bg-primary-50">
+                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                </svg>
+                                                Ver comprobante
+                                            </a>
+                                        @endif
+                                        @php
+                                            // Modificación: Solo habilitar botones cuando la cita está CONFIRMADA
+                                            // y NO está en ningún otro estado posterior (En trabajo, Trabajo concluido)
+                                            $puedeEditar = ($etapas['cita_confirmada']['completado'] ?? false) && 
+                                                          !($etapas['en_trabajo']['completado'] ?? false) && 
+                                                          !($etapas['en_trabajo']['activo'] ?? false) && 
+                                                          !($etapas['trabajo_concluido']['completado'] ?? false) && 
+                                                          !($etapas['trabajo_concluido']['activo'] ?? false);
+                                        @endphp
+
+                                        @if($puedeEditar)
+                                            <button type="button" wire:click="editarCita({{ json_encode($cita, JSON_HEX_APOS | JSON_HEX_QUOT) }})" onclick="console.log('🔧 Botón Editar clickeado:', @json($cita))" class="text-primary-600 hover:text-primary-800 flex items-center justify-center md:justify-start text-sm py-2 rounded-md hover:bg-primary-50">
+                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                </svg>
+                                                Editar
+                                            </button>
+                                        @else
+                                            <button type="button" 
+                                                    disabled
+                                                    class="text-gray-400 flex items-center justify-center md:justify-start text-sm py-2 px-3 rounded-md cursor-not-allowed opacity-50"
+                                                    title="Solo se puede editar cuando la cita está confirmada y no ha iniciado el trabajo">
+                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                </svg>
+                                                Editar
+                                            </button>
+                                        @endif
+                                        @php
+                                            // Modificación: Solo habilitar botones cuando la cita está CONFIRMADA
+                                            // y NO está en ningún otro estado posterior (En trabajo, Trabajo concluido)
+                                            $puedeAnular = ($etapas['cita_confirmada']['completado'] ?? false) && 
+                                                          !($etapas['en_trabajo']['completado'] ?? false) && 
+                                                          !($etapas['en_trabajo']['activo'] ?? false) && 
+                                                          !($etapas['trabajo_concluido']['completado'] ?? false) && 
+                                                          !($etapas['trabajo_concluido']['activo'] ?? false);
+                                        @endphp
+
+                                        @if($puedeAnular)
+                                            <button type="button" 
+                                                    wire:click="anularCita({{ json_encode($cita, JSON_HEX_APOS | JSON_HEX_QUOT) }})"
+                                                    class="text-red-600 hover:text-red-800 flex items-center justify-center md:justify-start text-sm py-2 rounded-md hover:bg-red-50 transition-colors">
+                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
+                                                Anular
+                                            </button>
+                                        @else
+                                            <button type="button" 
+                                                    disabled
+                                                    class="text-gray-400 flex items-center justify-center md:justify-start text-sm py-2 px-3 rounded-md cursor-not-allowed opacity-50"
+                                                    title="Solo se puede anular cuando la cita está confirmada y no ha iniciado el trabajo">
+                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
+                                                </svg>
+                                                Anular
+                                            </button>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
-
-                            <!-- Botones de acción -->
-                            <div class="mt-4 pt-3 border-t border-gray-200">
-                                <div class="flex flex-row md:justify-end gap-2 md:gap-4">
-                                    @if($concluidoCompletado && !empty($cita['rut_pdf']))
-                                        <a href="{{ $cita['rut_pdf'] }}" target="_blank" class="text-gray-600 hover:text-primary-800 flex items-center justify-center md:justify-start text-sm py-2 rounded-md hover:bg-primary-50">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                            </svg>
-                                            Ver comprobante
-                                        </a>
-                                    @endif
-                                    @php
-                                        // Modificación: Solo habilitar botones cuando la cita está CONFIRMADA
-                                        // y NO está en ningún otro estado posterior (En trabajo, Trabajo concluido)
-                                        $puedeEditar = ($etapas['cita_confirmada']['completado'] ?? false) && 
-                                                      !($etapas['en_trabajo']['completado'] ?? false) && 
-                                                      !($etapas['en_trabajo']['activo'] ?? false) && 
-                                                      !($etapas['trabajo_concluido']['completado'] ?? false) && 
-                                                      !($etapas['trabajo_concluido']['activo'] ?? false);
-                                    @endphp
-
-                                    @if($puedeEditar)
-                                        <button type="button" wire:click="editarCita({{ json_encode($cita, JSON_HEX_APOS | JSON_HEX_QUOT) }})" onclick="console.log('🔧 Botón Editar clickeado:', @json($cita))" class="text-primary-600 hover:text-primary-800 flex items-center justify-center md:justify-start text-sm py-2 rounded-md hover:bg-primary-50">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                            </svg>
-                                            Editar
-                                        </button>
-                                    @else
-                                        <button type="button" 
-                                                disabled
-                                                class="text-gray-400 flex items-center justify-center md:justify-start text-sm py-2 px-3 rounded-md cursor-not-allowed opacity-50"
-                                                title="Solo se puede editar cuando la cita está confirmada y no ha iniciado el trabajo">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                            </svg>
-                                            Editar
-                                        </button>
-                                    @endif
-                                    @php
-                                        // Modificación: Solo habilitar botones cuando la cita está CONFIRMADA
-                                        // y NO está en ningún otro estado posterior (En trabajo, Trabajo concluido)
-                                        $puedeAnular = ($etapas['cita_confirmada']['completado'] ?? false) && 
-                                                      !($etapas['en_trabajo']['completado'] ?? false) && 
-                                                      !($etapas['en_trabajo']['activo'] ?? false) && 
-                                                      !($etapas['trabajo_concluido']['completado'] ?? false) && 
-                                                      !($etapas['trabajo_concluido']['activo'] ?? false);
-                                    @endphp
-
-                                    @if($puedeAnular)
-                                        <button type="button" 
-                                                wire:click="anularCita({{ json_encode($cita, JSON_HEX_APOS | JSON_HEX_QUOT) }})"
-                                                class="text-red-600 hover:text-red-800 flex items-center justify-center md:justify-start text-sm py-2 rounded-md hover:bg-red-50 transition-colors">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                            </svg>
-                                            Anular
-                                        </button>
-                                    @else
-                                        <button type="button" 
-                                                disabled
-                                                class="text-gray-400 flex items-center justify-center md:justify-start text-sm py-2 px-3 rounded-md cursor-not-allowed opacity-50"
-                                                title="Solo se puede anular cuando la cita está confirmada y no ha iniciado el trabajo">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
-                                            </svg>
-                                            Anular
-                                        </button>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
+                        @endforeach
+                    </div>
                 </div>
             </div>
 
