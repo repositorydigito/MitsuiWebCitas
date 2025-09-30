@@ -796,12 +796,24 @@ class Vehiculos extends Page
             $vehiculo = Vehicle::where('vehicle_id', $vehiculoId)->first();
 
             if ($vehiculo) {
+                // Obtener el usuario actual
+                $usuario = \Illuminate\Support\Facades\Auth::user();
+                
+                // Enviar correo de alerta antes de eliminar
+                try {
+                    \Illuminate\Support\Facades\Mail::send(new \App\Mail\VehiculoRetirado($vehiculo, $usuario));
+                    Log::info("[VehiculosPage] Correo de alerta enviado por retiro de vehículo: {$vehiculo->license_plate}");
+                } catch (\Exception $mailException) {
+                    Log::error("[VehiculosPage] Error al enviar correo de alerta: " . $mailException->getMessage());
+                    // Continuar con la eliminación aunque falle el correo
+                }
+                
                 // Eliminar el vehículo (soft delete)
                 $vehiculo->delete();
 
                 \Filament\Notifications\Notification::make()
                     ->title('Vehículo retirado')
-                    ->body('El vehículo ha sido retirado correctamente.')
+                    ->body('El vehículo ha sido retirado correctamente y se ha enviado una alerta por correo.')
                     ->success()
                     ->send();
 
