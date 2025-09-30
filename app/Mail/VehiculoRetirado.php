@@ -34,7 +34,7 @@ class VehiculoRetirado extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            to: ['bchuco@digito.pe'],
+            to: ['tsm-kaizen@mitsuiautomotriz.com'],
             subject: '🚗 Alerta: Vehículo Retirado del Sistema',
         );
     }
